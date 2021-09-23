@@ -1,0 +1,15 @@
+de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\HDBSCANInputException.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\MyException.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\CoalitionGenerator.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\package-info.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\utils\CoalitionGeneratorUtils.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\CSGPSolver.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\CoalitionGenerationInputException.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\MAJANPlugin.class
+META-INF\extensions.idx
+de\dfki\asr\ajan\pluginsystem\majanplugin\vocabularies\MAJANVocabulary.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\HDBSCAN.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\ConstraintsException.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\utils\Utils.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\CSGPSolverInputException.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\solvers\BOSS.class

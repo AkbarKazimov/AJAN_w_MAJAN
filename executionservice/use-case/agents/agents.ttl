@@ -1,0 +1,283 @@
+# @base <http://localhost/rdf4j/repositories/agents> .
+
+@prefix : <http://localhost:8090/rdf4j/repositories/agents#> .
+@prefix behaviors: <http://localhost:8090/rdf4j/repositories/behaviors#> .
+@prefix beliefs: <http://localhost:8090/rdf4j/repositories/beliefs#> .
+
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix http: <http://www.w3.org/2011/http#> .
+@prefix ajan: <http://www.ajan.de/ajan-ns#> .
+@prefix sp: <http://spinrdf.org/sp#> .
+@prefix test: <http://test/> .
+@prefix mosim: <http://www.dfki.de/mosim-ns#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+# ----------- Endpoint ------------
+
+# localhost:8080/ajan/agents/ | POST | text/turtle
+
+# ------------- Body --------------
+
+#@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+#@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+#@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+#@prefix ajan: <http://www.ajan.de/ajan-ns#> .
+#@prefix inv: <http://www.dfki.de/inversiv#> .
+#@prefix : <http://www.dfki.de/inversiv#> .
+#@prefix bt: <http://www.ajan.de/behavior/bt-ns#> .
+#@prefix http: <http://www.w3.org/2006/http#> .
+#@prefix test: <http://test/> .
+#
+#:initialization rdf:type ajan:AgentInitialisation ;
+#				ajan:agentName "Agento"^^xsd:string ;
+#				ajan:agentTemplate <http://localhost:8090/rdf4j/repositories/agents#ExampleAgent> ;
+#				ajan:agentInitKnowledge test:Subject  .
+#
+#test:Subject rdf:type test:Resource .
+#test:Subject test:predicate "Geh weg!" .
+
+
+# ----------- Templates -----------
+
+:MAJANAgent
+	a ajan:AgentTemplate ;
+	rdfs:label "MAJAN Agent to Test MAJAN Features" ;
+	ajan:event :StartLCCEvent ;
+	ajan:event :StartCHCEvent ;
+	ajan:endpoint :startCHC ;
+	ajan:endpoint :startLCC ;
+	ajan:behavior :LCCProtocolBehavior ;
+	ajan:behavior :CHCProtocolBehavior .    
+
+
+:WelcomeAgent
+	a ajan:AgentTemplate ;
+	rdfs:label "DTASFWelcomeAgent" ;
+	ajan:event :PopulateLSREvent ;
+	ajan:event :PopulateLAREvent ;	
+	ajan:event :ReceiveLocalAgentsEvent ;
+	ajan:event :ReceiveHandshakeEvent ;	
+	ajan:event :SpeakAvatarEvent ;	
+	ajan:event :EventDIPORServiceRequest ;	
+	ajan:event :EventStatementNonOpinion ;	
+	ajan:event :SpecificBTEvent ;
+	ajan:event :FirstInteractionBTEvent ;	
+	ajan:event :CloseScenarioEvent ;	
+	ajan:event :AgentShutdownEvent ;
+	ajan:event :AgentMonitoringEvent ;
+	ajan:endpoint :populateRepo ;
+	ajan:endpoint :receiveSpeechAct ;
+	ajan:endpoint :speakAvatar ;
+	ajan:endpoint :handshake ;
+	ajan:endpoint :closeScenario ;
+    ajan:endpoint :agentSession ;
+	ajan:endpoint :heartbeat ;
+	ajan:initialBehavior :InitialWelcomeBehavior ;
+	ajan:finalBehavior :FinalWelcomeBehavior ;
+	ajan:behavior :ReceiveTriplestoLocalRepos ;
+	ajan:behavior :SendRequestPopulateRepos ;
+	ajan:behavior :HandshakeBehavior ;
+	ajan:behavior :ProcessSpeechActsBehavior ;
+	ajan:behavior :SpecificFirstReceptionBT ;
+	ajan:behavior :AgentShutdown ;
+	ajan:behavior :HeartbeatMonitoringBT .
+
+
+
+
+#------------MAJAN Stuff-------------------
+
+:LCCProtocolBehavior
+	a ajan:Behavior ;
+	rdfs:label "LCC Protocol BT" ;
+	ajan:trigger :StartLCCEvent ;
+	ajan:bt behaviors:LCCProtocolBT.
+
+:CHCProtocolBehavior
+	a ajan:Behavior ;
+	rdfs:label "CHC Protocol BT" ;
+	ajan:trigger :StartCHCEvent ;
+	ajan:bt behaviors:CHCProtocolBT.
+
+:startLCC
+	a ajan:Endpoint ;
+	rdfs:label "start LCC endpoint" ;
+	ajan:capability "startLCC" ;
+	ajan:event :StartLCCEvent .
+
+:startCHC
+	a ajan:Endpoint ;
+	rdfs:label "start CHC endpoint" ;
+	ajan:capability "startCHC" ;
+	ajan:event :StartCHCEvent .
+
+:StartLCCEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Start LCC Event" .
+
+:StartCHCEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Start CHC Event" .
+
+
+# ----------- Behaviors -----------
+
+
+:InitialWelcomeBehavior
+	a ajan:InitialBehavior ;
+	rdfs:label "Initial Behavior" ;
+	ajan:bt behaviors:InitialWelcomeBehavior .
+
+:FinalWelcomeBehavior
+	a ajan:FinalBehavior ;
+	rdfs:label "Final Behavior" ;
+	ajan:bt behaviors:FinalWelcomeBehavior .
+
+:SendRequestPopulateRepos
+	a ajan:Behavior ;
+	rdfs:label "Send Request Populate Repos" ;
+	ajan:trigger :PopulateLSREvent ;
+	ajan:trigger :PopulateLAREvent ;
+	ajan:bt behaviors:SendRequestPopulateRepos .
+
+:ReceiveTriplestoLocalRepos
+	a ajan:Behavior ;
+	rdfs:label "Receive Triples to LocalRepos" ;
+	#ajan:trigger :ReceiveLocalServicesEvent ;
+	ajan:trigger :ReceiveLocalAgentsEvent ;
+	ajan:bt behaviors:ReceiveTriplestoLocalRepos .
+
+:HandshakeBehavior
+	a ajan:Behavior ;
+	rdfs:label "Handshake Behavior" ;
+	ajan:trigger :ReceiveHandshakeEvent ;	
+	ajan:bt behaviors:HandshakeBehavior .
+	
+:ProcessSpeechActsBehavior
+	a ajan:Behavior ;
+	rdfs:label "Process Speech Acts Behavior" ;
+	ajan:trigger :SpeakAvatarEvent ;
+	ajan:trigger :EventDIPORServiceRequest ;
+	ajan:trigger :EventStatementNonOpinion ;
+	ajan:bt behaviors:ProcessSpeechActsBehavior .
+
+:SpecificFirstReceptionBT
+	a ajan:Behavior ;
+	rdfs:label "Specific First Reception Behavior Tree" ;
+	ajan:trigger :FirstInteractionBTEvent ;
+	ajan:trigger :CloseScenarioEvent ;
+	ajan:trigger :SpecificBTEvent ;
+	ajan:bt behaviors:SpecificFirstReceptionBT .
+
+:AgentShutdown
+	a ajan:Behavior ;
+	rdfs:label "Agent Shutdown" ;
+	ajan:trigger :AgentShutdownEvent ;
+	ajan:bt behaviors:AgentShutdown .
+
+:HeartbeatMonitoringBT
+	a ajan:Behavior ;
+	rdfs:label "Heartbeat Monitoring Behavior" ;
+	ajan:trigger :AgentMonitoringEvent ;
+	ajan:bt behaviors:HeartbeatMonitoringBT .
+
+# ----------- Endpoints -----------
+
+:populateRepo
+	a ajan:Endpoint ;
+	rdfs:label "populate Repo Endpoint" ;
+	ajan:capability "populateRepo" ;
+	#ajan:event :ReceiveLocalServicesEvent ;
+	ajan:event :ReceiveLocalAgentsEvent .
+
+:receiveSpeechAct
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for DIPs" ;
+	ajan:capability "receiveSpeechAct" ;	
+	ajan:event :EventDIPORServiceRequest ;
+	ajan:event :EventStatementNonOpinion .
+
+:handshake
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for handshake" ;
+	ajan:capability "handshake" ;
+	ajan:event :ReceiveHandshakeEvent .
+	
+:speakAvatar
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for speakAvatar" ;
+	ajan:capability "speakAvatar" ;
+	ajan:event :SpeakAvatarEvent .
+	
+:closeScenario
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for closeScenario" ;
+	ajan:capability "closeScenario" ;
+	ajan:event :CloseScenarioEvent .
+	
+:agentSession
+	a ajan:Endpoint ;
+	rdfs:label "Agent Session Endpoint" ;
+	ajan:capability "agentSession" ;
+	ajan:event :AgentShutdownEvent .
+
+:heartbeat
+	a ajan:Endpoint ;
+	rdfs:label "Heartbeat monitoring Endpoint" ;
+	ajan:capability "heartbeat" ;
+	ajan:event :AgentMonitoringEvent .
+	
+# ----------- Events -----------
+:PopulateLSREvent
+	a ajan:ModelEvent ;
+	rdfs:label "PopulateLSREvent" .
+	
+:PopulateLAREvent
+	a ajan:ModelEvent ;
+	rdfs:label "Populate LAR Event" .
+
+#:ReceiveLocalServicesEvent
+#	a ajan:ModelEvent ;
+#	rdfs:label "ReceiveLocalServicesEvent" .
+	
+:ReceiveLocalAgentsEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Local Agents Event" .
+	
+:ReceiveHandshakeEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Handshake Event" .
+
+:SpeakAvatarEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Speak to Avatar Event" .
+	
+:EventDIPORServiceRequest
+	a ajan:ModelEvent ;
+	rdfs:label "Receive a DIP or Service Request Event" .
+
+:EventStatementNonOpinion
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Default Statement Non Opinion Event" .
+
+:FirstInteractionBTEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive First Service Interaction Move Event" .
+
+:CloseScenarioEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Close Scenario Event" .
+	
+:SpecificBTEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Specific BT Event" .
+
+:AgentShutdownEvent
+	a ajan:ModelEvent ;
+	rdfs:label "AgentShutdownEvent" .
+
+:AgentMonitoringEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Agent Monitoring Event" .
