@@ -45,12 +45,182 @@
 	a ajan:AgentTemplate ;
 	rdfs:label "MAJAN Agent to Test MAJAN Features" ;
 	ajan:event :StartLCCEvent ;
-	ajan:event :StartCHCEvent ;
-	ajan:endpoint :startCHC ;
+	ajan:event :CHCProtocolEvent ;
+	ajan:event :ExecuteCHCProcessEvent;
+	ajan:event :ShareCHCPersonalInfoEvent ;
+	ajan:event :ReceiveCHCPersonalInfoEvent;
+	ajan:event :ShareCHCSimilaritiesEvent;
+	ajan:event :ReceiveCHCSimilaritiesEvent;
+	ajan:event :SolveCHCEvent;
+	ajan:event :ShareCHCResultEvent;
+	ajan:endpoint :CHCProtocolEndpoint ;
 	ajan:endpoint :startLCC ;
+	ajan:endpoint :ShareCHCPersonalInfoEndpoint ;
+	ajan:endpoint :ReceiveCHCPersonalInfoEndpoint;
+	ajan:endpoint :ShareCHCSimilaritiesEndpoint ;
+	ajan:endpoint :ReceiveCHCSimilaritiesEndpoint ;
+	ajan:endpoint :ShareCHCResultEndpoint;
 	ajan:behavior :LCCProtocolBehavior ;
-	ajan:behavior :CHCProtocolBehavior .    
+	ajan:behavior :CHCProtocolBehavior ;
+	ajan:behavior :ExecutingCHCProcessBehavior ;
+	ajan:behavior :SharingCHCPersonaInfoBehavior ;	 
+	ajan:behavior :ReceivingCHCPersonaInfoBehavior;  
+	ajan:behavior :SharingCHCSimilaritiesBehavior;  
+	ajan:behavior :ReceivingCHCSimilaritiesBehavior;
+	ajan:behavior :SolvingCHCBehavior;
+	ajan:behavior :SharingCHCResultBehavior.
 
+
+#------------MAJAN Stuff-------------------
+
+#----Behaviors-------
+:LCCProtocolBehavior
+	a ajan:Behavior ;
+	rdfs:label "LCC Protocol BT" ;
+	ajan:trigger :StartLCCEvent ;
+	ajan:bt behaviors:LCCProtocolBT.
+
+
+:CHCProtocolBehavior
+	a ajan:Behavior ;
+	rdfs:label "Start CHC Protocol with TCN/App request" ;
+	ajan:trigger :CHCProtocolEvent ;
+	ajan:bt behaviors:CHCProtocolBT.
+
+:ExecutingCHCProcessBehavior
+	a ajan:Behavior ;
+	rdfs:label "Execute CHC Process" ;
+	ajan:trigger :ExecuteCHCProcessEvent ;
+	ajan:bt behaviors:ExecutingCHCProcessBT.
+
+:SharingCHCPersonaInfoBehavior
+	a ajan:Behavior ;
+	rdfs:label "Share CHC Personal Info" ;
+	ajan:trigger :ShareCHCPersonalInfoEvent ;
+	ajan:bt behaviors:SharingCHCPersonalInfoBT.
+
+:ReceivingCHCPersonaInfoBehavior
+	a ajan:Behavior ;
+	rdfs:label "Receive CHC Personal Info" ;
+	ajan:trigger :ReceiveCHCPersonalInfoEvent ;
+	ajan:bt behaviors:ReceiveCHCPersonalInfoBT.
+
+:SharingCHCSimilaritiesBehavior
+	a ajan:Behavior ;
+	rdfs:label "Share CHC Similarities" ;
+	ajan:trigger :ShareCHCSimilaritiesEvent ;
+	ajan:bt behaviors:SharingCHCSimilaritiesBT.
+
+:ReceivingCHCSimilaritiesBehavior
+	a ajan:Behavior ;
+	rdfs:label "Receive CHC Similarities" ;
+	ajan:trigger :ReceiveCHCSimilaritiesEvent ;
+	ajan:bt behaviors:ReceivingCHCSimilaritiesBT.
+
+:SolvingCHCBehavior
+	a ajan:Behavior ;
+	rdfs:label "Solve CHC Problem Behavior" ;
+	ajan:trigger :SolveCHCEvent ;
+	ajan:bt behaviors:SolvingCHCBT.
+
+:SharingCHCResultBehavior
+	a ajan:Behavior ;
+	rdfs:label "Share CHC Result with TCN/App Behavior" ;
+	ajan:trigger :ShareCHCResultEvent ;
+	ajan:bt behaviors:SharingCHCResultBT.
+
+#----Behaviors-------
+
+#----Endpoints-------
+
+:startLCC
+	a ajan:Endpoint ;
+	rdfs:label "start LCC endpoint" ;
+	ajan:capability "startLCC" ;
+	ajan:event :StartLCCEvent .
+
+:CHCProtocolEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to start CHC Protocol" ;
+	ajan:capability "startCHC" ;
+	ajan:event :CHCProtocolEvent .
+
+:ShareCHCPersonalInfoEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to trigger Sharing CHC Personal Info Behavior" ;
+	ajan:capability "shareCHCPersonalInfo" ;
+	ajan:event :ShareCHCPersonalInfoEvent .
+
+:ReceiveCHCPersonalInfoEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to trigger Receiving CHC Personal Info Behavior" ;
+	ajan:capability "receiveCHCPersonalInfo" ;
+	ajan:event :ReceiveCHCPersonalInfoEvent .
+
+:ShareCHCSimilaritiesEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to trigger Sharing CHC Similarities Behavior" ;
+	ajan:capability "shareCHCSimilarities" ;
+	ajan:event :ShareCHCSimilaritiesEvent .
+
+:ReceiveCHCSimilaritiesEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to trigger Receiving CHC Similarities Behavior" ;
+	ajan:capability "receiveCHCSimilarities" ;
+	ajan:event :ReceiveCHCSimilaritiesEvent .
+
+:ShareCHCResultEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to trigger Sharing CHC Result Behavior" ;
+	ajan:capability "shareCHCResult" ;
+	ajan:event :ShareCHCResultEvent .
+
+
+
+#----Endpoints-------
+
+#----Events-------
+
+:StartLCCEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Start LCC Event" .
+
+:CHCProtocolEvent
+	a ajan:ModelEvent ;
+	rdfs:label "CHC Protocol Event" .
+
+:ExecuteCHCProcessEvent 
+	a ajan:ModelEvent ;
+	rdfs:label "Execute CHC Process Event" .
+
+:ShareCHCPersonalInfoEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Share CHC Personal Info Event" .
+
+:ReceiveCHCPersonalInfoEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive CHC Personal Info Event" .
+
+:ShareCHCSimilaritiesEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Share CHC Similarities Event" .
+
+:ReceiveCHCSimilaritiesEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive CHC Similarities Event" .
+
+:SolveCHCEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Solve CHC Problem Event" .
+
+:ShareCHCResultEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Share CHC Result Event" .
+
+#----Events-------
+
+
+#------------MAJAN Stuff-------------------
 
 :WelcomeAgent
 	a ajan:AgentTemplate ;
@@ -83,43 +253,6 @@
 	ajan:behavior :SpecificFirstReceptionBT ;
 	ajan:behavior :AgentShutdown ;
 	ajan:behavior :HeartbeatMonitoringBT .
-
-
-
-
-#------------MAJAN Stuff-------------------
-
-:LCCProtocolBehavior
-	a ajan:Behavior ;
-	rdfs:label "LCC Protocol BT" ;
-	ajan:trigger :StartLCCEvent ;
-	ajan:bt behaviors:LCCProtocolBT.
-
-:CHCProtocolBehavior
-	a ajan:Behavior ;
-	rdfs:label "CHC Protocol BT" ;
-	ajan:trigger :StartCHCEvent ;
-	ajan:bt behaviors:CHCProtocolBT.
-
-:startLCC
-	a ajan:Endpoint ;
-	rdfs:label "start LCC endpoint" ;
-	ajan:capability "startLCC" ;
-	ajan:event :StartLCCEvent .
-
-:startCHC
-	a ajan:Endpoint ;
-	rdfs:label "start CHC endpoint" ;
-	ajan:capability "startCHC" ;
-	ajan:event :StartCHCEvent .
-
-:StartLCCEvent
-	a ajan:ModelEvent ;
-	rdfs:label "Receive Start LCC Event" .
-
-:StartCHCEvent
-	a ajan:ModelEvent ;
-	rdfs:label "Receive Start CHC Event" .
 
 
 # ----------- Behaviors -----------

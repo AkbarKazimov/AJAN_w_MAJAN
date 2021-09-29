@@ -273,6 +273,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             this.getObject().getLocalServicesBeliefs().update(responseModel);
         }
 
+        respFlag=true;
         return respFlag;
     }
     

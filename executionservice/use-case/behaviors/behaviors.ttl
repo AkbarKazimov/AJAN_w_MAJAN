@@ -33,7 +33,8 @@
 # ---------------- Behaviors ----------------
 # -------------------------------------------	
 
- 
+#------------MAJAN Stuff----------------------
+
 :LCCProtocolBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
@@ -55,13 +56,344 @@
 	bt:hasChild [
 					a bt:Sequence ;
 					bt:hasChildren (
+							:HandleCHCProtocolEvent
+							[
+								a bt:Priority ;	
+								bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+													:ConditionAgentRunningCHCProcess
+													:MessageAlreadyRunningCHCProcess
+													)																														
+										]
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+													:ConditionAgentInvolvedInCHCProcess
+													[
+														a bt:Priority ;
+														bt:hasChildren (
+																[
+																	a bt:Invert ;
+																	bt:hasChild 
+																			:MessageWantToStartNewCHCProcess
+																]
+																[
+																	a bt:Invert ;
+																	bt:hasChild 
+																			:ConditionStillWantToStartCHC
+																]
+																
+																)																														
+													]
+													)																														
+										]
+										:EventProducerExecuteCHCProcessEvent
+								)																														
+							]				
+		
+							)
+				] .
+
+:ExecutingCHCProcessBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "ExecutingCHCProcessBT Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+										:HDBSCAN
+									)
+				] .
+
+:SharingCHCPersonalInfoBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "SharingCHCPersonalInfoBT Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+										:HDBSCAN
+									)
+				] .
+
+:ReceiveCHCPersonalInfoBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "ReceiveCHCPersonalInfoBT Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+										:HDBSCAN
+									)
+				] .
+
+:SharingCHCSimilaritiesBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "SharingCHCSimilaritiesBT Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+										:HDBSCAN
+									)
+				] .
+
+:ReceivingCHCSimilaritiesBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "ReceivingCHCSimilaritiesBT Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+										:HDBSCAN
+									)
+				] .
+
+:SolvingCHCBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "SolvingCHCBT Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+										:HDBSCAN
+									)
+				] .
+
+:SharingCHCResultBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "SharingCHCResultBT Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
 										:HDBSCAN
 									)
 				] .
 
 
 
+#---------------MAJAN BT Nodes---------------
 
+:HandleCHCProtocolEvent
+	a bt:HandleEvent ;
+	rdfs:label "EventHandler: CHC Protocol BT" ;
+	bt:event agents:CHCProtocolEvent ;
+	bt:validate [
+					a bt:ConstructQuery ;
+					bt:targetBase ajan:AgentKnowledge ;
+					bt:sparql """
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE { 
+							?s ?p ?o .				
+						}"""^^xsd:string ;
+				] .
+
+:ConditionAgentRunningCHCProcess
+	a bt:Condition ;
+	rdfs:label "Condition: Is Agent Running a CHC Process as Dedicated Agent?" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					ASK
+					WHERE {
+						?s ?p ?o.	
+						?s ajan:sik ajan:bas.
+					}"""^^xsd:string ;
+		]) .
+
+:ConditionAgentInvolvedInCHCProcess
+	a bt:Condition ;
+	rdfs:label "Condition: Is agent involved in a CHC process?" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					ASK
+					WHERE {
+						?s ?p ?o.	
+					}"""^^xsd:string ;
+		]) .
+		
+:ConditionStillWantToStartCHC
+	a bt:Condition ;
+	rdfs:label "Condition: Does TCN want to start a CHC even though he/she is already involved in one?" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					ASK
+					WHERE {
+						?s ?p ?o.	
+					}"""^^xsd:string ;
+		]) .
+		
+		
+:MessageAlreadyRunningCHCProcess
+	a bt:Message ;
+	rdfs:label "Message: Send Already running a CHC Process to TCN"^^xsd:string ;
+	rdfs:comment "Message: Send Already running a CHC Process to TCN"^^xsd:string ;
+	bt:targetBase ajan:AgentKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "application/ld+json; charset=UTF-8"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "application/ld+json"
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:to ;
+					http-core:fieldValue "APP"
+			]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					SELECT ?requestURI
+					WHERE {
+					  VALUES ?requestURI { "http://localhost:8092/informApp" }
+					}"""^^xsd:string
+	] .
+	
+	
+:MessageWantToStartNewCHCProcess
+	a bt:Message ;
+	rdfs:label "Message: Send already involved in a CHC process. Still want to start a new one? to TCN"^^xsd:string ;
+	rdfs:comment "Message: Send already involved in a CHC process. Still want to start a new one? to TCN"^^xsd:string ;
+	bt:targetBase ajan:AgentKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "application/ld+json"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "application/ld+json"
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:to ;
+					http-core:fieldValue "APP"
+			]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					SELECT ?requestURI
+					WHERE {
+					  VALUES ?requestURI { "http://localhost:8092/askApp" }
+					}"""^^xsd:string
+	] .
+	
+	
+:EventProducerExecuteCHCProcessEvent
+	a bt:EventProducer ;
+	rdfs:label "EventProducer: Execute CHC Process" ;
+	ajan:event agents:ExecuteCHCProcessEvent ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:AgentKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string ;
+				] .	
+	
+#------------MAJAN Stuff----------------------
 
 :InitialWelcomeBehavior
 	a bt:BehaviorTree ;
