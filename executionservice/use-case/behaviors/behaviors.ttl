@@ -49,6 +49,7 @@
 									)
 				] .
 
+
 :CHCProtocolBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
@@ -90,10 +91,9 @@
 													)																														
 										]
 										:EventProducerExecuteCHCProcessEvent
-								)																														
+												)																														
 							]				
-		
-							)
+								)
 				] .
 
 :ExecutingCHCProcessBT
@@ -101,9 +101,57 @@
 	a bt:Root ;
 	rdfs:label "ExecutingCHCProcessBT Behavior Tree" ;
 	bt:hasChild [
-					a bt:Sequence ;
+					a bt:Priority ;
 					bt:hasChildren (
-										:HDBSCAN
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+													:HandleExecuteCHCProcessEvent
+													:Message2AppStartingCHC
+													:Message2WPMUpdateStatus2InCoordination
+#PopulateLARRepos BT (by Elena) is used to populate LAR but since running locally, LAR is not populated. Uncomment nodes related to LAR when running globally. 
+#													:EventProducerPopulateLAR
+#													:Wait4LAR
+#													[
+#														a bt:Priority ;
+#														bt:hasChildren (
+#																:ConditionLARPopulated
+#																[
+#																	a bt:Sequence ;
+#																	bt:hasChildren (
+#																		:EventProducerPopulateLAR
+#																		:Wait4LAR
+#																		:ConditionLARPopulated
+#																					)																														
+#																]
+#																		)																														
+#													]
+													:WriteCHCProblemInstance
+													:UpdateAgentRunningCHC
+													:Message2Agents4PersonalInfo
+													:Wait4PersonalInfo
+#													[
+#														a bt:Priority ;
+#														bt:hasChildren (
+#															:ConditionReceivedCompletePersonalInfo
+#															:UpdateRemoveNotRespondingAgentsFromCHCProblemInstance
+#																		)																														
+#													]
+#													:Message2Agents4SimilarityValues
+#													:Wait4SimilarityValues
+#													[
+#														a bt:Priority ;
+#														bt:hasChildren (
+#															:ConditionReceivedCompleteSimilarityValues
+#															:WriteZeroSimilarity4NotRespondingAgents
+#																		)																														
+#													]
+#													:EventProducerSolverCHCEvent
+															)																														
+										]
+#										:Wait4LAR
+#										:EventProducerCHCFaulireEvent
+										:ConditionLARPopulated
 									)
 				] .
 
@@ -114,7 +162,7 @@
 	bt:hasChild [
 					a bt:Sequence ;
 					bt:hasChildren (
-										:HDBSCAN
+										:HandleShareCHCPersonalInfoEvent
 									)
 				] .
 
@@ -162,10 +210,21 @@
 									)
 				] .
 
-:SharingCHCResultBT
+:FinalizingCHCProcessBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
-	rdfs:label "SharingCHCResultBT Behavior Tree" ;
+	rdfs:label "Finalizing CHC Process Behavior Tree" ;
+	bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+										:HDBSCAN
+									)
+				] .
+				
+:CHCFailureBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "CHC Process/Protocol Failure Behavior Tree" ;
 	bt:hasChild [
 					a bt:Sequence ;
 					bt:hasChildren (
@@ -177,13 +236,329 @@
 
 #---------------MAJAN BT Nodes---------------
 
+#------------LCC Protocol Nodes -------------------------------
+
+:TestBigQuery
+	a bt:Write ;
+	rdfs:label "Testing Big Query" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:targetBase ajan:AgentKnowledge ;
+				bt:sparql """
+	PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+	PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+	PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+	CONSTRUCT{
+		_:bNodeSimilarity ajan:subject ?a1;
+		ajan:object ?a2;
+		welcome:isComputedForProblemId  ?usecaseId;
+		welcome:hasPerfectMatchScore ?perfectMatchScore;
+		welcome:hasNumberOfAgents ?numberOfAgents;
+		ajan:hasSimilarityScore ?totalSml.
+		}
+	WHERE {
+		welcome:UseCase welcome:toBeSolved ?usecase.
+		?usecase 	welcome:hasMacProblemId  ?usecaseId;
+				welcome:hasNumberOfAgents ?numberOfAgents;
+				welcome:hasAgeWeight ?ageWeight;
+				welcome:hasGenderWeight ?genWeight;
+				welcome:hasFamilyWeight	?famWeight;
+				welcome:hasNationalityWeight	?natWeight;
+				welcome:hasReligionWeight	?relWeight;
+				welcome:hasEthnicityWeight	?ethWeight;
+				welcome:hasLocationWeight	?locWeight;
+				welcome:hasAccessibilityWeight	?accWeight;
+				welcome:hasRentPeriodWeight	?rentWeight;
+				welcome:hasShareWithWeight	?shareWeight.
+		?a1 a ajan:Agent.
+		?a1 welcome:isParticipatingIn ?usecaseId.
+	
+		?a2 a ajan:Agent.
+		?a2 welcome:isParticipatingIn ?usecaseId.
+		?a1 welcome:hasAgePreference ?agePrefA1.
+		OPTIONAL {
+			?agePrefA1 welcome:lowerBound ?lowerAgeA1;
+		        welcome:higherBound ?higherAgeA1.
+			}.
+		?a1 welcome:hasGenderPreference ?genPrefA1.
+		?a1 welcome:hasFamilyPreference ?famPrefA1.
+		?a1 welcome:hasNationPreference ?natPrefA1.
+		?a1 welcome:hasNationality ?nationA1.
+		?a1 welcome:hasReligionPreference ?relPrefA1.
+		?a1 welcome:hasReligion ?relA1.
+		?a1 welcome:hasEthnicPreference ?ethPrefA1.
+		?a1 welcome:hasEthnicity ?ethA1.
+		?a1 welcome:hasLocationPreference ?locPrefA1.
+		?a1 welcome:hasAccessibilityPreference ?accPrefA1.
+		?a1 welcome:hasRentPeriodPreference ?rentPrefA1.
+		OPTIONAL {
+			?rentPrefA1 welcome:startDate ?startRentA1;
+		        welcome:endDate ?endRentA1.
+			}.
+		?a1 welcome:hasShareWithPreference ?sharePrefA1.
+		OPTIONAL {
+			?sharePrefA1 welcome:min ?minShareA1;
+		        welcome:max ?maxShareA1.
+			}.
+		?a2 welcome:hasAge ?ageA2.
+		?a2 welcome:hasGender ?genA2.
+		?a2 welcome:hasFamily ?famA2.
+		?a2 welcome:hasNationality ?nationA2.
+		?a2 welcome:hasReligion ?relA2.
+		?a2 welcome:hasEthnicity ?ethA2.
+		?a2 welcome:hasLocationPreference ?locPrefA2.
+		?a2 welcome:hasAccessibilityPreference ?accPrefA2.
+		?a2 welcome:hasRentPeriodPreference ?rentPrefA2.
+		OPTIONAL {
+			?rentPrefA2 welcome:startDate ?startRentA2;
+		        welcome:endDate ?endRentA2.
+			}.
+		?a2 welcome:hasShareWithPreference ?sharePrefA2.
+		OPTIONAL {
+			?sharePrefA2 welcome:min ?minShareA2;
+		        welcome:max ?maxShareA2.
+			}.
+		FILTER(?a1 != ?a2)
+		BIND(1 AS ?matchScore)
+		BIND(0 AS ?unmatchScore)
+		BIND(10 AS ?numberOfPreferences)
+		BIND((?matchScore * (?ageWeight + ?genWeight + ?famWeight + ?natWeight + ?relWeight + ?ethWeight + ?locWeight + ?accWeight + ?rentWeight + ?shareWeight))/?numberOfPreferences AS ?perfectMatchScore)
+	
+		BIND(IF(?agePrefA1="Dont mind" || (xsd:integer(?ageA2) >= xsd:integer(?lowerAgeA1) && xsd:integer(?ageA2) <= xsd:integer(?higherAgeA1)), ?matchScore, ?unmatchScore) AS ?ageSml).
+		BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
+		BIND(IF(?famPrefA1="Dont mind" || ?famA2=?famPrefA1, ?matchScore, ?unmatchScore) AS ?famSml).
+		BIND(IF(?natPrefA1="Dont mind" || (?natPrefA1="Same" && ?nationA1=?nationA2) || (?natPrefA1="Mixed" && ?nationA1!=?nationA2), ?matchScore, ?unmatchScore) AS ?natSml)
+		BIND(IF(?relPrefA1="Dont mind" || (?relPrefA1="Same" && ?relA1=?relA2) || (?relPrefA1="Mixed" && ?relA1!=?relA2), ?matchScore, ?unmatchScore) AS ?relSml)
+		BIND(IF(?ethPrefA1="Dont mind" || (?ethPrefA1="Same" && ?ethA1=?ethA2) || (?ethPrefA1="Mixed" && ?ethA1!=?ethA2), ?matchScore, ?unmatchScore) AS ?ethSml)
+		
+		BIND(IF(?locPrefA1="Dont mind" || ?locPrefA2="Dont mind" || ?locPrefA1=?locPrefA2, ?matchScore, ?unmatchScore) AS ?locSml)
+		BIND(IF(?accPrefA1="Dont mind" || ?accPrefA2="Dont mind" || ?accPrefA1=?accPrefA2, ?matchScore, ?unmatchScore) AS ?accSml)
+		BIND(((year(xsd:dateTime(?endRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA1))) + day(xsd:dateTime(?endRentA1))) AS ?endRentA1IntValue)
+		BIND(((year(xsd:dateTime(?endRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA2))) + day(xsd:dateTime(?endRentA2))) AS ?endRentA2IntValue)
+		BIND(((year(xsd:dateTime(?startRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA1))) + day(xsd:dateTime(?startRentA1))) AS ?startRentA1IntValue)
+		BIND(((year(xsd:dateTime(?startRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA2))) + day(xsd:dateTime(?startRentA2))) AS ?startRentA2IntValue)
+		BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA2IntValue, ?endRentA1IntValue) AS ?smallerEndRent)
+		BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA1IntValue, ?startRentA2IntValue) AS ?biggerStartRent)
+		BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA2IntValue, ?startRentA1IntValue) AS ?smallerStartRent)
+		BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA1IntValue, ?endRentA2IntValue) AS ?biggerEndRent)
+		BIND(?smallerEndRent - ?biggerStartRent + 1 AS ?rentOverlap)
+		BIND(?biggerEndRent - ?smallerStartRent + 1 AS ?rentTotal)
+		BIND(IF(?rentPrefA1="Dont mind" || ?rentPrefA2="Dont mind", ?matchScore, IF(?startRentA1 > ?endRentA2 || ?startRentA2 > ?endRentA1, ?unmatchScore, 
+		xsd:double(?rentOverlap/?rentTotal))) AS ?rentSml)
+		BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA2, ?maxShareA1) AS ?smallerMaxShare)
+		BIND(IF(?minShareA1>?minShareA2, ?minShareA1, ?minShareA2) AS ?biggerMinShare)
+		BIND(IF(?minShareA1>?minShareA2, ?minShareA2, ?minShareA1) AS ?smallerMinShare)
+		BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA1, ?maxShareA2) AS ?biggerMaxShare)
+		BIND(?smallerMaxShare - ?biggerMinShare + 1 AS ?shareOverlap)
+		
+		BIND(?biggerMaxShare - ?smallerMinShare + 1 AS ?shareTotal)
+		BIND(IF(?sharePrefA1="Dont mind" || ?sharePrefA2="Dont mind", ?matchScore, IF(?minShareA1 > ?maxShareA2 || ?minShareA2 > ?maxShareA1, ?unmatchScore, 
+		xsd:double(?shareOverlap/?shareTotal))) AS ?shareSml)
+	
+		BIND(xsd:float(((?ageSml * ?ageWeight) + (?genSml * ?genWeight) + (?famSml * ?famWeight) + (?natSml * ?natWeight) + (?relSml * ?relWeight) + 
+		(?ethSml * ?ethWeight) + (?locSml * ?locWeight) + (?accSml * ?accWeight) + (?rentSml * ?rentWeight) + (?shareSml * ?shareWeight))/10.0) AS ?totalSml).		
+		}
+					"""^^xsd:string ;
+			] .
+
+
+
+:HDBSCAN
+	a bt:HDBSCAN ;
+	rdfs:label "Run HDBSCAN" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:targetBase ajan:AgentKnowledge ;
+				bt:sparql """
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+			PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+			CONSTRUCT{
+				?usecase 	welcome:hasMacProblemId  ?usecaseID;
+						welcome:hasPerfectMatchScore ?perfectMatchScore;
+						welcome:hasNumberOfAgents ?numberOfAgents;
+						welcome:hasParticipants ?agents.
+				_:bNodeSimilarity 	ajan:hasSubject ?a1;
+							ajan:hasObject ?a2;
+							welcome:isComputedForProblemId  ?usecaseId;
+							ajan:hasSimilarityScore ?totalSml.
+				}
+			WHERE {
+				{
+				welcome:UseCase welcome:toBeSolved ?usecase.
+				?usecase 	welcome:hasNumberOfAgents ?numberOfAgents;
+						welcome:hasParticipants ?agents;
+						welcome:hasMacProblemId  ?usecaseID;
+						welcome:hasAgeWeight ?ageWeight;
+						welcome:hasGenderWeight ?genWeight;
+						welcome:hasFamilyWeight	?famWeight;
+						welcome:hasNationalityWeight	?natWeight;
+						welcome:hasReligionWeight	?relWeight;
+						welcome:hasEthnicityWeight	?ethWeight;
+						welcome:hasLocationWeight	?locWeight;
+						welcome:hasAccessibilityWeight	?accWeight;
+						welcome:hasRentPeriodWeight	?rentWeight;
+						welcome:hasShareWithWeight	?shareWeight.
+				BIND(1 AS ?matchScore)
+				BIND(0 AS ?unmatchScore)
+				BIND(10 AS ?numberOfPreferences)
+				BIND((?matchScore * (?ageWeight + ?genWeight + ?famWeight + ?natWeight + ?relWeight + ?ethWeight + ?locWeight + ?accWeight + ?rentWeight + ?shareWeight))/?numberOfPreferences AS ?perfectMatchScore)
+				} UNION {
+				welcome:UseCase welcome:toBeSolved ?usecase.	
+				?usecase 	welcome:hasMacProblemId  ?usecaseId;
+						welcome:hasAgeWeight ?ageWeight;
+						welcome:hasGenderWeight ?genWeight;
+						welcome:hasFamilyWeight	?famWeight;
+						welcome:hasNationalityWeight	?natWeight;
+						welcome:hasReligionWeight	?relWeight;
+						welcome:hasEthnicityWeight	?ethWeight;
+						welcome:hasLocationWeight	?locWeight;
+						welcome:hasAccessibilityWeight	?accWeight;
+						welcome:hasRentPeriodWeight	?rentWeight;
+						welcome:hasShareWithWeight	?shareWeight.
+				BIND(1 AS ?matchScore)
+				BIND(0 AS ?unmatchScore)
+				?a1 a ajan:Agent.
+				?a1 welcome:isParticipatingIn ?usecaseId.
+	
+				?a2 a ajan:Agent.
+				?a2 welcome:isParticipatingIn ?usecaseId.
+				?a1 welcome:hasAgePreference ?agePrefA1.
+				OPTIONAL {
+					?agePrefA1 welcome:lowerBound ?lowerAgeA1;
+					        welcome:higherBound ?higherAgeA1.
+					}.
+				?a1 welcome:hasGenderPreference ?genPrefA1.
+				?a1 welcome:hasFamilyPreference ?famPrefA1.
+				?a1 welcome:hasNationPreference ?natPrefA1.
+				?a1 welcome:hasNationality ?nationA1.
+				?a1 welcome:hasReligionPreference ?relPrefA1.
+				?a1 welcome:hasReligion ?relA1.
+				?a1 welcome:hasEthnicPreference ?ethPrefA1.
+				?a1 welcome:hasEthnicity ?ethA1.
+				?a1 welcome:hasLocationPreference ?locPrefA1.
+				?a1 welcome:hasAccessibilityPreference ?accPrefA1.
+				?a1 welcome:hasRentPeriodPreference ?rentPrefA1.
+				OPTIONAL {
+					?rentPrefA1 welcome:startDate ?startRentA1;
+				        welcome:endDate ?endRentA1.
+					}.
+				?a1 welcome:hasShareWithPreference ?sharePrefA1.
+					OPTIONAL {
+					?sharePrefA1 welcome:min ?minShareA1;
+		        		welcome:max ?maxShareA1.
+					}.
+				?a2 welcome:hasAge ?ageA2.
+				?a2 welcome:hasGender ?genA2.
+				?a2 welcome:hasFamily ?famA2.
+				?a2 welcome:hasNationality ?nationA2.
+				?a2 welcome:hasReligion ?relA2.
+				?a2 welcome:hasEthnicity ?ethA2.
+				?a2 welcome:hasLocationPreference ?locPrefA2.
+				?a2 welcome:hasAccessibilityPreference ?accPrefA2.
+				?a2 welcome:hasRentPeriodPreference ?rentPrefA2.
+				OPTIONAL {
+					?rentPrefA2 welcome:startDate ?startRentA2;
+				        welcome:endDate ?endRentA2.
+					}.
+				?a2 welcome:hasShareWithPreference ?sharePrefA2.
+				OPTIONAL {
+					?sharePrefA2 welcome:min ?minShareA2;
+				        welcome:max ?maxShareA2.
+					}.
+				FILTER(?a1 != ?a2)
+				BIND(IF(?agePrefA1="Dont mind" || (xsd:integer(?ageA2) >= xsd:integer(?lowerAgeA1) && xsd:integer(?ageA2) <= xsd:integer(?higherAgeA1)), ?matchScore, ?unmatchScore) AS ?ageSml).
+				BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
+				BIND(IF(?famPrefA1="Dont mind" || ?famA2=?famPrefA1, ?matchScore, ?unmatchScore) AS ?famSml).
+				BIND(IF(?natPrefA1="Dont mind" || (?natPrefA1="Same" && ?nationA1=?nationA2) || (?natPrefA1="Mixed" && ?nationA1!=?nationA2), ?matchScore, ?unmatchScore) AS ?natSml)
+				BIND(IF(?relPrefA1="Dont mind" || (?relPrefA1="Same" && ?relA1=?relA2) || (?relPrefA1="Mixed" && ?relA1!=?relA2), ?matchScore, ?unmatchScore) AS ?relSml)
+				BIND(IF(?ethPrefA1="Dont mind" || (?ethPrefA1="Same" && ?ethA1=?ethA2) || (?ethPrefA1="Mixed" && ?ethA1!=?ethA2), ?matchScore, ?unmatchScore) AS ?ethSml)
+		
+				BIND(IF(?locPrefA1="Dont mind" || ?locPrefA2="Dont mind" || ?locPrefA1=?locPrefA2, ?matchScore, ?unmatchScore) AS ?locSml)
+				BIND(IF(?accPrefA1="Dont mind" || ?accPrefA2="Dont mind" || ?accPrefA1=?accPrefA2, ?matchScore, ?unmatchScore) AS ?accSml)
+				BIND(((year(xsd:dateTime(?endRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA1))) + day(xsd:dateTime(?endRentA1))) AS ?endRentA1IntValue)
+				BIND(((year(xsd:dateTime(?endRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA2))) + day(xsd:dateTime(?endRentA2))) AS ?endRentA2IntValue)
+				BIND(((year(xsd:dateTime(?startRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA1))) + day(xsd:dateTime(?startRentA1))) AS ?startRentA1IntValue)
+				BIND(((year(xsd:dateTime(?startRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA2))) + day(xsd:dateTime(?startRentA2))) AS ?startRentA2IntValue)
+				BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA2IntValue, ?endRentA1IntValue) AS ?smallerEndRent)
+				BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA1IntValue, ?startRentA2IntValue) AS ?biggerStartRent)
+				BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA2IntValue, ?startRentA1IntValue) AS ?smallerStartRent)
+				BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA1IntValue, ?endRentA2IntValue) AS ?biggerEndRent)
+				BIND(?smallerEndRent - ?biggerStartRent + 1 AS ?rentOverlap)
+				BIND(?biggerEndRent - ?smallerStartRent + 1 AS ?rentTotal)
+				BIND(IF(?rentPrefA1="Dont mind" || ?rentPrefA2="Dont mind", ?matchScore, IF(?startRentA1 > ?endRentA2 || ?startRentA2 > ?endRentA1, ?unmatchScore, 
+				xsd:double(?rentOverlap/?rentTotal))) AS ?rentSml)
+				BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA2, ?maxShareA1) AS ?smallerMaxShare)
+				BIND(IF(?minShareA1>?minShareA2, ?minShareA1, ?minShareA2) AS ?biggerMinShare)
+				BIND(IF(?minShareA1>?minShareA2, ?minShareA2, ?minShareA1) AS ?smallerMinShare)
+				BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA1, ?maxShareA2) AS ?biggerMaxShare)
+				BIND(?smallerMaxShare - ?biggerMinShare + 1 AS ?shareOverlap)
+		
+				BIND(?biggerMaxShare - ?smallerMinShare + 1 AS ?shareTotal)
+				BIND(IF(?sharePrefA1="Dont mind" || ?sharePrefA2="Dont mind", ?matchScore, IF(?minShareA1 > ?maxShareA2 || ?minShareA2 > ?maxShareA1, ?unmatchScore, 
+				xsd:double(?shareOverlap/?shareTotal))) AS ?shareSml)
+	
+				BIND(xsd:float(((?ageSml * ?ageWeight) + (?genSml * ?genWeight) + (?famSml * ?famWeight) + (?natSml * ?natWeight) + (?relSml * ?relWeight) + 
+				(?ethSml * ?ethWeight) + (?locSml * ?locWeight) + (?accSml * ?accWeight) + (?rentSml * ?rentWeight) + (?shareSml * ?shareWeight))/10.0) AS ?totalSml).		
+				}}
+					"""^^xsd:string ;
+			] .
+
+
+:CoalitionGenerator
+	a bt:CoalitionGenerator ;
+	rdfs:label "Generating Coalitions" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:targetBase ajan:AgentKnowledge ;
+				bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+					Construct {
+						welcome:LCC1 ?p ?o.
+						?o2 ?p3 ?o3.
+					}
+					Where{
+						{ welcome:LCC1 ?p ?o. }   UNION 
+						{ welcome:LCC1 ?p2 ?o2.
+						  ?o2 ?p3 ?o3.}
+					}
+					"""^^xsd:string ;
+			] .
+
+:CSGPSolver
+	a bt:CSGPSolver ;
+	rdfs:label "Solve CSGP" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:targetBase ajan:AgentKnowledge ;
+				bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+					Construct {
+						welcome:LCC1 ?p ?o.
+						?o2 ?p3 ?o3.
+					}
+					Where{
+						{ welcome:LCC1 ?p ?o. }   UNION 
+						{ welcome:LCC1 ?p2 ?o2.
+						  ?o2 ?p3 ?o3.}
+					}
+					"""^^xsd:string ;
+			] .
+
+#------------LCC Protocol Nodes -------------------------------
+
+#-----------------CHCProtocolBT Nodes--------------------------------------
 :HandleCHCProtocolEvent
 	a bt:HandleEvent ;
 	rdfs:label "EventHandler: CHC Protocol BT" ;
 	bt:event agents:CHCProtocolEvent ;
 	bt:validate [
 					a bt:ConstructQuery ;
-					bt:targetBase ajan:AgentKnowledge ;
+					bt:targetBase ajan:ExecutionKnowledge ;
 					bt:sparql """
 						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 						CONSTRUCT {
@@ -206,9 +581,9 @@
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 					ASK
 					WHERE {
-						?s ?p ?o.	
-						?s ajan:sik ajan:bas.
-					}"""^^xsd:string ;
+						?agent welcome:isRunningCHC "true"^^xsd:boolean .
+						?agent rdf:type ajan:Agent .					
+						}"""^^xsd:string ;
 		]) .
 
 :ConditionAgentInvolvedInCHCProcess
@@ -223,8 +598,9 @@
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 					ASK
 					WHERE {
-						?s ?p ?o.	
-					}"""^^xsd:string ;
+						?agent welcome:isInvolvedInCHC "true"^^xsd:boolean .
+						?agent rdf:type ajan:Agent .					
+						}"""^^xsd:string ;
 		]) .
 		
 :ConditionStillWantToStartCHC
@@ -232,14 +608,14 @@
 	rdfs:label "Condition: Does TCN want to start a CHC even though he/she is already involved in one?" ;
 	bt:query ( [
 		a bt:AskQuery ;
-		bt:originBase ajan:AgentKnowledge ;
+		bt:originBase ajan:ExecutionKnowledge ;
 		bt:sparql """
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 					ASK
 					WHERE {
-						?s ?p ?o.	
+						GRAPH ?g { ?agent welcome:startCHC "true"^^xsd:boolean . }
 					}"""^^xsd:string ;
 		]) .
 		
@@ -248,7 +624,7 @@
 	a bt:Message ;
 	rdfs:label "Message: Send Already running a CHC Process to TCN"^^xsd:string ;
 	rdfs:comment "Message: Send Already running a CHC Process to TCN"^^xsd:string ;
-	bt:targetBase ajan:AgentKnowledge ;  
+	bt:targetBase ajan:ExecutionKnowledge ;  
 	bt:binding [
 		a http-core:Request ;
 		http-core:httpVersion "1.1"^^xsd:string ;
@@ -286,13 +662,14 @@
 				rdf:type bt:ConstructQuery ;
 				bt:originBase ajan:AgentKnowledge ;
 				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 						CONSTRUCT {
-							?s ?p ?o .
+							?agent welcome:informTCN "Already running CHC. Cannot start a new one now."^^xsd:string.
 						}
 						WHERE {
-							?s ?p ?o .
+							?agent rdf:type ajan:Agent .
 						}"""^^xsd:string
 			]
 		] ;    
@@ -304,7 +681,7 @@
 		bt:sparql """
 					SELECT ?requestURI
 					WHERE {
-					  VALUES ?requestURI { "http://localhost:8092/informApp" }
+					  VALUES ?requestURI { "http://localhost:8092/app/inform" }
 					}"""^^xsd:string
 	] .
 	
@@ -313,7 +690,7 @@
 	a bt:Message ;
 	rdfs:label "Message: Send already involved in a CHC process. Still want to start a new one? to TCN"^^xsd:string ;
 	rdfs:comment "Message: Send already involved in a CHC process. Still want to start a new one? to TCN"^^xsd:string ;
-	bt:targetBase ajan:AgentKnowledge ;  
+	bt:targetBase ajan:ExecutionKnowledge ;  
 	bt:binding [
 		a http-core:Request ;
 		http-core:httpVersion "1.1"^^xsd:string ;
@@ -351,13 +728,15 @@
 				rdf:type bt:ConstructQuery ;
 				bt:originBase ajan:AgentKnowledge ;
 				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 						CONSTRUCT {
-							?s ?p ?o .
+							?agent welcome:askTCN "I am involved in a CHC. Do you want to start a new CHC process?" .
+							?agent rdf:type ajan:Agent .
 						}
 						WHERE {
-							?s ?p ?o .
+							?agent rdf:type ajan:Agent .
 						}"""^^xsd:string
 			]
 		] ;    
@@ -369,7 +748,7 @@
 		bt:sparql """
 					SELECT ?requestURI
 					WHERE {
-					  VALUES ?requestURI { "http://localhost:8092/askApp" }
+					  VALUES ?requestURI { "http://localhost:8092/app/ask" }
 					}"""^^xsd:string
 	] .
 	
@@ -380,7 +759,7 @@
 	ajan:event agents:ExecuteCHCProcessEvent ;
 	bt:content [
 					a bt:ConstructQuery ;
-					bt:originBase ajan:AgentKnowledge;
+					bt:originBase ajan:ExecutionKnowledge;
 					bt:sparql """
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
@@ -393,7 +772,319 @@
 						}"""^^xsd:string ;
 				] .	
 	
+
+#-----------------CHCProtocolBT Nodes--------------------------------------
+
+
+#-----------------ExecutingCHCProcessBT Nodes--------------------------------------
+:HandleExecuteCHCProcessEvent
+	a bt:HandleEvent ;
+	rdfs:label "EventHandler: Execute CHC Process BT" ;
+	bt:event agents:ExecuteCHCProcessEvent ;
+	bt:validate [
+					a bt:ConstructQuery ;
+					bt:targetBase ajan:ExecutionKnowledge ;
+					bt:sparql """
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE { 
+							?s ?p ?o .				
+						}"""^^xsd:string ;
+				] .
+													
+:Message2AppStartingCHC
+	a bt:Message ;
+	rdfs:label "Message: Inform TCN that agent is starting CHC"^^xsd:string ;
+	rdfs:comment "Message: Inform TCN that agent is starting CHC"^^xsd:string ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "application/ld+json"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "application/ld+json"
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:to ;
+					http-core:fieldValue "APP"
+			]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?agent welcome:informTCN "I am starting a CHC and will let you know its result." .
+							?agent rdf:type ajan:Agent .
+						}
+						WHERE {
+							?agent rdf:type ajan:Agent .
+						}"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					SELECT ?requestURI
+					WHERE {
+					  VALUES ?requestURI { "http://localhost:8092/app/inform" }
+					}"""^^xsd:string
+	] .
+	
+:Message2WPMUpdateStatus2InCoordination
+	a bt:Message ;
+	rdfs:label "Message: Update Agent status to In_Coordination in WAR"^^xsd:string ;
+	rdfs:comment "Message: Update Agent status to In_Coordination in WAR"^^xsd:string ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "application/ld+json"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "application/ld+json"
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:to ;
+					http-core:fieldValue "WPM"
+			]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?agent welcome:hasStatus "In_Coordination"^^xsd:string .
+						}
+						WHERE {
+							?agent rdf:type ajan:Agent .
+						}"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					SELECT ?requestURI
+					WHERE {
+					  VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
+					}"""^^xsd:string
+	] .
+
+:Wait4LAR 
+	a bt:Wait ;
+	rdfs:label "Wait: wait for LAR to be populated" ;
+	rdfs:comment "no comment" ;
+	bt:milliseconds "5000"^^xsd:int .
+
+
+:WriteCHCProblemInstance
+	a bt:Write ;
+	rdfs:label "Write: CHC Problem Instance to Agent Knowledge" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 	
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			CONSTRUCT  {
+				?agentName rdf:type ajan:Agent .
+			}
+			WHERE { 
+				?agentName rdf:type ajan:Agent .
+			} """^^xsd:string ;
+	] .
+
+
+:UpdateAgentRunningCHC
+	a bt:Update ;
+	rdfs:label "Update: Insert the id of CHC problem instance to Agent Knowledge" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					INSERT {
+						?agent welcome:hasCHCRunning "chc1" .
+					}
+					WHERE {
+						?agent rdf:type ajan:Agent .
+					}
+					"""^^xsd:string ;
+		]) .
+
+
+
+:Message2Agents4PersonalInfo
+	a bt:Broadcast ;
+	rdfs:label "Broadcast: Request agents to return Personal Info for CHC"^^xsd:string ;
+	rdfs:comment "Broadcast:  agents to return Personal Info for CHC"^^xsd:string ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "text/turtle"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "text/turtle"
+				]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							?agent welcome:hasMacRole "Dedicated"^^xsd:string .
+							?agent welcome:isStarting "chc1".
+							
+						}
+						WHERE {
+							?agent rdf:type ajan:Agent .
+						}"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					SELECT ?requestURI
+					WHERE {
+					  VALUES ?requestURI { 
+					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/testAgent2?capability=shareCHCPersonalInfo" 
+					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/testAgent3?capability=shareCHCPersonalInfo" 
+					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/testAgent4?capability=shareCHCPersonalInfo"}
+					}"""^^xsd:string
+	] .
+	
+
+
+:Wait4PersonalInfo 
+	a bt:Wait ;
+	rdfs:label "Wait: wait for agents to return their Personal Info for CHC" ;
+	rdfs:comment "no comment" ;
+	bt:milliseconds "5000"^^xsd:int .
+#-----------------ExecutingCHCProcessBT Nodes--------------------------------------
+
+
+#----------------Sharing Personal Info BT nodes ----------------------
+:HandleShareCHCPersonalInfoEvent
+	a bt:HandleEvent ;
+	rdfs:label "EventHandler: Share CHC Personal Info BT" ;
+	bt:event agents:ShareCHCPersonalInfoEvent ;
+	bt:validate [
+					a bt:ConstructQuery ;
+					bt:targetBase ajan:ExecutionKnowledge ;
+					bt:sparql """
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+
+						CONSTRUCT {
+							?s ?p ?o .
+							?agent welcome:hasMacRole "Dedicated"^^xsd:string .
+							?agent welcome:isStarting ?processId.
+						}
+						WHERE { 
+							?s ?p ?o .	
+							?agent welcome:hasMacRole "Dedicated"^^xsd:string .
+							?agent welcome:isStarting ?processId.
+						}"""^^xsd:string ;
+				] .
+				
+#----------------Sharing Personal Info BT nodes ----------------------
+
+
+
+	
 #------------MAJAN Stuff----------------------
+
+
+#---------------WELCOME Stuff by ELENA-----------------------------
+	
 
 :InitialWelcomeBehavior
 	a bt:BehaviorTree ;
@@ -444,108 +1135,97 @@
 				] .
 
 
-
-:SendRequestPopulateRepos
+:PopulateLSRRepos
 	a bt:BehaviorTree ;
 	a bt:Root ;
-	rdfs:label "Populate Local Repositories" ;
+	rdfs:label "Populate Local LSR Repository" ;
 	bt:hasChild [
-					a bt:Sequence ;
+					a bt:Priority ;
 					bt:hasChildren (
 										[
-											a bt:Priority ;
+											a bt:Sequence ;
 											bt:hasChildren (
+																:EventHandlerRequestLSRTriples
+																:UpdateBehaviorRunning
+																:UpdateCreateHeaderDispatcherMessage
+																:MessageSendLSRMessageWPM
+																:DefaultFailed
+															)																														
+										]
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+																:EventHandlerReceiveLocalServices
+																:UpdateBehaviorRunning
+																#[
+																#	a bt:Invert ;
+																#	bt:hasChild 
+																#				:ConditionNoAgentPopulation																													
+																#]
 																[
-																	a bt:Invert ;
-																	bt:hasChild 
-																				:EventHandlerRequestLSRTriples																													
-																]
-																[
-																	a bt:Sequence ;
+																	a bt:Priority ;
 																	bt:hasChildren (
-																						:UpdateBehaviorRunning
-																						:ActionSendLSRMessageWPM
+																						[
+																							a bt:Invert ;
+																							bt:hasChild 
+																										:ConditionLSRPopulated																														
+																						]
+																						:RemoveLSRContent
+																						:UpdateLSRAgentKnowledge
 																					)																															
 																]
+																:WriteTriplesLSRC1
+																:WriteTriplesLSRC2
+																:PluginOWL2PDDL
+																:UpdateAgentKnowsLSR
+																:UpdateLSRExecutionKnowledge
+																:UpdateDeleteBehaviorRunning
+															)																															
+										]
+								   )
+				] .
+
+:PopulateLARRepos
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Populate Local LAR Repository" ;
+	bt:hasChild [
+					a bt:Priority ;
+					bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+																:EventHandlerRequestLARTriples
+																:UpdateBehaviorRunning
+																:UpdateCreateHeaderDispatcherMessage
+																:MessageSendLARMessageWPM
+																:DefaultFailed
 															)																															
 										]
 										[
-											a bt:Priority ;
+											a bt:Sequence ;
 											bt:hasChildren (
+																:EventHandlerReceiveLocalAgents
+																:UpdateBehaviorRunning
 																[
-																	a bt:Invert ;
-																	bt:hasChild 
-																				:EventHandlerRequestLARTriples																													
-																]
-																[
-																	a bt:Sequence ;
+																	a bt:Priority ;
 																	bt:hasChildren (
-																						:UpdateBehaviorRunning
-																						:ActionSendLARMessageWPM
+																						[
+																							a bt:Invert ;
+																							bt:hasChild 
+																										:ConditionLARPopulated																														
+																						]
+																						:RemoveLARContent
+																						:UpdateLARAgentKnowledge
 																					)																															
 																]
+																:WriteTriplesLAR
+																:UpdateAgentKnowsLAR
+																:UpdateLARExecutionKnowledge
+																:UpdateDeleteBehaviorRunning
 															)																															
-										]										
-									)				
-
-				] .
-
-:ReceiveTriplestoLocalRepos
-	a bt:BehaviorTree ;
-	a bt:Root ;
-	rdfs:label "Receive Triples Local Repos" ;
-	bt:hasChild [
-	a bt:Priority ;
-	bt:hasChildren (
-						[
-							a bt:Sequence ;
-							bt:hasChildren (
-												:EventHandlerReceiveLocalAgents
-												:UpdateBehaviorRunning
-												[
-													a bt:Priority ;
-													bt:hasChildren (
-																		[
-																			a bt:Invert ;
-																			bt:hasChild 
-																						:ConditionLARPopulated																														
-																		]
-																		:RemoveLARContent
-																		:UpdateLARAgentKnowledge
-																	)																															
-												]
-												:WriteTriplesLAR
-												:UpdateAgentKnowsLAR
-												:UpdateLARExecutionKnowledge
-												:UpdateDeleteBehaviorRunning
-											)																															
-						]
-						[
-							a bt:Sequence ;
-							bt:hasChildren (
-												:EventHandlerReceiveLocalServices
-												:UpdateBehaviorRunning
-												[
-													a bt:Priority ;
-													bt:hasChildren (
-																		[
-																			a bt:Invert ;
-																			bt:hasChild 
-																					:ConditionLSRPopulated																														
-																		]
-																		:RemoveLSRContent
-																		:UpdateLSRAgentKnowledge
-																	)																															
-												]
-												:WriteTriplesLSRC1
-												:WriteTriplesLSRC2
-												:PluginOWL2PDDL
-												:UpdateAgentKnowsLSR
-												:UpdateLSRExecutionKnowledge
-												:UpdateDeleteBehaviorRunning
-											)																															
-						]						
-					)															
+										]
+								   )
 				] .
 				
 :HandshakeBehavior
@@ -570,11 +1250,11 @@
 																	bt:hasChildren ([
 																						a bt:Sequence ;
 																						bt:hasChildren (
-																										:ConditionLARPopulated																										
-																										:UpdateCreateHeaderReadinessMessage
+																										:ConditionLARPopulated	
+																										:UpdateCreateHeaderDispatcherMessage
 																										:MessageSendAgentReadiness
 																										:UpdateDeleteBehaviorRunning
-																										:DeleteHeaderReadinessMessageinLAKR
+																										#:DeleteHeaderDispatcherMessageinLAKR
 																										)																															
 																					]
 																					:EventProducerPopulateLAR
@@ -606,6 +1286,11 @@
 																	bt:hasChildren (
 																						:UpdateBehaviorRunning
 																						:WriteAgentNameinExecution
+																						[
+																							a bt:IsSucceeding ;
+																							bt:hasChild 	
+																										:DeletePreviousDIPinExecution
+																						]
 																						:UpdateCreateOpeningDIPPart1
 																						:UpdateCreateOpeningDIPPart2
 																						:UpdateCreateOpeningDIPPart3
@@ -789,7 +1474,8 @@
 																							bt:hasChild 	
 																										:DeletePreviousDIPinExecution
 																						]
-																						:CreateClosingUponFailureInternalError
+																						:CreateClosingUponFailureInternalErrorPart1
+																						:CreateClosingUponFailureInternalErrorPart2
 																						:SendDIPtoKMS
 																					)
 																]
@@ -827,7 +1513,7 @@
 																				bt:hasChildren (
 																									:ConditionalServiceFirstInteraction
 																									:WriteObtainRegistrationStatus2Execution
-																									:DeleteObtainRegistrationStatusinLAKR
+																									#:DeleteObtainRegistrationStatusinLAKR
 																									:SendDIPtoKMS
 																								)																														
 																			]
@@ -835,7 +1521,11 @@
 																				a bt:Sequence ;
 																				bt:hasChildren (
 																									:WriteAgentNameinExecution
-																									:DeletePreviousDIPinExecution
+																									[
+																										a bt:IsSucceeding ;
+																										bt:hasChild 	
+																													:DeletePreviousDIPinExecution
+																									]
 																									:UpdateCreateInformContactNGO																									
 																									:SendDIPtoKMS
 																								)																														
@@ -843,17 +1533,6 @@
 																		)																														
 													]
 													:DeleteFirstInteractionFlaginExecution													
-												)																														
-							]
-							[
-								a bt:Sequence ;
-								bt:hasChildren (
-													:EventHandlerNormalClosingScenario													
-													:UpdateBehaviorRunning
-													:DeleteActiveDIPinExecution
-													:DeleteActiveDIPinAgentKB													
-													:UpdateCreateNormalClosing
-													:SendDIPtoKMS
 												)																														
 							]
 							[
@@ -915,6 +1594,13 @@
 																									[
 																										a bt:Sequence ;
 																										bt:hasChildren (
+																															:ConditionalNormalClosingComplete
+																															:SucessFinishScenario
+																														)																														
+																									]
+																									[
+																										a bt:Sequence ;
+																										bt:hasChildren (
 																															[
 																																a bt:Priority ;
 																																bt:hasChildren (
@@ -957,8 +1643,20 @@
 																																											:ConditionalObtainRegistrationServiceInfoComplete
 																																											:WriteInformRegistrationService2Execution
 																																											:DeletePreviousRegistrationOfficesinExecution
-																																											:WriteCoordinatesinExecution
-																																											#:InvokeClosestDistancePlugin
+																																											[
+																																												a bt:Priority ;
+																																												bt:hasChildren (
+																																																	[
+																																																		a bt:Sequence ;
+																																																		bt:hasChildren (
+																																																							:ConditionalCoordinateExists
+																																																							:WriteCoordinatesinExecution
+																																																							:InvokeClosestDistancePlugin
+																																																						)																														
+																																																	]
+																																																	:WriteDefaultOfficeinExecution
+																																																)																														
+																																											]
 																																											:UpdateInformRegistrationServiceDIP
 																																										)																														
 																																					]																															
@@ -1001,7 +1699,14 @@
 																																						a bt:Sequence ;
 																																						bt:hasChildren (
 																																											:WriteAgentNameinExecution
-																																											:CreateClosingUponFailureInternalError
+																																											[
+																																												a bt:IsSucceeding ;
+																																												bt:hasChild 	
+																																															:DeletePreviousDIPinExecution
+																																															
+																																											]
+																																											:CreateClosingUponFailureInternalErrorPart1
+																																											:CreateClosingUponFailureInternalErrorPart2
 																																										)																														
 																																					]
 																																				)																														
@@ -1017,7 +1722,35 @@
 							]
 						)
 				] .	
-				
+
+:CloseScenarioBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Specific First Reception Closing Behavior Tree" ;
+	bt:hasChild [
+		a bt:Sequence ;
+		bt:hasChildren (
+							[
+								a bt:Priority ;
+								bt:hasChildren (
+													:EventHandlerNormalClosingScenario
+													:EventHandlerAlternativeClosingScenario
+												)
+							]												
+							:UpdateBehaviorRunning
+							[
+								a bt:IsSucceeding ;
+								bt:hasChild 	
+											:DeleteActiveDIPinExecution
+							]
+							:DeleteActiveDIPinAgentKB	
+							:WriteAgentNameinExecution
+							:UpdateCreateNormalClosingPart1
+							:UpdateCreateNormalClosingPart2
+							:SendDIPtoKMS
+						)	
+	].
+	
 :AgentShutdown
 	a bt:BehaviorTree ;
 	a bt:Root ;
@@ -1094,7 +1827,7 @@
 	rdfs:label "Condition: LAR initialized?" ;
 	bt:query ( [
 		a bt:AskQuery ;
-		bt:originBase ajan:AgentKnowledge ;
+		bt:originBase ajan:LocalAgentsKnowledge ;
 		bt:sparql """
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
@@ -1102,7 +1835,7 @@
 					ASK
 					WHERE {
 						?agent rdf:type ajan:Agent .
-						?agent welcome:knowsLocalAgents ?localAgents .	
+						?agent ?p ?o .	
 					}"""^^xsd:string ;
 		]) .
 
@@ -1130,15 +1863,15 @@
 	rdfs:label "Condition: LSR initialized?" ;
 	bt:query ( [
 		a bt:AskQuery ;
-		bt:originBase ajan:AgentKnowledge ;
+		bt:originBase ajan:LocalServicesKnowledge ;
 		bt:sparql """
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX service: <http://www.daml.org/services/owl-s/1.1/Service.owl#>
 					ASK
 					WHERE {
-						?agent rdf:type ajan:Agent .
-						?agent welcome:knowsLocalServices ?localServices .	
+						?service rdf:type service:Service.	
 					}"""^^xsd:string ;
 		]) .
 		
@@ -1269,26 +2002,87 @@
 						}"""^^xsd:string ;
 				] .
 
-:ActionSendLSRMessageWPM
-	a bt:Action ;
-    rdfs:label "Action: Request KBS populate LSR" ;
-    bt:inputs ( [
-		a bt:Input ;
-		a bt:ConstructQuery ;
-        bt:originBase ajan:AgentKnowledge ;
-        bt:sparql """
-				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+:MessageSendLSRMessageWPM
+	a bt:Message ;
+	rdfs:label "Message: Request KBS populate LSR" ;
+	rdfs:comment "Message: Request KBS populate LSR" ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
 				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
-				PREFIX ajan: <http://www.ajan.de/ajan-ns#>		
-				CONSTRUCT {					
-					?agent rdf:type ajan:Agent .
-				}
+				SELECT ?hdrName ?fieldValue
 				WHERE {
-					?agent rdf:type ajan:Agent .
-				}"""^^xsd:string ;
-		]) ;
-		bt:definition services:RetrieveWelcomeServices .
-		
+						?headerName welcome:hasHeaderName ?hdrName .
+						?headerName welcome:hasHeaderValue ?fieldValue .
+				}"""^^xsd:string
+		] ;	
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "application/trig"
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "text/turtle"
+				]
+		) ;			
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>	
+						CONSTRUCT {					
+							?agent rdf:type ajan:Agent .
+						}
+						WHERE {
+							?agent rdf:type ajan:Agent .					
+						}"""^^xsd:string
+		  ]
+		] ;    
+	] ;
+	bt:queryUri [
+	a bt:SelectQuery ;
+	a bt:QueryUri ;
+	bt:originBase ajan:AgentKnowledge ;
+	bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+				SELECT ?requestURI 
+				WHERE
+				{
+				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+				  BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/globalRepository?repository=wsr") AS ?requestURI )
+				}"""^^xsd:string
+	] . 
+#	bt:queryUri [
+#	a bt:SelectQuery ;
+#	a bt:QueryUri ;
+#	bt:originBase ajan:AgentKnowledge ;  
+#	bt:sparql """
+#				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+#				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#				SELECT ?requestURI 
+#				WHERE
+#				{
+#				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+#				  BIND(CONCAT(STR(?partialAddress), "/kms/receiveDIP") AS ?requestURI )
+#				}"""^^xsd:string
+#	] .
+
+:DefaultFailed
+	a bt:Fail ;
+	rdfs:label "Default Fail - Successful Request to KBS"^^xsd:string .
+	
 :EventHandlerRequestLARTriples
 	a bt:HandleEvent ;
 	rdfs:label "EventHandler: Request Populate LAR" ;
@@ -1306,25 +2100,82 @@
 						}"""^^xsd:string ;
 				] .
 
-:ActionSendLARMessageWPM
-	a bt:Action ;
-    rdfs:label "Action: Request KBS populate LAR" ;
-    bt:inputs ([
-		a bt:Input ;
-		a bt:ConstructQuery ;
-        bt:originBase ajan:AgentKnowledge ;
-        bt:sparql """
-				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+:MessageSendLARMessageWPM
+	a bt:Message ;
+	rdfs:label "Message: Request KBS populate LAR" ;
+	rdfs:comment "Message: Request KBS populate LAR" ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
 				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
-				PREFIX ajan: <http://www.ajan.de/ajan-ns#>		
-				CONSTRUCT {					
-					?agent rdf:type ajan:Agent .
-				}
+				SELECT ?hdrName ?fieldValue
 				WHERE {
-					?agent rdf:type ajan:Agent .
-				}"""^^xsd:string ;
-		]) ;
-	bt:definition services:RetrieveActiveAgents .
+						?headerName welcome:hasHeaderName ?hdrName .
+						?headerName welcome:hasHeaderValue ?fieldValue .
+				}"""^^xsd:string
+		] ;	
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "text/turtle"
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "text/turtle"
+				]
+		) ;			
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>	
+						CONSTRUCT {					
+							?agent rdf:type ajan:Agent .
+						}
+						WHERE {
+							?agent rdf:type ajan:Agent .					
+						}"""^^xsd:string
+		  ]
+		] ;    
+	] ;
+	bt:queryUri [
+	a bt:SelectQuery ;
+	a bt:QueryUri ;
+	bt:originBase ajan:AgentKnowledge ;
+	bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+				SELECT ?requestURI 
+				WHERE
+				{
+				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+				  BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/globalRepository?repository=war") AS ?requestURI )
+				}"""^^xsd:string
+	] . 
+#	bt:queryUri [
+#	a bt:SelectQuery ;
+#	a bt:QueryUri ;
+#	bt:originBase ajan:AgentKnowledge ;  
+#	bt:sparql """
+#				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+#				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#				SELECT ?requestURI 
+#				WHERE
+#				{
+#				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+#				  BIND(CONCAT(STR(?partialAddress), "/kms/receiveDIP") AS ?requestURI )
+#				}"""^^xsd:string
+#	] .
 
 :EventHandlerReceiveLocalServices
 	a bt:HandleEvent ;
@@ -1336,6 +2187,23 @@
 					bt:sparql """"""^^xsd:string ;
 				] .
 
+#:ConditionNoAgentPopulation
+#	a bt:Condition ;
+#	rdfs:label "Condition: Agent Population?" ;
+#	bt:query ( [
+#		a bt:AskQuery ;
+#		bt:originBase ajan:ExecutionKnowledge ;
+#		bt:sparql """
+#					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+#					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+#					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+#					PREFIX service: <http://www.daml.org/services/owl-s/1.1/Service.owl#>
+#					ASK
+#					WHERE {
+#						?agentName rdf:type ajan:Agent .
+#					}"""^^xsd:string ;
+#		]) .
+		
 :RemoveLSRContent
 	a bt:Update ;
 	rdfs:label "Update: Remove LSR Content" ;
@@ -1374,30 +2242,30 @@
 				}		"""^^xsd:string ;
 		]) .
 		
-:WriteTriplesLSR
-	a bt:Write ;
-	rdfs:label "Write Triples in LSR" ;
-	bt:query [
-		a bt:ConstructQuery ;
-		bt:originBase ajan:ExecutionKnowledge ;
-		bt:targetBase ajan:LocalServicesKnowledge ;
-		bt:sparql """
-			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-			PREFIX service: <http://www.daml.org/services/owl-s/1.1/Service.owl#>
-			PREFIX profile: <http://www.daml.org/services/owl-s/1.1/Profile.owl#>
-			PREFIX owl: <http://www.w3.org/2002/07/owl#>
-			PREFIX process: <http://www.daml.org/services/owl-s/1.1/Process.owl#>
-			CONSTRUCT  {
-			  ?s ?o ?p .
-			}
-			WHERE { 
-			  SELECT DISTINCT ?s ?o ?p 
-			  WHERE {
-				?s ?o ?p .
-				?a rdf:type service:Service .
-			  }
-			} """^^xsd:string ;
-	] .
+#:WriteTriplesLSR
+#	a bt:Write ;
+#	rdfs:label "Write Triples in LSR" ;
+#	bt:query [
+#		a bt:ConstructQuery ;
+#		bt:originBase ajan:ExecutionKnowledge ;
+#		bt:targetBase ajan:LocalServicesKnowledge ;
+#		bt:sparql """
+#			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+#			PREFIX service: <http://www.daml.org/services/owl-s/1.1/Service.owl#>
+#			PREFIX profile: <http://www.daml.org/services/owl-s/1.1/Profile.owl#>
+#			PREFIX owl: <http://www.w3.org/2002/07/owl#>
+#			PREFIX process: <http://www.daml.org/services/owl-s/1.1/Process.owl#>
+#			CONSTRUCT  {
+#			  ?s ?o ?p .
+#			}
+#			WHERE { 
+#			  SELECT DISTINCT ?s ?o ?p 
+#			  WHERE {
+#				?s ?o ?p .
+#				?a rdf:type service:Service .
+#			  }
+#			} """^^xsd:string ;
+#	] .
 
 :PluginOWL2PDDL
 	a ssc:PDDLConverter ;
@@ -1509,11 +2377,9 @@
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>	
 						CONSTRUCT {
 							?s ?p ?o .
-							?s rdf:type ajan:Agent .
 						}
 						WHERE {
 							?s ?p ?o .
-							?s rdf:type ajan:Agent .
 						}"""^^xsd:string ;
 				] .
 				
@@ -1564,6 +2430,7 @@
 		bt:targetBase ajan:LocalAgentsKnowledge ;
 		bt:sparql """
 			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 			CONSTRUCT { 
 				?s ?p ?o .
 				?s rdf:type ajan:Agent .
@@ -1636,15 +2503,21 @@
 						} """^^xsd:string ;
 				] .
 
-:UpdateCreateHeaderReadinessMessage
+:UpdateCreateHeaderDispatcherMessage
 	a bt:Update ;
-	rdfs:label "Update: Header Readiness Message" ;
+	rdfs:label "Update: Header Dispatcher Message" ;
 	bt:query ([
 		a bt:UpdateQuery ;
 		bt:originBase ajan:AgentKnowledge ;
 		bt:sparql """
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					DELETE{
+						welcome:headerCorrelation welcome:hasHeaderName "X-Correlation-ID" .
+						welcome:headerCorrelation welcome:hasHeaderValue ?correlationID .
+						welcome:headerUserID welcome:hasHeaderName "X-User-ID" .
+						welcome:headerUserID welcome:hasHeaderValue ?id .
+					}
 					INSERT {
 						welcome:headerCorrelation welcome:hasHeaderName "X-Correlation-ID" .
 						welcome:headerCorrelation welcome:hasHeaderValue ?correlationID .
@@ -1676,23 +2549,14 @@
 				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 				SELECT ?hdrName ?fieldValue
 				WHERE {
-					{
 						?headerName welcome:hasHeaderName ?hdrName .
 						?headerName welcome:hasHeaderValue ?fieldValue .
-					}
-					UNION 
-					{
-						  VALUES (?hdrName ?fieldValue) {							
-							("content-type" "application/ld+json")							
-							("Accept" "application/ld+json")
-						}
-					}
 				}"""^^xsd:string
 		] ;	
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "application/ld+json"^^xsd:string 
+					http-core:fieldValue "text/turtle"
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
@@ -1722,25 +2586,33 @@
 	a bt:QueryUri ;
 	bt:originBase ajan:AgentKnowledge ;
 	bt:sparql """
-				SELECT ?requestURI
-				WHERE {
-				  VALUES ?requestURI { "http://18.224.42.120:9998/welcome/integration/workflow/dispatcher/handshake" }
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+				SELECT ?requestURI 
+				WHERE
+				{
+			  welcome:dispatcher welcome:hasAddress ?partialAddress .
+				  BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/handshake") AS ?requestURI )
 				}"""^^xsd:string
 	] . 
 #	bt:queryUri [
 #	a bt:SelectQuery ;
 #	a bt:QueryUri ;
-#	bt:originBase ajan:AgentKnowledge ;
+#	bt:originBase ajan:AgentKnowledge ;  
 #	bt:sparql """
-#				SELECT ?requestURI
-#				WHERE {
-#				VALUES ?requestURI { "http://localhost:8092/dms/receiveDIP" }
+#				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+#				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#				SELECT ?requestURI 
+#				WHERE
+#				{
+#				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+#				  BIND(CONCAT(STR(?partialAddress), "/dms/receiveDIP") AS ?requestURI )
 #				}"""^^xsd:string
 #	] .
   
-:DeleteHeaderReadinessMessageinLAKR
+:DeleteHeaderDispatcherMessageinLAKR
 	a bt:Update ;
-	rdfs:label "Update: Delete Header Readiness Message in LAKR" ;
+	rdfs:label "Update: Delete Header Dispatcher Message in LAKR" ;
 	bt:query ([
 		a bt:UpdateQuery ;
 		bt:originBase ajan:AgentKnowledge ;
@@ -1894,6 +2766,20 @@
 	rdfs:label "Message: Send DIP to KMS"^^xsd:string ;
 	rdfs:comment "Message: Send DIP to KMS"^^xsd:string ;
 	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:headers [
+		  a bt:SelectQuery;
+		  a bt:QueryUri ;
+		  bt:originBase ajan:AgentKnowledge ;
+		  bt:sparql """
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					SELECT ?hdrName ?fieldValue
+					WHERE {
+						VALUES (?hdrName ?fieldValue) {							
+								("content-type" "text/plain")							
+								("accept" "text/turtle;charset=UTF-8")
+						}
+					}"""^^xsd:string
+		] ;
 	bt:binding [
 		a http-core:Request ;
 		http-core:httpVersion "1.1"^^xsd:string ;
@@ -1901,14 +2787,14 @@
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "text/turtle"^^xsd:string 
+					http-core:fieldValue "text/turtle;charset=UTF-8"
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
 					http-core:fieldValue "text/plain"
 				]
-		) ;	
-		http-core:body [
+	   ) ;	
+	  http-core:body [
 			a actn:Payload ;
 			bt:query [
 				rdf:type bt:ConstructQuery ;
@@ -1941,9 +2827,17 @@
 							OPTIONAL { ?dip welcome:belongsTo ?someService . }
 							?dip welcome:hasSlot ?slotDIP .
 							?slotDIP rdf:type ?slotType .
-							?slotDIP welcome:hasOntologyType ?slotOntoType .
-							?slotDIP welcome:hasInputRDFContents ?slotRDFContents .
-							OPTIONAL { ?slotRDFContents ?reifiRDFContentsPred ?reifiRDFContentsObj .}
+							?slotDIP welcome:hasOntologyType ?slotOntoType .							
+							OPTIONAL { 
+								{
+									?slotDIP welcome:hasInputRDFContents ?slotRDFContents .
+									?slotRDFContents ?reifiRDFContentsPred ?reifiRDFContentsObj .
+								}
+								UNION
+								{
+									?slotDIP welcome:hasInputRDFContents ?slotRDFContents .
+								}
+							}
 							?slotDIP welcome:hasStatus ?slotStatus .
 							?slotDIP welcome:hasNumberAttempts ?NbAttempts .
 							?slotDIP welcome:confidenceScore ?confScore .
@@ -1991,8 +2885,7 @@
 						?slots welcome:hasNumberAttempts ?NbAttempts .
 						?slots welcome:confidenceScore ?confScore .
 						?slots welcome:isOptional ?optional .	
-						?slots welcome:hasTemplateId ?templateID .
-						?RDFContents ?ReifiPredi ?ReifiObj .					
+						?slots welcome:hasTemplateId ?templateID .				
 					} WHERE { 
 						?dip rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#DIP"^^xsd:anyURI .
 						?dip welcome:hasDIPStatus ?status .
@@ -2005,13 +2898,8 @@
 						?slots welcome:hasNumberAttempts ?NbAttempts .
 						?slots welcome:confidenceScore ?confScore .
 						?slots welcome:isOptional ?optional .	
-						OPTIONAL {						
-							{?slots welcome:hasTemplateId ?templateID .}
-							UNION
-							{?slots welcome:hasTCNAnswer ?tcnAnswer .}
-							UNION
-							{?RDFContents ?ReifiPredi ?ReifiObj .}					
-						}
+						OPTIONAL {?slots welcome:hasTemplateId ?templateID .}
+						OPTIONAL {?slots welcome:hasTCNAnswer ?tcnAnswer .}
 					}"""^^xsd:string ;
 		]) .
 
@@ -2060,10 +2948,8 @@
 							?slot welcome:hasTemplateId ?slottemplate . 
 							?slot welcome:hasTCNAnswer ?tcnAnswer . 
 							?dip welcome:hasDIPStatus ?statusdip .
-							?tcnAnswer ?preReifi ?objReifi . 
-							?rdfcontents ?contentreifi ?contentObjReifi .
 							?dipName welcome:hasNamedGraph ?dipGraph . 
-							?bt welcome:hasActiveDIP ?dipId .
+							?bt welcome:hasActiveDIP ?dipIdVal .
 							?dip welcome:belongsTo ?someService .							
 					}
 					WHERE {		
@@ -2081,10 +2967,8 @@
 							OPTIONAL { ?slot welcome:hasTemplateId ?slottemplate . }
 							OPTIONAL { ?slot welcome:hasTCNAnswer ?tcnAnswer . }
 							OPTIONAL { ?dip welcome:hasDIPStatus ?statusdip .}
-							OPTIONAL { ?tcnAnswer ?preReifi ?objReifi . }
-							OPTIONAL { ?rdfcontents ?contentreifi ?contentObjReifi .}
 							OPTIONAL { ?dipName welcome:hasNamedGraph ?dipGraph . }
-							OPTIONAL { ?bt welcome:hasActiveDIP ?dipId . }
+							OPTIONAL { ?bt welcome:hasActiveDIP ?dipIdVal . }
 							OPTIONAL { ?dip welcome:belongsTo ?someService .}
 					}"""^^xsd:string ;
 		]) .
@@ -2372,14 +3256,12 @@
 						?container welcome:hasSpeechActType welcome:Commit .
 						?containerObject rdf:type ?type .
 						?containerObject ?property ?PropertyVal .
-						?PropertyVal ?pr ?ob . 
 					} WHERE { 
 							?container rdf:type welcome:SpeechActContainer .
 							?container welcome:hasSpeechActObject ?containerObject .
 							?container welcome:hasSpeechActType welcome:Commit .
 							?containerObject rdf:type ?type .
 							?containerObject ?property ?PropertyVal .
-							OPTIONAL{ ?PropertyVal ?pr ?ob . }
 					}"""^^xsd:string ;
 		]) .
 		
@@ -2504,388 +3386,6 @@
 							?precondClass expr:expressionBody ?precondition .
 						}
 					}"""^^xsd:string ;
-			] .
-
-
-
-:TestBigQuery
-	a bt:Write ;
-	rdfs:label "Testing Big Query" ;
-	bt:query [
-				a bt:ConstructQuery ;
-				bt:originBase ajan:AgentKnowledge ;
-				bt:targetBase ajan:AgentKnowledge ;
-				bt:sparql """
-	PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-	PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
-	PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-	CONSTRUCT{
-		_:bNodeSimilarity ajan:subject ?a1;
-		ajan:object ?a2;
-		welcome:isComputedForProblemId  ?usecaseId;
-		welcome:hasPerfectMatchScore ?perfectMatchScore;
-		welcome:hasNumberOfAgents ?numberOfAgents;
-		ajan:hasSimilarityScore ?totalSml.
-
-		}
-	WHERE {
-		welcome:UseCase welcome:toBeSolved ?usecase.
-		?usecase 	welcome:hasMacProblemId  ?usecaseId;
-				welcome:hasNumberOfAgents ?numberOfAgents;
-				welcome:hasAgeWeight ?ageWeight;
-				welcome:hasGenderWeight ?genWeight;
-				welcome:hasFamilyWeight	?famWeight;
-				welcome:hasNationalityWeight	?natWeight;
-				welcome:hasReligionWeight	?relWeight;
-				welcome:hasEthnicityWeight	?ethWeight;
-				welcome:hasLocationWeight	?locWeight;
-				welcome:hasAccessibilityWeight	?accWeight;
-				welcome:hasRentPeriodWeight	?rentWeight;
-				welcome:hasShareWithWeight	?shareWeight.
-
-
-		?a1 a ajan:Agent.
-		?a1 welcome:isParticipatingIn ?usecaseId.
-	
-		?a2 a ajan:Agent.
-		?a2 welcome:isParticipatingIn ?usecaseId.
-
-		?a1 welcome:hasAgePreference ?agePrefA1.
-		OPTIONAL {
-			?agePrefA1 welcome:lowerBound ?lowerAgeA1;
-		        welcome:higherBound ?higherAgeA1.
-			}.
-		?a1 welcome:hasGenderPreference ?genPrefA1.
-		?a1 welcome:hasFamilyPreference ?famPrefA1.
-		?a1 welcome:hasNationPreference ?natPrefA1.
-		?a1 welcome:hasNationality ?nationA1.
-		?a1 welcome:hasReligionPreference ?relPrefA1.
-		?a1 welcome:hasReligion ?relA1.
-		?a1 welcome:hasEthnicPreference ?ethPrefA1.
-		?a1 welcome:hasEthnicity ?ethA1.
-		?a1 welcome:hasLocationPreference ?locPrefA1.
-		?a1 welcome:hasAccessibilityPreference ?accPrefA1.
-		?a1 welcome:hasRentPeriodPreference ?rentPrefA1.
-		OPTIONAL {
-			?rentPrefA1 welcome:startDate ?startRentA1;
-		        welcome:endDate ?endRentA1.
-			}.
-		?a1 welcome:hasShareWithPreference ?sharePrefA1.
-		OPTIONAL {
-			?sharePrefA1 welcome:min ?minShareA1;
-		        welcome:max ?maxShareA1.
-			}.
-
-		?a2 welcome:hasAge ?ageA2.
-		?a2 welcome:hasGender ?genA2.
-		?a2 welcome:hasFamily ?famA2.
-		?a2 welcome:hasNationality ?nationA2.
-		?a2 welcome:hasReligion ?relA2.
-		?a2 welcome:hasEthnicity ?ethA2.
-		?a2 welcome:hasLocationPreference ?locPrefA2.
-		?a2 welcome:hasAccessibilityPreference ?accPrefA2.
-		?a2 welcome:hasRentPeriodPreference ?rentPrefA2.
-		OPTIONAL {
-			?rentPrefA2 welcome:startDate ?startRentA2;
-		        welcome:endDate ?endRentA2.
-			}.
-		?a2 welcome:hasShareWithPreference ?sharePrefA2.
-		OPTIONAL {
-			?sharePrefA2 welcome:min ?minShareA2;
-		        welcome:max ?maxShareA2.
-			}.
-
-
-		FILTER(?a1 != ?a2)
-
-		BIND(1 AS ?matchScore)
-		BIND(0 AS ?unmatchScore)
-		BIND(10 AS ?numberOfPreferences)
-		BIND((?matchScore * (?ageWeight + ?genWeight + ?famWeight + ?natWeight + ?relWeight + ?ethWeight + ?locWeight + ?accWeight + ?rentWeight + ?shareWeight))/?numberOfPreferences AS ?perfectMatchScore)
-
-	
-		BIND(IF(?agePrefA1="Dont mind" || (xsd:integer(?ageA2) >= xsd:integer(?lowerAgeA1) && xsd:integer(?ageA2) <= xsd:integer(?higherAgeA1)), ?matchScore, ?unmatchScore) AS ?ageSml).
-
-		BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
-
-		BIND(IF(?famPrefA1="Dont mind" || ?famA2=?famPrefA1, ?matchScore, ?unmatchScore) AS ?famSml).
-
-		BIND(IF(?natPrefA1="Dont mind" || (?natPrefA1="Same" && ?nationA1=?nationA2) || (?natPrefA1="Mixed" && ?nationA1!=?nationA2), ?matchScore, ?unmatchScore) AS ?natSml)
-
-		BIND(IF(?relPrefA1="Dont mind" || (?relPrefA1="Same" && ?relA1=?relA2) || (?relPrefA1="Mixed" && ?relA1!=?relA2), ?matchScore, ?unmatchScore) AS ?relSml)
-
-		BIND(IF(?ethPrefA1="Dont mind" || (?ethPrefA1="Same" && ?ethA1=?ethA2) || (?ethPrefA1="Mixed" && ?ethA1!=?ethA2), ?matchScore, ?unmatchScore) AS ?ethSml)
-		
-		BIND(IF(?locPrefA1="Dont mind" || ?locPrefA2="Dont mind" || ?locPrefA1=?locPrefA2, ?matchScore, ?unmatchScore) AS ?locSml)
-
-		BIND(IF(?accPrefA1="Dont mind" || ?accPrefA2="Dont mind" || ?accPrefA1=?accPrefA2, ?matchScore, ?unmatchScore) AS ?accSml)
-
-
-		BIND(((year(xsd:dateTime(?endRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA1))) + day(xsd:dateTime(?endRentA1))) AS ?endRentA1IntValue)
-		BIND(((year(xsd:dateTime(?endRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA2))) + day(xsd:dateTime(?endRentA2))) AS ?endRentA2IntValue)
-		BIND(((year(xsd:dateTime(?startRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA1))) + day(xsd:dateTime(?startRentA1))) AS ?startRentA1IntValue)
-		BIND(((year(xsd:dateTime(?startRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA2))) + day(xsd:dateTime(?startRentA2))) AS ?startRentA2IntValue)
-
-
-		BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA2IntValue, ?endRentA1IntValue) AS ?smallerEndRent)
-		BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA1IntValue, ?startRentA2IntValue) AS ?biggerStartRent)
-		BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA2IntValue, ?startRentA1IntValue) AS ?smallerStartRent)
-		BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA1IntValue, ?endRentA2IntValue) AS ?biggerEndRent)
-
-		BIND(?smallerEndRent - ?biggerStartRent + 1 AS ?rentOverlap)
-		BIND(?biggerEndRent - ?smallerStartRent + 1 AS ?rentTotal)
-
-		BIND(IF(?rentPrefA1="Dont mind" || ?rentPrefA2="Dont mind", ?matchScore, IF(?startRentA1 > ?endRentA2 || ?startRentA2 > ?endRentA1, ?unmatchScore, 
-		xsd:double(?rentOverlap/?rentTotal))) AS ?rentSml)
-
-		BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA2, ?maxShareA1) AS ?smallerMaxShare)
-
-		BIND(IF(?minShareA1>?minShareA2, ?minShareA1, ?minShareA2) AS ?biggerMinShare)
-
-		BIND(IF(?minShareA1>?minShareA2, ?minShareA2, ?minShareA1) AS ?smallerMinShare)
-
-		BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA1, ?maxShareA2) AS ?biggerMaxShare)
-
-		BIND(?smallerMaxShare - ?biggerMinShare + 1 AS ?shareOverlap)
-		
-		BIND(?biggerMaxShare - ?smallerMinShare + 1 AS ?shareTotal)
-
-		BIND(IF(?sharePrefA1="Dont mind" || ?sharePrefA2="Dont mind", ?matchScore, IF(?minShareA1 > ?maxShareA2 || ?minShareA2 > ?maxShareA1, ?unmatchScore, 
-		xsd:double(?shareOverlap/?shareTotal))) AS ?shareSml)
-	
-
-		BIND(xsd:float(((?ageSml * ?ageWeight) + (?genSml * ?genWeight) + (?famSml * ?famWeight) + (?natSml * ?natWeight) + (?relSml * ?relWeight) + 
-		(?ethSml * ?ethWeight) + (?locSml * ?locWeight) + (?accSml * ?accWeight) + (?rentSml * ?rentWeight) + (?shareSml * ?shareWeight))/10.0) AS ?totalSml).		
-
-
-		}
-
-					"""^^xsd:string ;
-			] .
-
-
-
-:HDBSCAN
-	a bt:HDBSCAN ;
-	rdfs:label "Run HDBSCAN" ;
-	bt:query [
-				a bt:ConstructQuery ;
-				bt:originBase ajan:AgentKnowledge ;
-				bt:targetBase ajan:AgentKnowledge ;
-				bt:sparql """
-			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
-			PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-			CONSTRUCT{
-				?usecase 	welcome:hasMacProblemId  ?usecaseID;
-						welcome:hasPerfectMatchScore ?perfectMatchScore;
-						welcome:hasNumberOfAgents ?numberOfAgents;
-						welcome:hasParticipants ?agents.
-
-				_:bNodeSimilarity 	ajan:hasSubject ?a1;
-							ajan:hasObject ?a2;
-							welcome:isComputedForProblemId  ?usecaseId;
-							ajan:hasSimilarityScore ?totalSml.
-				}
-			WHERE {
-
-				{
-				welcome:UseCase welcome:toBeSolved ?usecase.
-
-				?usecase 	welcome:hasNumberOfAgents ?numberOfAgents;
-						welcome:hasParticipants ?agents;
-						welcome:hasMacProblemId  ?usecaseID;
-						welcome:hasAgeWeight ?ageWeight;
-						welcome:hasGenderWeight ?genWeight;
-						welcome:hasFamilyWeight	?famWeight;
-						welcome:hasNationalityWeight	?natWeight;
-						welcome:hasReligionWeight	?relWeight;
-						welcome:hasEthnicityWeight	?ethWeight;
-						welcome:hasLocationWeight	?locWeight;
-						welcome:hasAccessibilityWeight	?accWeight;
-						welcome:hasRentPeriodWeight	?rentWeight;
-						welcome:hasShareWithWeight	?shareWeight.
-
-
-				BIND(1 AS ?matchScore)
-				BIND(0 AS ?unmatchScore)
-				BIND(10 AS ?numberOfPreferences)
-				BIND((?matchScore * (?ageWeight + ?genWeight + ?famWeight + ?natWeight + ?relWeight + ?ethWeight + ?locWeight + ?accWeight + ?rentWeight + ?shareWeight))/?numberOfPreferences AS ?perfectMatchScore)
-
-
-				} UNION {
-				welcome:UseCase welcome:toBeSolved ?usecase.	
-				?usecase 	welcome:hasMacProblemId  ?usecaseId;
-						welcome:hasAgeWeight ?ageWeight;
-						welcome:hasGenderWeight ?genWeight;
-						welcome:hasFamilyWeight	?famWeight;
-						welcome:hasNationalityWeight	?natWeight;
-						welcome:hasReligionWeight	?relWeight;
-						welcome:hasEthnicityWeight	?ethWeight;
-						welcome:hasLocationWeight	?locWeight;
-						welcome:hasAccessibilityWeight	?accWeight;
-						welcome:hasRentPeriodWeight	?rentWeight;
-						welcome:hasShareWithWeight	?shareWeight.
-
-				BIND(1 AS ?matchScore)
-				BIND(0 AS ?unmatchScore)
-				?a1 a ajan:Agent.
-				?a1 welcome:isParticipatingIn ?usecaseId.
-	
-				?a2 a ajan:Agent.
-				?a2 welcome:isParticipatingIn ?usecaseId.
-
-				?a1 welcome:hasAgePreference ?agePrefA1.
-				OPTIONAL {
-					?agePrefA1 welcome:lowerBound ?lowerAgeA1;
-					        welcome:higherBound ?higherAgeA1.
-					}.
-				?a1 welcome:hasGenderPreference ?genPrefA1.
-				?a1 welcome:hasFamilyPreference ?famPrefA1.
-				?a1 welcome:hasNationPreference ?natPrefA1.
-				?a1 welcome:hasNationality ?nationA1.
-				?a1 welcome:hasReligionPreference ?relPrefA1.
-				?a1 welcome:hasReligion ?relA1.
-				?a1 welcome:hasEthnicPreference ?ethPrefA1.
-				?a1 welcome:hasEthnicity ?ethA1.
-				?a1 welcome:hasLocationPreference ?locPrefA1.
-				?a1 welcome:hasAccessibilityPreference ?accPrefA1.
-				?a1 welcome:hasRentPeriodPreference ?rentPrefA1.
-				OPTIONAL {
-					?rentPrefA1 welcome:startDate ?startRentA1;
-				        welcome:endDate ?endRentA1.
-					}.
-				?a1 welcome:hasShareWithPreference ?sharePrefA1.
-					OPTIONAL {
-					?sharePrefA1 welcome:min ?minShareA1;
-		        		welcome:max ?maxShareA1.
-					}.
-
-				?a2 welcome:hasAge ?ageA2.
-				?a2 welcome:hasGender ?genA2.
-				?a2 welcome:hasFamily ?famA2.
-				?a2 welcome:hasNationality ?nationA2.
-				?a2 welcome:hasReligion ?relA2.
-				?a2 welcome:hasEthnicity ?ethA2.
-				?a2 welcome:hasLocationPreference ?locPrefA2.
-				?a2 welcome:hasAccessibilityPreference ?accPrefA2.
-				?a2 welcome:hasRentPeriodPreference ?rentPrefA2.
-				OPTIONAL {
-					?rentPrefA2 welcome:startDate ?startRentA2;
-				        welcome:endDate ?endRentA2.
-					}.
-				?a2 welcome:hasShareWithPreference ?sharePrefA2.
-				OPTIONAL {
-					?sharePrefA2 welcome:min ?minShareA2;
-				        welcome:max ?maxShareA2.
-					}.
-
-				FILTER(?a1 != ?a2)
-
-
-				BIND(IF(?agePrefA1="Dont mind" || (xsd:integer(?ageA2) >= xsd:integer(?lowerAgeA1) && xsd:integer(?ageA2) <= xsd:integer(?higherAgeA1)), ?matchScore, ?unmatchScore) AS ?ageSml).
-
-				BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
-
-				BIND(IF(?famPrefA1="Dont mind" || ?famA2=?famPrefA1, ?matchScore, ?unmatchScore) AS ?famSml).
-
-				BIND(IF(?natPrefA1="Dont mind" || (?natPrefA1="Same" && ?nationA1=?nationA2) || (?natPrefA1="Mixed" && ?nationA1!=?nationA2), ?matchScore, ?unmatchScore) AS ?natSml)
-
-				BIND(IF(?relPrefA1="Dont mind" || (?relPrefA1="Same" && ?relA1=?relA2) || (?relPrefA1="Mixed" && ?relA1!=?relA2), ?matchScore, ?unmatchScore) AS ?relSml)
-
-				BIND(IF(?ethPrefA1="Dont mind" || (?ethPrefA1="Same" && ?ethA1=?ethA2) || (?ethPrefA1="Mixed" && ?ethA1!=?ethA2), ?matchScore, ?unmatchScore) AS ?ethSml)
-		
-				BIND(IF(?locPrefA1="Dont mind" || ?locPrefA2="Dont mind" || ?locPrefA1=?locPrefA2, ?matchScore, ?unmatchScore) AS ?locSml)
-
-				BIND(IF(?accPrefA1="Dont mind" || ?accPrefA2="Dont mind" || ?accPrefA1=?accPrefA2, ?matchScore, ?unmatchScore) AS ?accSml)
-
-				BIND(((year(xsd:dateTime(?endRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA1))) + day(xsd:dateTime(?endRentA1))) AS ?endRentA1IntValue)
-				BIND(((year(xsd:dateTime(?endRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?endRentA2))) + day(xsd:dateTime(?endRentA2))) AS ?endRentA2IntValue)
-				BIND(((year(xsd:dateTime(?startRentA1)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA1))) + day(xsd:dateTime(?startRentA1))) AS ?startRentA1IntValue)
-				BIND(((year(xsd:dateTime(?startRentA2)) - year(now()))*365 + 30*(month(xsd:dateTime(?startRentA2))) + day(xsd:dateTime(?startRentA2))) AS ?startRentA2IntValue)
-
-				BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA2IntValue, ?endRentA1IntValue) AS ?smallerEndRent)
-				BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA1IntValue, ?startRentA2IntValue) AS ?biggerStartRent)
-				BIND(IF(?startRentA1IntValue>?startRentA2IntValue, ?startRentA2IntValue, ?startRentA1IntValue) AS ?smallerStartRent)
-				BIND(IF(?endRentA1IntValue>?endRentA2IntValue, ?endRentA1IntValue, ?endRentA2IntValue) AS ?biggerEndRent)
-
-				BIND(?smallerEndRent - ?biggerStartRent + 1 AS ?rentOverlap)
-				BIND(?biggerEndRent - ?smallerStartRent + 1 AS ?rentTotal)
-
-				BIND(IF(?rentPrefA1="Dont mind" || ?rentPrefA2="Dont mind", ?matchScore, IF(?startRentA1 > ?endRentA2 || ?startRentA2 > ?endRentA1, ?unmatchScore, 
-				xsd:double(?rentOverlap/?rentTotal))) AS ?rentSml)
-
-				BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA2, ?maxShareA1) AS ?smallerMaxShare)
-
-				BIND(IF(?minShareA1>?minShareA2, ?minShareA1, ?minShareA2) AS ?biggerMinShare)
-
-				BIND(IF(?minShareA1>?minShareA2, ?minShareA2, ?minShareA1) AS ?smallerMinShare)
-
-				BIND(IF(?maxShareA1>?maxShareA2, ?maxShareA1, ?maxShareA2) AS ?biggerMaxShare)
-
-				BIND(?smallerMaxShare - ?biggerMinShare + 1 AS ?shareOverlap)
-		
-				BIND(?biggerMaxShare - ?smallerMinShare + 1 AS ?shareTotal)
-
-				BIND(IF(?sharePrefA1="Dont mind" || ?sharePrefA2="Dont mind", ?matchScore, IF(?minShareA1 > ?maxShareA2 || ?minShareA2 > ?maxShareA1, ?unmatchScore, 
-				xsd:double(?shareOverlap/?shareTotal))) AS ?shareSml)
-	
-				BIND(xsd:float(((?ageSml * ?ageWeight) + (?genSml * ?genWeight) + (?famSml * ?famWeight) + (?natSml * ?natWeight) + (?relSml * ?relWeight) + 
-				(?ethSml * ?ethWeight) + (?locSml * ?locWeight) + (?accSml * ?accWeight) + (?rentSml * ?rentWeight) + (?shareSml * ?shareWeight))/10.0) AS ?totalSml).		
-
-				}}
-					"""^^xsd:string ;
-			] .
-
-
-:CoalitionGenerator
-	a bt:CoalitionGenerator ;
-	rdfs:label "Generating Coalitions" ;
-	bt:query [
-				a bt:ConstructQuery ;
-				bt:originBase ajan:AgentKnowledge ;
-				bt:targetBase ajan:AgentKnowledge ;
-				bt:sparql """
-					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
-
-					Construct {
-
-						welcome:LCC1 ?p ?o.
-						?o2 ?p3 ?o3.
-
-					}
-					Where{
-						{ welcome:LCC1 ?p ?o. }   UNION 
-						{ welcome:LCC1 ?p2 ?o2.
-						  ?o2 ?p3 ?o3.}
-					}
-					"""^^xsd:string ;
-			] .
-
-:CSGPSolver
-	a bt:CSGPSolver ;
-	rdfs:label "Solve CSGP" ;
-	bt:query [
-				a bt:ConstructQuery ;
-				bt:originBase ajan:AgentKnowledge ;
-				bt:targetBase ajan:AgentKnowledge ;
-				bt:sparql """
-					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
-
-					Construct {
-
-						welcome:LCC1 ?p ?o.
-						?o2 ?p3 ?o3.
-
-					}
-					Where{
-						{ welcome:LCC1 ?p ?o. }   UNION 
-						{ welcome:LCC1 ?p2 ?o2.
-						  ?o2 ?p3 ?o3.}
-					}
-					"""^^xsd:string ;
 			] .
 
 :ConditionPreconditionHolds
@@ -3196,9 +3696,9 @@
 						}"""^^xsd:string ;
 				] .
 
-:CreateClosingUponFailureInternalError
+:CreateClosingUponFailureInternalErrorPart1
 	a bt:Update ;
-	rdfs:label "Update: Create Closing Upon Failure DIP - Internal Error" ;
+	rdfs:label "Update: Create Closing Upon Failure DIP - Internal Error Part 1" ;
 	bt:query ([
 		a bt:UpdateQuery ;
 		bt:originBase ajan:ExecutionKnowledge ;
@@ -3214,18 +3714,35 @@
 						welcome:ClosingUponFailure welcome:hasSlot welcome:informMessage .
 						welcome:informMessage rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#SystemInfo"^^xsd:anyURI .
 						welcome:informMessage welcome:hasOntologyType "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#Template"^^xsd:anyURI .
-						welcome:informMessage welcome:hasTemplateId "TInformMessage"^^xsd:string . 
-						welcome:informMessage welcome:hasInputRDFContents welcome:reifiedReason2  .
-						welcome:informMessage welcome:hasStatus welcome:Pending .
+						welcome:informMessage welcome:hasTemplateId "TInformMessage"^^xsd:string . 						
+						welcome:informMessage welcome:hasStatus welcome:Pending .						
+					} WHERE { 
+						?a rdf:type ajan:Agent .
+					}"""^^xsd:string ;
+		]) .
+
+:CreateClosingUponFailureInternalErrorPart2
+	a bt:Update ;
+	rdfs:label "Update: Create Closing Upon Failure DIP - Internal Error Part 2" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 										
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#> 
+					INSERT {
 						welcome:informMessage welcome:hasNumberAttempts 0 .
 						welcome:informMessage welcome:confidenceScore "0.0"^^xsd:float .
-						welcome:informMessage welcome:isOptional "false"^^xsd:boolean .				
+						welcome:informMessage welcome:isOptional "false"^^xsd:boolean .	
+						welcome:informMessage welcome:hasInputRDFContents welcome:reifiedReason2  .
 						welcome:reifiedReason2 rdf:type rdf:Statement .
 						welcome:reifiedReason2 rdf:subject welcome:subTemplate .
 						welcome:reifiedReason2 rdf:predicate welcome:isReason .
 						welcome:reifiedReason2 rdf:object "STReasonInternalFailure"^^xsd:string .
 					} WHERE { 
-						?a rdf:type ajan:Agent .
+						welcome:ClosingUponFailure welcome:hasSlot welcome:informMessage .
 					}"""^^xsd:string ;
 		]) .
 		
@@ -3385,11 +3902,8 @@
 						?slots welcome:hasNumberAttempts ?NbAttempts .
 						?slots welcome:confidenceScore ?confScore .
 						?slots welcome:isOptional ?optional .	
-						OPTIONAL {						
-							{?slots welcome:hasTemplateId ?templateID .}
-							UNION
-							{?slots welcome:hasTCNAnswer ?tcnAnswer .}				
-						}
+						OPTIONAL {?slots welcome:hasTemplateId ?templateID .}
+						OPTIONAL {?slots welcome:hasTCNAnswer ?tcnAnswer .}	
 					}
 					FILTER regex(str(?g), "DIP") 
 				}
@@ -3462,21 +3976,39 @@
 						}"""^^xsd:string ;
 				] .
 
-:UpdateCreateNormalClosing
+:EventHandlerAlternativeClosingScenario
+	a bt:HandleEvent ;
+	rdfs:label "EventHandler: Alternative Normal Closing Scenario" ;
+	bt:event <http://localhost:8090/rdf4j/repositories/agents#AlternativeCloseScenarioEvent> ;
+	bt:validate [
+					a bt:ConstructQuery ;
+					bt:targetBase ajan:AgentKnowledge ;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 				
+						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						CONSTRUCT {
+							welcome:DTASF welcome:hasAlternativeClosing "true" . 			
+						}
+						WHERE { 
+							welcome:DTASF welcome:hasAlternativeClosing "true" . 					
+						}"""^^xsd:string ;
+				] .
+				
+:UpdateCreateNormalClosingPart1
 	a bt:Update ;
-	rdfs:label "Update: Create Normal Closing DIP" ;
+	rdfs:label "Update: Create Normal Closing DIP Part 1" ;
 	bt:query ([
 		a bt:UpdateQuery ;
 		bt:originBase ajan:ExecutionKnowledge ;
 		bt:sparql """
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
-					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 					
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>					
 					INSERT {
 						welcome:NormalClosing rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#DIP"^^xsd:anyURI .
 						welcome:NormalClosing welcome:hasDIPStatus welcome:Unknown .
 						welcome:NormalClosing welcome:hasSlot welcome:informEnd .
-						welcome:NormalClosing welcome:hasSlot welcome:obtainConfirmation .
 						welcome:NormalClosing welcome:isCurrentDIP "true"^^xsd:boolean . 
 						welcome:informEnd rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#SystemInfo"^^xsd:anyURI .
 						welcome:informEnd welcome:hasOntologyType "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#Template"^^xsd:anyURI . 
@@ -3486,7 +4018,26 @@
 						welcome:informEnd welcome:hasStatus welcome:Pending .
 						welcome:informEnd welcome:hasNumberAttempts "0"^^xsd:int .
 						welcome:informEnd welcome:confidenceScore "0.0"^^xsd:float .
-						welcome:informEnd welcome:isOptional "false"^^xsd:boolean .
+						welcome:informEnd welcome:isOptional "false"^^xsd:boolean .			
+					} 
+					WHERE { 
+						?s rdf:type ajan:Agent .
+					}"""^^xsd:string ;
+		]) .
+
+:UpdateCreateNormalClosingPart2
+	a bt:Update ;
+	rdfs:label "Update: Create Normal Closing DIP Part 2" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>					
+					INSERT {
+						welcome:NormalClosing welcome:hasSlot welcome:obtainConfirmation .
 						welcome:obtainConfirmation rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#ConfirmationRequest"^^xsd:anyURI . 
 						welcome:obtainConfirmation welcome:hasOntologyType "http://www.w3.org/2001/XMLSchema#boolean"^^xsd:anyURI .
 						welcome:obtainConfirmation welcome:hasTemplateId "TObtainConfirmation"^^xsd:string .
@@ -3498,7 +4049,7 @@
 						welcome:obtainConfirmation welcome:isOptional "false"^^xsd:boolean .					
 					} 
 					WHERE { 
-						?s ?p ?o .
+						?s rdf:type ajan:Agent .
 					}"""^^xsd:string ;
 		]) .
 		
@@ -3597,8 +4148,6 @@
 							?slot welcome:hasTemplateId ?slottemplate . 
 							?slot welcome:hasTCNAnswer ?tcnAnswer . 
 							?dip welcome:hasDIPStatus ?statusdip .
-							?tcnAnswer ?preReifi ?objReifi . 
-							?rdfcontents ?contentreifi ?contentObjReifi .
 							?dipName welcome:hasNamedGraph ?dipGraph . 
 							?bt welcome:hasActiveDIP ?activeId . 	
 							?dip welcome:belongsTo ?someService .							
@@ -3618,8 +4167,6 @@
 							OPTIONAL { ?slot welcome:hasTemplateId ?slottemplate . }
 							OPTIONAL { ?slot welcome:hasTCNAnswer ?tcnAnswer . }
 							OPTIONAL { ?dip welcome:hasDIPStatus ?statusdip .}
-							OPTIONAL { ?tcnAnswer ?preReifi ?objReifi . }
-							OPTIONAL { ?rdfcontents ?contentreifi ?contentObjReifi .}
 							OPTIONAL { ?dipName welcome:hasNamedGraph ?dipGraph . }
 							OPTIONAL { ?bt welcome:hasActiveDIP ?activeId . }
 							OPTIONAL { ?dip welcome:belongsTo ?someService .}
@@ -3739,23 +4286,14 @@
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 					SELECT ?hdrName ?fieldValue
 					WHERE {
-						{
-							?headerName welcome:hasHeaderName ?hdrName .
-							?headerName welcome:hasHeaderValue ?fieldValue .
-						}
-						UNION 
-						{
-							  VALUES (?hdrName ?fieldValue) {							
-								("content-type" "application/ld+json")							
-								("Accept" "application/ld+json")
-							}
-						}
+						?headerName welcome:hasHeaderName ?hdrName .
+						?headerName welcome:hasHeaderValue ?fieldValue .
 					}"""^^xsd:string
 		] ;
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "application/ld+json"^^xsd:string 
+					http-core:fieldValue "text/turtle;charset=UTF-8"^^xsd:string 
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
@@ -3793,39 +4331,55 @@
 							?dip welcome:isCurrentDIP ?current .
 							?dip welcome:hasSlot ?slots .
 							?slots rdf:type ?slotType .
-							?slots welcome:hasOntologyType ?ontoType .
-							?slots welcome:hasInputRDFContents ?RDFContents .	
+							?slots welcome:hasOntologyType ?ontoType .							
 							?slots welcome:hasStatus ?slotsStatus .		
 							?slots welcome:hasNumberAttempts ?NbAttempts .
 							?slots welcome:confidenceScore ?confScore .
 							?slots welcome:isOptional ?optional .	
-							OPTIONAL { ?slots welcome:hasTemplateId ?templateID .	}
-							OPTIONAL { ?slots welcome:hasTCNAnswer ?tcnAnswer . }
-							OPTIONAL { ?RDFContents ?ReifiPredi ?ReifiObj . }
-							OPTIONAL { ?tcnAnswer ?reifiPredAnswer ?reifiedObjAnswer . }
+							OPTIONAL { ?slots welcome:hasTemplateId ?templateID . }
+							OPTIONAL { 
+								{?slots welcome:hasTCNAnswer ?tcnAnswer .}
+								UNION
+								{?slots welcome:hasTCNAnswer ?tcnAnswer .
+								 ?tcnAnswer ?reifiPredAnswer ?reifiedObjAnswer .}
+							}
+							OPTIONAL { 
+								{?slots welcome:hasInputRDFContents ?RDFContents . }
+								UNION
+								{?slots welcome:hasInputRDFContents ?RDFContents .
+								?RDFContents ?ReifiPredi ?ReifiObj .}
+							}
 						}"""^^xsd:string
 			]
 		] ;    
 	] ;
 	bt:queryUri [
-		a bt:SelectQuery ;
-		a bt:QueryUri ;
-		bt:originBase ajan:AgentKnowledge ;
-		bt:sparql """
-					SELECT ?requestURI
-					WHERE {
-					  VALUES ?requestURI { "http://18.224.42.120:9998/welcome/integration/workflow/dispatcher/toTcn?log=true" }
-					}"""^^xsd:string
-	] .
+	a bt:SelectQuery ;
+	a bt:QueryUri ;
+	bt:originBase ajan:AgentKnowledge ;
+	bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+				SELECT ?requestURI 
+				WHERE
+				{
+				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+				  BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/toTcn?log=true") AS ?requestURI )
+				}"""^^xsd:string
+	] . 
 #	bt:queryUri [
-#		a bt:SelectQuery ;
-#		a bt:QueryUri ;
-#		bt:originBase ajan:AgentKnowledge ;
-#		bt:sparql """
-#					SELECT ?requestURI
-#					WHERE {
-#					  VALUES ?requestURI { "http://localhost:8092/dms/receiveDIP" }
-#					}"""^^xsd:string
+#	a bt:SelectQuery ;
+#	a bt:QueryUri ;
+#	bt:originBase ajan:AgentKnowledge ;  
+#	bt:sparql """
+#				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+#				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#				SELECT ?requestURI 
+#				WHERE
+#				{
+#				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+#				  BIND(CONCAT(STR(?partialAddress), "/dms/receiveDIP") AS ?requestURI )
+#				}"""^^xsd:string
 #	] .
 
 :DeleteHeaderDMSMessage 
@@ -3848,16 +4402,14 @@
 						welcome:headerLanguage welcome:hasHeaderValue ?preferedLang .					
 					} 
 					WHERE { 
-						OPTIONAL{
-							welcome:headerCorrelation welcome:hasHeaderName "X-Correlation-ID" .
-							welcome:headerCorrelation welcome:hasHeaderValue ?correlationID .
-							welcome:headerUserID welcome:hasHeaderName "X-User-ID" .
-							welcome:headerUserID welcome:hasHeaderValue ?userID .	
-							welcome:headerAvatarGender welcome:hasHeaderName "X-Avatar-Gender" .
-							welcome:headerAvatarGender welcome:hasHeaderValue ?value .
-							welcome:headerLanguage welcome:hasHeaderName "X-Language" .
-							welcome:headerLanguage welcome:hasHeaderValue ?preferedLang .
-						}
+						OPTIONAL{ welcome:headerCorrelation welcome:hasHeaderName "X-Correlation-ID" . }
+						OPTIONAL{ welcome:headerCorrelation welcome:hasHeaderValue ?correlationID . }
+						OPTIONAL{ welcome:headerUserID welcome:hasHeaderName "X-User-ID" . }
+						OPTIONAL{ welcome:headerUserID welcome:hasHeaderValue ?userID . }	
+						OPTIONAL{ welcome:headerAvatarGender welcome:hasHeaderName "X-Avatar-Gender" . }
+						OPTIONAL{ welcome:headerAvatarGender welcome:hasHeaderValue ?value . }
+						OPTIONAL{ welcome:headerLanguage welcome:hasHeaderName "X-Language" . }
+						OPTIONAL{ welcome:headerLanguage welcome:hasHeaderValue ?preferedLang . }
 					}
 					"""^^xsd:string ;
 		]) .
@@ -3883,7 +4435,8 @@
 							?reifiedAnswer rdf:type rdf:Statement .
 							?reifiedAnswer rdf:subject ?ReifiSub .
 							?reifiedAnswer rdf:predicate ?ReifiPredi .
-							?reifiedAnswer rdf:object "Yes" .
+							?reifiedAnswer rdf:object ?answer .
+							FILTER (STRENDS(str(?answer), "Yes") || STRENDS(str(?answer), "yes") || STRENDS(str(?answer), "True") || STRENDS(str(?answer), "true"))
 					}"""^^xsd:string ;
 		]) .
 
@@ -4076,14 +4629,14 @@
 							?bt welcome:hasActiveDIP ?id . 
 							welcomeServices:ObtainRegistrationStatus rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#DIP"^^xsd:anyURI .
 							welcomeServices:ObtainRegistrationStatus welcome:DIPId ?id .
-							welcomeServices:ObtainRegistrationStatus welcome:hasDIPStatus welcome:Complete .
 							welcomeServices:ObtainRegistrationStatus welcome:hasSlot welcomeServices:obtainStatus .	
 							welcomeServices:obtainStatus welcome:hasInputRDFContents ?RDFContents .
 							welcomeServices:obtainStatus welcome:hasTCNAnswer ?reifiedAnswer .
 							?reifiedAnswer rdf:type rdf:Statement .
 							?reifiedAnswer rdf:subject ?ReifiSub .
 							?reifiedAnswer rdf:predicate ?ReifiPredi .
-							?reifiedAnswer rdf:object "Not"^^xsd:string .
+							?reifiedAnswer rdf:object ?answer .
+							FILTER (STRENDS(str(?answer), "Not") || STRENDS(str(?answer), "not") || STRENDS(str(?answer), "False") || STRENDS(str(?answer), "false") || STRENDS(str(?answer), "No") || STRENDS(str(?answer), "no"))
 					}"""^^xsd:string ;
 		]) .
 
@@ -4183,7 +4736,8 @@
 							?reifiedAnswer rdf:type rdf:Statement .
 							?reifiedAnswer rdf:subject ?ReifiSub .
 							?reifiedAnswer rdf:predicate ?ReifiPredi .
-							?reifiedAnswer rdf:object "Yes"  .
+							?reifiedAnswer rdf:object ?answer .
+							FILTER (STRENDS(str(?answer), "Yes") || STRENDS(str(?answer), "yes") || STRENDS(str(?answer), "True") || STRENDS(str(?answer), "true"))
 					}"""^^xsd:string ;
 		]) .
 
@@ -4283,7 +4837,8 @@
 							?reifiedAnswer rdf:type rdf:Statement .
 							?reifiedAnswer rdf:subject ?ReifiSub .
 							?reifiedAnswer rdf:predicate ?ReifiPredi .
-							?reifiedAnswer rdf:object "Not"  .
+							?reifiedAnswer rdf:object ?answer .
+							FILTER (STRENDS(str(?answer), "Not") || STRENDS(str(?answer), "not") || STRENDS(str(?answer), "False") || STRENDS(str(?answer), "false") || STRENDS(str(?answer), "No") || STRENDS(str(?answer), "no"))
 					}"""^^xsd:string ;
 		]) .
 
@@ -4386,11 +4941,8 @@
 				?slots welcome:hasNumberAttempts ?NbAttempts .
 				?slots welcome:confidenceScore ?confScore .
 				?slots welcome:isOptional ?optional .	
-				OPTIONAL {						
-							{?slots welcome:hasTemplateId ?templateID .}
-							UNION
-							{?slots welcome:hasTCNAnswer ?tcnAnswer .}				
-						}
+				OPTIONAL {?slots welcome:hasTemplateId ?templateID .}
+				OPTIONAL {?slots welcome:hasTCNAnswer ?tcnAnswer .}
 				FILTER NOT EXISTS
 				{	
 					GRAPH ?g {
@@ -4408,11 +4960,8 @@
 						?slots welcome:hasNumberAttempts ?NbAttempts .
 						?slots welcome:confidenceScore ?confScore .
 						?slots welcome:isOptional ?optional .	
-						OPTIONAL {						
-							{?slots welcome:hasTemplateId ?templateID .}
-							UNION
-							{?slots welcome:hasTCNAnswer ?tcnAnswer .}				
-						}
+						OPTIONAL {?slots welcome:hasTemplateId ?templateID .}
+						OPTIONAL {?slots welcome:hasTCNAnswer ?tcnAnswer .}
 					}
 					FILTER regex(str(?g), "DIP") 
 				}
@@ -4441,8 +4990,36 @@
 						OPTIONAL { ?tcn rdf:type welcome:DialogueUser . }
 						OPTIONAL { ?tcn welcome:long ?longvalue . }
 						OPTIONAL { ?tcn welcome:lat ?latvalue . }
-						OPTIONAL { ?office rdf:type welcome:RegistrationOffice . }
-						OPTIONAL { ?office ?proOffice ?valOffice . }
+						OPTIONAL { 
+							?office rdf:type welcome:RegistrationOffice . 
+							?office ?proOffice ?valOffice .
+						}
+					}"""^^xsd:string ;
+		]) .
+
+:ConditionalCoordinateExists
+	a bt:Condition ;
+	rdfs:label "Condition: Coordinates of TCN and Registration Offices Exist?" ;
+	bt:query ([
+		a bt:AskQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>	
+					PREFIX locn: <http://www.w3.org/ns/locn#>
+					PREFIX daml: <http://www.daml.org/services/owl-s/1.1/ActorDefault.owl#>
+					ASK
+					WHERE {
+						?tcn rdf:type welcome:DialogueUser .
+						?tcn welcome:hasCity ?city .
+						?city welcome:lat ?lat .
+						?city welcome:long ?long .
+						?office rdf:type welcome:RegistrationOffice .
+						?office locn:address ?address .
+						?address daml:physicalAddress ?value .
+						?address welcome:lat ?latOffice .
+						?address welcome:long ?longOffice .
 					}"""^^xsd:string ;
 		]) .
 		
@@ -4461,13 +5038,13 @@
 			PREFIX daml: <http://www.daml.org/services/owl-s/1.1/ActorDefault.owl#>
 			CONSTRUCT  {
 				?tcn rdf:type welcome:DialogueUser .
-				?tcn welcome:long ?longvalue .
-				?tcn welcome:lat ?latvalue .
+				?tcn welcome:long ?long .
+				?tcn welcome:lat ?lat .
 				?office rdf:type welcome:RegistrationOffice .
 				?office locn:address ?address .
 				?office daml:physicalAddress ?value .
-				?office welcome:lat ?latval .
-				?office welcome:long ?longval .		
+				?office welcome:lat ?latOffice .
+				?office welcome:long ?longOffice .		
 			}
 			WHERE {
 				?tcn rdf:type welcome:DialogueUser .
@@ -4477,8 +5054,8 @@
 				?office rdf:type welcome:RegistrationOffice .
 				?office locn:address ?address .
 				?address daml:physicalAddress ?value .
-				?address welcome:lat ?lat ;
-				?address welcome:long ?long .
+				?address welcome:lat ?latOffice .
+				?address welcome:long ?longOffice .
 			}"""^^xsd:string ;
 	] .
 
@@ -4488,7 +5065,7 @@
 	welcomePlugin:tcnLocation [
 			a bt:ConstructQuery ;
 			bt:originBase ajan:ExecutionKnowledge ;
-			bt:targetBase ajan:AgentKnowledge ;
+			bt:targetBase ajan:ExecutionKnowledge ;
 			bt:sparql """
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 						
@@ -4508,23 +5085,56 @@
 			bt:originBase ajan:ExecutionKnowledge ;
 			bt:sparql """
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 						
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX locn: <http://www.w3.org/ns/locn#> 
+					PREFIX actor: <http://www.daml.org/services/owl-s/1.1/ActorDefault.owl#> 
 					CONSTRUCT {
 						?office rdf:type welcome:RegistrationOffice .
 						?office locn:address ?address .
-						?office daml:physicalAddress ?value .
+						?office actor:physicalAddress ?value .
 						?office welcome:lat ?latval .
 						?office welcome:long ?longval .	
 					}
 					WHERE { 
 						?office rdf:type welcome:RegistrationOffice .
 						?office locn:address ?address .
-						?office daml:physicalAddress ?value .
+						?office actor:physicalAddress ?value .
 						?office welcome:lat ?latval .
 						?office welcome:long ?longval .				
 					}"""^^xsd:string ;
 	] .
 
+:WriteDefaultOfficeinExecution
+	a bt:Write ;
+	rdfs:label "Write: Default Registration Office Coordinates in Execution" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+			PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>	
+			PREFIX locn: <http://www.w3.org/ns/locn#>
+			PREFIX daml: <http://www.daml.org/services/owl-s/1.1/ActorDefault.owl#>
+			CONSTRUCT  {
+				?tcn welcome:hasClosestRegistrationOffice ?officeName .
+				?officeName locn:address ?addressOffice .
+				?officeName daml:physicalAddress ?physicalAddressValue .
+			}
+			WHERE {
+				?tcn rdf:type welcome:DialogueUser .
+				{
+					SELECT ?officeName
+					WHERE 
+					{?officeName rdf:type welcome:RegistrationOffice .}
+					LIMIT 1
+				}
+				?officeName locn:address ?addressOffice .
+				?addressOffice daml:physicalAddress ?physicalAddressValue .
+			}"""^^xsd:string ;
+	] .
+	
 :UpdateInformRegistrationServiceDIP
 	a bt:Update ;
 	rdfs:label "Update: Closest Office in Inform Registration Service DIP" ;
@@ -4535,7 +5145,6 @@
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
 					PREFIX welcomeServices: <http://localhost:8080/services/FirstReceptionService.owl#>
-					PREFIX actor: <http://www.daml.org/services/owl-s/1.1/ActorDefault.owl#> 
 					PREFIX daml: <http://www.daml.org/services/owl-s/1.1/ActorDefault.owl#>
 					PREFIX locn: <http://www.w3.org/ns/locn#>
 					DELETE {
@@ -4545,17 +5154,14 @@
 					INSERT{
 						welcomeServices:informOfficeAddress welcome:hasInputRDFContents welcome:rdfInformClosestOffice .
 						welcome:rdfInformClosestOffice a rdf:Statement .
-						welcome:rdfInformClosestOffice rdf:subject ?officeIRI .
-						welcome:rdfInformClosestOffice rdf:predicate actor:physicalAddress .
+						welcome:rdfInformClosestOffice rdf:subject welcome:Address .
+						welcome:rdfInformClosestOffice rdf:predicate welcome:hasValue .
 						welcome:rdfInformClosestOffice rdf:object ?value .
 					}
 					WHERE {	
 						welcomeServices:InformRegistrationService rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#DIP"^^xsd:anyURI .
-						welcomeServices:InformRegistrationService welcome:hasDIPStatus ?status .
-						welcomeServices:InformRegistrationService welcome:isCurrentDIP "true"^^xsd:boolean .
 						welcomeServices:InformRegistrationService welcome:hasSlot welcomeServices:informOfficeAddress .
 						welcomeServices:informOfficeAddress welcome:hasInputRDFContents ?RDFContents .
-						welcomeServices:informOfficeAddress ?prop ?propVal .
 						?tcnIRI welcome:hasClosestRegistrationOffice ?officeIRI .
 						?officeIRI locn:address ?address .
 						?officeIRI daml:physicalAddress ?value .
@@ -4585,8 +5191,8 @@
 		
 :EventProducerNormalClosingScenario
 	a bt:EventProducer ;
-	rdfs:label "EventProducer: Normal Closing Scenario" ;
-	ajan:event agents:CloseScenarioEvent ;
+	rdfs:label "EventProducer: Alternataive Normal Closing Scenario" ;
+	ajan:event <http://localhost:8090/rdf4j/repositories/agents#AlternativeCloseScenarioEvent> ;
 	bt:content [
 					a bt:ConstructQuery ;
 					bt:originBase ajan:AgentKnowledge;
@@ -4595,7 +5201,7 @@
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						CONSTRUCT {
-							welcome:TCN_Profile welcome:updated "true" . 
+							welcome:DTASF welcome:hasAlternativeClosing "true" . 
 						}
 						WHERE {
 							?s rdf:type ajan:Agent . 
@@ -4622,7 +5228,8 @@
 							?reifiedAnswer rdf:type rdf:Statement .
 							?reifiedAnswer rdf:subject ?ReifiSub .
 							?reifiedAnswer rdf:predicate ?ReifiPredi .
-							?reifiedAnswer rdf:object "Yes"  .
+							?reifiedAnswer rdf:object ?answer .
+							FILTER (STRENDS(str(?answer), "True") || STRENDS(str(?answer), "true") || STRENDS(str(?answer), "yes") || STRENDS(str(?answer), "Yes"))
 					}"""^^xsd:string ;
 	]) .
 
@@ -5121,23 +5728,14 @@
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 					SELECT ?hdrName ?fieldValue
 					WHERE {
-						{
 							?headerName welcome:hasHeaderName ?hdrName .
 							?headerName welcome:hasHeaderValue ?fieldValue .
-						}
-						UNION 
-						{
-							  VALUES (?hdrName ?fieldValue) {							
-								("content-type" "application/ld+json")							
-								("Accept" "application/ld+json")
-							}
-						}
 					}"""^^xsd:string
 		] ;
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "application/ld+json"^^xsd:string 
+					http-core:fieldValue "text/turtle;charset=UTF-8"^^xsd:string 
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
@@ -5163,26 +5761,57 @@
 		] ;    
 	] ;
 	bt:queryUri [
-		a bt:SelectQuery ;
-		a bt:QueryUri ;
-		bt:originBase ajan:AgentKnowledge ;
-		bt:sparql """
-					SELECT ?requestURI
-					WHERE {
-					  VALUES ?requestURI { "http://18.224.42.120:9998/welcome/integration/workflow/dispatcher/agentNotification" }
-					}"""^^xsd:string
-	] .
+	a bt:SelectQuery ;
+	a bt:QueryUri ;
+	bt:originBase ajan:AgentKnowledge ;
+	bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+				SELECT ?requestURI 
+				WHERE
+				{
+				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+				  BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentNotification") AS ?requestURI )
+				}"""^^xsd:string
+	] . 
 #	bt:queryUri [
-#		a bt:SelectQuery ;
-#		a bt:QueryUri ;
-#		bt:originBase ajan:AgentKnowledge ;
-#		bt:sparql """
-#					SELECT ?requestURI
-#					WHERE {
-#					  VALUES ?requestURI {"http://localhost:8092/dms/receiveDIP"}
-#					}"""^^xsd:string
+#	a bt:SelectQuery ;
+#	a bt:QueryUri ;
+#	bt:originBase ajan:AgentKnowledge ;  
+#	bt:sparql """
+#				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+#				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#				SELECT ?requestURI 
+#				WHERE
+#				{
+#				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+#				  BIND(CONCAT(STR(?partialAddress), "/dms/receiveDIP") AS ?requestURI )
+#				}"""^^xsd:string
 #	] .
-	
+
+:ConditionalNormalClosingComplete
+	a bt:Condition ;
+	rdfs:label "Condition: Normal Closing Complete" ;
+	bt:query ([
+		a bt:AskQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>					
+					ASK
+					WHERE {
+							?bt welcome:hasActiveDIP ?id . 
+							welcome:NormalClosing rdf:type "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#DIP"^^xsd:anyURI .
+							welcome:NormalClosing welcome:DIPId ?id .
+					}"""^^xsd:string ;
+		]) .
+		
+:SucessFinishScenario
+	a bt:Success ;
+	rdfs:label "Scenario Finished"^^xsd:string .
+																															
 :DeleteHeaderAppNotificationMessage
 	a bt:Update ;
 	rdfs:label "Update: Header App Notification Message" ;
@@ -5325,16 +5954,12 @@
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "text/turtle; charset=UTF-8"^^xsd:string 
+					http-core:fieldValue "text/turtle;charset=UTF-8"^^xsd:string 
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
 					http-core:fieldValue "application/ld+json"
-				][
-					a http-core:Header ;
-					http-core:hdrName http-headers:to ;
-					http-core:fieldValue "WPM"
-			]
+				]
 		) ;	
 		http-core:body [
 			a actn:Payload ;
@@ -5354,22 +5979,30 @@
 		] ;    
 	] ;
 	bt:queryUri [
-		a bt:SelectQuery ;
-		a bt:QueryUri ;
-		bt:originBase ajan:AgentKnowledge ;
-		bt:sparql """
-					SELECT ?requestURI
-					WHERE {
-					  VALUES ?requestURI { "/welcome/integration/workflow/dispatcher/agentShutdownAcknowledgement" }
-					}"""^^xsd:string
-	] .
+	a bt:SelectQuery ;
+	a bt:QueryUri ;
+	bt:originBase ajan:AgentKnowledge ;
+	bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+				SELECT ?requestURI 
+				WHERE
+				{
+				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+				  BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentShutdownAcknowledgement") AS ?requestURI )
+				}"""^^xsd:string
+	] . 
 #	bt:queryUri [
-#		a bt:SelectQuery ;
-#		a bt:QueryUri ;
-#		bt:originBase ajan:AgentKnowledge ;
-#		bt:sparql """
-#					SELECT ?requestURI
-#					WHERE {
-#					  VALUES ?requestURI { "http://localhost:8092/dms/receiveDIP" }
-#					}"""^^xsd:string
+#	a bt:SelectQuery ;
+#	a bt:QueryUri ;
+#	bt:originBase ajan:AgentKnowledge ;  
+#	bt:sparql """
+#				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+#				PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#				SELECT ?requestURI 
+#				WHERE
+#				{
+#				  welcome:dispatcher welcome:hasAddress ?partialAddress .
+#				  BIND(CONCAT(STR(?partialAddress), "/dms/receiveDIP") AS ?requestURI )
+#				}"""^^xsd:string
 #	] .

@@ -26,15 +26,14 @@ import de.dfki.asr.ajan.pluginsystem.extensionpoints.NodeExtension;
 import de.dfki.asr.ajan.behaviour.nodes.common.EvaluationResult;
 import de.dfki.asr.ajan.behaviour.nodes.common.EvaluationResult.Result;
 import de.dfki.asr.ajan.behaviour.nodes.common.LeafStatus;
+import de.dfki.asr.ajan.behaviour.nodes.common.TreeNode;
 import de.dfki.asr.ajan.pluginsystem.standardbtnodes.exceptions.BeliefBaseUpdateException;
 import de.dfki.asr.ajan.pluginsystem.standardbtnodes.vocabularies.StandardBTVocabulary;
-import java.util.logging.Level;
 import lombok.Getter;
 import lombok.Setter;
 import org.cyberborean.rdfbeans.annotations.RDF;
 import org.cyberborean.rdfbeans.annotations.RDFBean;
 import org.cyberborean.rdfbeans.annotations.RDFSubject;
-import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
@@ -45,7 +44,7 @@ import ro.fortsoft.pf4j.Extension;
 
 @Extension
 @RDFBean("bt:Wait")
-public class Wait extends AbstractTDBLeafTask implements NodeExtension {
+public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode {
 	@Getter @Setter
 	@RDFSubject
 	private String url;

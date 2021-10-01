@@ -8,6 +8,7 @@ de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\CoalitionGenerationInputExc
 de\dfki\asr\ajan\pluginsystem\majanplugin\MAJANPlugin.class
 META-INF\extensions.idx
 de\dfki\asr\ajan\pluginsystem\majanplugin\vocabularies\MAJANVocabulary.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\Broadcast.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\HDBSCAN.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\ConstraintsException.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\utils\Utils.class

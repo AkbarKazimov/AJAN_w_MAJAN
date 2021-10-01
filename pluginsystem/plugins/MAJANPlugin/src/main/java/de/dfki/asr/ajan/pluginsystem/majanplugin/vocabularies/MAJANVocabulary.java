@@ -62,6 +62,9 @@ public class MAJANVocabulary {
         public final static IRI ClusterOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#isClusterOf");
 
        
+        // Broadcast
+        public final static IRI BROADCAST = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Broadcast");
+
        
 
 }

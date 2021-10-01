@@ -44,6 +44,8 @@
 :MAJANAgent
 	a ajan:AgentTemplate ;
 	rdfs:label "MAJAN Agent to Test MAJAN Features" ;
+	ajan:event :PopulateLAREvent ;	
+	ajan:event :ReceiveLocalAgentsEvent;
 	ajan:event :StartLCCEvent ;
 	ajan:event :CHCProtocolEvent ;
 	ajan:event :ExecuteCHCProcessEvent;
@@ -52,14 +54,16 @@
 	ajan:event :ShareCHCSimilaritiesEvent;
 	ajan:event :ReceiveCHCSimilaritiesEvent;
 	ajan:event :SolveCHCEvent;
-	ajan:event :ShareCHCResultEvent;
+	ajan:event :FinalizeCHCProcessEvent;
+	ajan:event :CHCFailureEvent;
 	ajan:endpoint :CHCProtocolEndpoint ;
 	ajan:endpoint :startLCC ;
 	ajan:endpoint :ShareCHCPersonalInfoEndpoint ;
 	ajan:endpoint :ReceiveCHCPersonalInfoEndpoint;
 	ajan:endpoint :ShareCHCSimilaritiesEndpoint ;
 	ajan:endpoint :ReceiveCHCSimilaritiesEndpoint ;
-	ajan:endpoint :ShareCHCResultEndpoint;
+	ajan:endpoint :FinalizeCHCProcessEndpoint;
+	ajan:behavior :PopulateLARRepos;
 	ajan:behavior :LCCProtocolBehavior ;
 	ajan:behavior :CHCProtocolBehavior ;
 	ajan:behavior :ExecutingCHCProcessBehavior ;
@@ -68,12 +72,14 @@
 	ajan:behavior :SharingCHCSimilaritiesBehavior;  
 	ajan:behavior :ReceivingCHCSimilaritiesBehavior;
 	ajan:behavior :SolvingCHCBehavior;
-	ajan:behavior :SharingCHCResultBehavior.
+	ajan:behavior :FinalizingCHCProcessBehavior;
+	ajan:behavior :CHCFailureBehavior.
 
 
 #------------MAJAN Stuff-------------------
 
 #----Behaviors-------
+
 :LCCProtocolBehavior
 	a ajan:Behavior ;
 	rdfs:label "LCC Protocol BT" ;
@@ -123,11 +129,17 @@
 	ajan:trigger :SolveCHCEvent ;
 	ajan:bt behaviors:SolvingCHCBT.
 
-:SharingCHCResultBehavior
+:FinalizingCHCProcessBehavior
 	a ajan:Behavior ;
-	rdfs:label "Share CHC Result with TCN/App Behavior" ;
-	ajan:trigger :ShareCHCResultEvent ;
-	ajan:bt behaviors:SharingCHCResultBT.
+	rdfs:label "Finalize CHC Process Behavior" ;
+	ajan:trigger :FinalizeCHCProcessEvent ;
+	ajan:bt behaviors:FinalizingCHCProcessBT.
+	
+:CHCFailureBehavior
+	a ajan:Behavior ;
+	rdfs:label "Behavior to run when something fails in CHC Protocol/Process" ;
+	ajan:trigger :CHCFailureEvent ;
+	ajan:bt behaviors:CHCFailureBT.
 
 #----Behaviors-------
 
@@ -169,11 +181,11 @@
 	ajan:capability "receiveCHCSimilarities" ;
 	ajan:event :ReceiveCHCSimilaritiesEvent .
 
-:ShareCHCResultEndpoint
+:FinalizeCHCProcessEndpoint
 	a ajan:Endpoint ;
-	rdfs:label "Endpoint to trigger Sharing CHC Result Behavior" ;
-	ajan:capability "shareCHCResult" ;
-	ajan:event :ShareCHCResultEvent .
+	rdfs:label "Endpoint to trigger Finalizing CHC Process Behavior" ;
+	ajan:capability "finalizeCHCProcess" ;
+	ajan:event :FinalizeCHCProcessEvent .
 
 
 
@@ -213,14 +225,22 @@
 	a ajan:ModelEvent ;
 	rdfs:label "Solve CHC Problem Event" .
 
-:ShareCHCResultEvent
+:FinalizeCHCProcessEvent
 	a ajan:ModelEvent ;
-	rdfs:label "Share CHC Result Event" .
+	rdfs:label "Finalize CHC Process Event" .
+	
+:CHCFailureEvent
+	a ajan:ModelEvent ;
+	rdfs:label "CHC Protocol/Process Failed Event" .
 
 #----Events-------
 
 
 #------------MAJAN Stuff-------------------
+
+
+#------------------WELCOME Stuff by ELENA----------------------
+
 
 :WelcomeAgent
 	a ajan:AgentTemplate ;
@@ -228,16 +248,19 @@
 	ajan:event :PopulateLSREvent ;
 	ajan:event :PopulateLAREvent ;	
 	ajan:event :ReceiveLocalAgentsEvent ;
+	ajan:event :ReceiveLocalServicesEvent ;
 	ajan:event :ReceiveHandshakeEvent ;	
 	ajan:event :SpeakAvatarEvent ;	
 	ajan:event :EventDIPORServiceRequest ;	
 	ajan:event :EventStatementNonOpinion ;	
 	ajan:event :SpecificBTEvent ;
 	ajan:event :FirstInteractionBTEvent ;	
-	ajan:event :CloseScenarioEvent ;	
+	ajan:event :CloseScenarioEvent ;
+	ajan:event :AlternativeCloseScenarioEvent ;
 	ajan:event :AgentShutdownEvent ;
 	ajan:event :AgentMonitoringEvent ;
-	ajan:endpoint :populateRepo ;
+	ajan:endpoint :populateLAR ;
+	ajan:endpoint :populateLSR ;
 	ajan:endpoint :receiveSpeechAct ;
 	ajan:endpoint :speakAvatar ;
 	ajan:endpoint :handshake ;
@@ -246,17 +269,16 @@
 	ajan:endpoint :heartbeat ;
 	ajan:initialBehavior :InitialWelcomeBehavior ;
 	ajan:finalBehavior :FinalWelcomeBehavior ;
-	ajan:behavior :ReceiveTriplestoLocalRepos ;
-	ajan:behavior :SendRequestPopulateRepos ;
+	ajan:behavior :PopulateLARRepos ;
+	ajan:behavior :PopulateLSRRepos ;
 	ajan:behavior :HandshakeBehavior ;
 	ajan:behavior :ProcessSpeechActsBehavior ;
 	ajan:behavior :SpecificFirstReceptionBT ;
+	ajan:behavior :CloseScenarioBT ;
 	ajan:behavior :AgentShutdown ;
 	ajan:behavior :HeartbeatMonitoringBT .
 
-
 # ----------- Behaviors -----------
-
 
 :InitialWelcomeBehavior
 	a ajan:InitialBehavior ;
@@ -268,19 +290,19 @@
 	rdfs:label "Final Behavior" ;
 	ajan:bt behaviors:FinalWelcomeBehavior .
 
-:SendRequestPopulateRepos
+:PopulateLARRepos
 	a ajan:Behavior ;
-	rdfs:label "Send Request Populate Repos" ;
-	ajan:trigger :PopulateLSREvent ;
+	rdfs:label "Populate LAR Repos" ;
 	ajan:trigger :PopulateLAREvent ;
-	ajan:bt behaviors:SendRequestPopulateRepos .
-
-:ReceiveTriplestoLocalRepos
-	a ajan:Behavior ;
-	rdfs:label "Receive Triples to LocalRepos" ;
-	#ajan:trigger :ReceiveLocalServicesEvent ;
 	ajan:trigger :ReceiveLocalAgentsEvent ;
-	ajan:bt behaviors:ReceiveTriplestoLocalRepos .
+	ajan:bt behaviors:PopulateLARRepos .
+
+:PopulateLSRRepos
+	a ajan:Behavior ;
+	rdfs:label "Populate LSR Repos" ;
+	ajan:trigger :PopulateLSREvent ;
+	ajan:trigger :ReceiveLocalServicesEvent ;
+	ajan:bt behaviors:PopulateLSRRepos .
 
 :HandshakeBehavior
 	a ajan:Behavior ;
@@ -300,10 +322,16 @@
 	a ajan:Behavior ;
 	rdfs:label "Specific First Reception Behavior Tree" ;
 	ajan:trigger :FirstInteractionBTEvent ;
-	ajan:trigger :CloseScenarioEvent ;
 	ajan:trigger :SpecificBTEvent ;
 	ajan:bt behaviors:SpecificFirstReceptionBT .
 
+:CloseScenarioBT
+	a ajan:Behavior ;
+	rdfs:label "Specific First Reception Closing Behavior Tree" ;
+	ajan:trigger :AlternativeCloseScenarioEvent ;
+	ajan:trigger :CloseScenarioEvent ;
+	ajan:bt behaviors:CloseScenarioBT .
+	
 :AgentShutdown
 	a ajan:Behavior ;
 	rdfs:label "Agent Shutdown" ;
@@ -318,13 +346,18 @@
 
 # ----------- Endpoints -----------
 
-:populateRepo
+:populateLAR
 	a ajan:Endpoint ;
-	rdfs:label "populate Repo Endpoint" ;
-	ajan:capability "populateRepo" ;
-	#ajan:event :ReceiveLocalServicesEvent ;
+	rdfs:label "populate LAR Repo Endpoint" ;
+	ajan:capability "populateLAR" ;
 	ajan:event :ReceiveLocalAgentsEvent .
 
+:populateLSR
+	a ajan:Endpoint ;
+	rdfs:label "populate LSR Repo Endpoint" ;
+	ajan:capability "populateLSR" ;
+	ajan:event :ReceiveLocalServicesEvent .
+	
 :receiveSpeechAct
 	a ajan:Endpoint ;
 	rdfs:label "KMS Endpoint for DIPs" ;
@@ -365,15 +398,15 @@
 # ----------- Events -----------
 :PopulateLSREvent
 	a ajan:ModelEvent ;
-	rdfs:label "PopulateLSREvent" .
+	rdfs:label "Populate LSR Event" .
 	
 :PopulateLAREvent
 	a ajan:ModelEvent ;
 	rdfs:label "Populate LAR Event" .
 
-#:ReceiveLocalServicesEvent
-#	a ajan:ModelEvent ;
-#	rdfs:label "ReceiveLocalServicesEvent" .
+:ReceiveLocalServicesEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Local Services Event" .
 	
 :ReceiveLocalAgentsEvent
 	a ajan:ModelEvent ;
@@ -399,6 +432,10 @@
 	a ajan:ModelEvent ;
 	rdfs:label "Receive First Service Interaction Move Event" .
 
+:AlternativeCloseScenarioEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Alternative Close Scenario Event" .
+	
 :CloseScenarioEvent
 	a ajan:ModelEvent ;
 	rdfs:label "Close Scenario Event" .
