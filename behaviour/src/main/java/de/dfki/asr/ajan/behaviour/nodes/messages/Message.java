@@ -72,8 +72,8 @@ public class Message extends AbstractTDBLeafTask {
 	@Getter @Setter
 	private URI targetBase;
 
-	protected String requestURI;
-	protected HttpConnection request;
+        protected String requestURI;
+        protected HttpConnection request;
 	protected static final Logger LOG = LoggerFactory.getLogger(Message.class);
 
 	@Override
@@ -85,18 +85,18 @@ public class Message extends AbstractTDBLeafTask {
 	public LeafStatus executeLeaf() {
 		try {
 			setRequestUri();
-			binding.setRequestURI(new URI(requestURI));
-			request = new HttpConnection(binding);
-			String payload = null;
-			if (binding.getPayload() != null) {
-				payload = getInput(binding);
-			}
-			request.setPayload(payload);
-			LOG.info("Executing request {}", request.toString());
-			if (!checkResponse(request.execute())) {
-				LOG.info(toString() + " FAILED due to malformed response model");
-				return new LeafStatus(Status.FAILED, toString() + " FAILED");
-			}
+                        binding.setRequestURI(new URI(requestURI));
+                        request = new HttpConnection(binding);
+                        String payload = null;
+                        if (binding.getPayload() != null) {
+                            payload = getInput(binding);
+                        }
+                        request.setPayload(payload);
+                        LOG.info("Executing request {}", request.toString());
+                        if (!checkResponse(request.execute())) {
+                            LOG.info(toString() + " FAILED due to malformed response model");
+                            return new LeafStatus(Status.FAILED, toString() + " FAILED");
+                        }
 			LOG.info(toString() + " SUCCEEDED");
 			return new LeafStatus(Status.SUCCEEDED, toString() + " SUCCEEDED");
 		} catch (IOException | URISyntaxException | MessageEvaluationException ex) {

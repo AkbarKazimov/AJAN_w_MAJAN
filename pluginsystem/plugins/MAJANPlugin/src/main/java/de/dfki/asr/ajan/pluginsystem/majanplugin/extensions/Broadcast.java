@@ -205,7 +205,7 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
 
 	@Override
 	public String toString() {
-		return "Message (" + label + ")";
+		return "Broadcast (" + label + ")";
 	}
 
 	@Override
