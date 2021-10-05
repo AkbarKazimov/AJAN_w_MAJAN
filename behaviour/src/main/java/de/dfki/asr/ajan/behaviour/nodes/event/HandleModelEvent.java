@@ -18,6 +18,7 @@
  */
 
 package de.dfki.asr.ajan.behaviour.nodes.event;
+import de.dfki.asr.ajan.behaviour.AgentTaskInformation;
 import de.dfki.asr.ajan.behaviour.events.ModelEventInformation;
 import de.dfki.asr.ajan.behaviour.exception.ConditionEvaluationException;
 import de.dfki.asr.ajan.behaviour.nodes.BTRoot;
@@ -54,8 +55,8 @@ import org.slf4j.LoggerFactory;
 
 @RDFBean("bt:HandleEvent")
 public class HandleModelEvent extends AbstractTDBLeafTask {
-@Getter @Setter
-	@RDFSubject
+        @Getter @Setter
+        @RDFSubject
 	private String url;
 
 	@RDF("rdfs:label")
@@ -108,9 +109,10 @@ public class HandleModelEvent extends AbstractTDBLeafTask {
 	}
 
 	protected boolean handleEvent() throws ConditionEvaluationException {
-		if (checkEventGoalMatching()) {
+            AgentTaskInformation ati=this.getObject();
+		if (checkEventGoalMatching(ati)) {
 			try {
-				Model model = getEventModel();
+				Model model = getEventModel(this.getObject());
 				if (!model.isEmpty()) {
 					if (constructQuery.getTargetBase().equals(new URI(AJANVocabulary.EXECUTION_KNOWLEDGE.toString()))) {
 						this.getObject().getExecutionBeliefs().update(model);
@@ -129,9 +131,9 @@ public class HandleModelEvent extends AbstractTDBLeafTask {
 		}
 		return false;
 	}
-	protected boolean checkEventGoalMatching() {
-		if (this.getObject().getEventInformation() instanceof ModelEventInformation) {
-			ModelEventInformation info = (ModelEventInformation)this.getObject().getEventInformation();
+	protected boolean checkEventGoalMatching(AgentTaskInformation ati) {
+		if (ati.getEventInformation() instanceof ModelEventInformation) {
+			ModelEventInformation info = (ModelEventInformation)ati.getEventInformation();
 			boolean bothNull = event == null && goal == null;
 			boolean eventMatching = event != null && event.toString().equals(((ModelEventInformation) info).getEvent());
 			boolean goalMatching = goal != null && goal.toString().equals(((ModelEventInformation) info).getEvent());
@@ -140,8 +142,8 @@ public class HandleModelEvent extends AbstractTDBLeafTask {
 		return false;
 	}
 
-	protected Model getEventModel() {
-		Object info = this.getObject().getEventInformation();
+	protected Model getEventModel(AgentTaskInformation ati) {
+		Object info = ati.getEventInformation();
 		Model model = new LinkedHashModel();
 		if (info instanceof ModelEventInformation) {
 			ModelEventInformation eventInfo = (ModelEventInformation) info;

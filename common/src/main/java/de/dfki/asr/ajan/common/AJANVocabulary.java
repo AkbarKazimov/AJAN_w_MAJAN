@@ -40,6 +40,8 @@ public class AJANVocabulary {
 
 	public final static IRI AJAN_PROCESS_ID = FACTORY.createIRI("http://www.ajan.de/ajan-ns#processId");
 
+        public final static IRI ALL = FACTORY.createIRI("http://www.ajan.de/ajan-ns#All");
+	public final static IRI NONE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#None");
 	public final static IRI AGENT_KNOWLEDGE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#AgentKnowledge");
 	public final static IRI EXECUTION_KNOWLEDGE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#ExecutionKnowledge");
 	public final static IRI BEHAVIOR_KNOWLEDGE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#BehaviorKnowledge");
@@ -48,7 +50,8 @@ public class AJANVocabulary {
 	public final static IRI TEMPLATE_KNOWLEDGE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#TemplateKnowledge");
 	public final static IRI LOCAL_SERVICES_KNOWLEDGE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#LocalServicesKnowledge");
 	public final static IRI LOCAL_AGENTS_KNOWLEDGE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#LocalAgentsKnowledge");
-
+        
+        public final static IRI HAS_AGENT = FACTORY.createIRI("http://www.ajan.de/ajan-ns#agent");
 	public final static IRI AGENT_HAS_REPORT_URI = FACTORY.createIRI("http://www.ajan.de/ajan-ns#agentReportURI");
 	public final static IRI AGENT_HAS_INITKNOWLEDGE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#agentInitKnowledge");
 	public final static IRI AGENT_HAS_INITIALBEHAVIOR = FACTORY.createIRI("http://www.ajan.de/ajan-ns#initialBehavior");
@@ -85,6 +88,11 @@ public class AJANVocabulary {
 
 	public final static IRI EXC_EXCEPTION = FACTORY.createIRI("http://www.ajan.de/ajan-ns#Exception");
 	public final static IRI EXC_HAS_CAUSE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasCause");
+        
+        public final static IRI CONTEXT = FACTORY.createIRI("http://www.ajan.de/ajan-ns#Context");
+	public final static IRI UUID_CONTEXT = FACTORY.createIRI("http://www.ajan.de/ajan-ns#UUIDContext");
+	public final static IRI HAS_RDF_CONTEXT = FACTORY.createIRI("http://www.ajan.de/ajan-ns#rdfContext");
+	public final static IRI HAS_RDF_UUID_CONTEXT = FACTORY.createIRI("http://www.ajan.de/ajan-ns#rdfUUIDContext");
 
 	public final static IRI ASYNC_REQUEST_URI = FACTORY.createIRI("http://www.ajan.de/actn#asyncRequestURI");
 

@@ -98,6 +98,7 @@ public class BTRoot extends BehaviorTree<AgentTaskInformation> implements TreeNo
 	public void run () {
             System.out.println("Start Root BT label: "+label);
             System.out.println("Start Root BT block: "+block);
+           // block = false;
 
 		if (!block) {
                     System.out.println("root bt running-----===---");
@@ -147,6 +148,8 @@ public class BTRoot extends BehaviorTree<AgentTaskInformation> implements TreeNo
 
 	@Override
 	public void setEventInformation(final Object info) {
+            System.out.println("BTRoot: setEventInformation: info - " + info);
+
 		this.getObject().setEventInformation(info);
 		this.run();
 	}

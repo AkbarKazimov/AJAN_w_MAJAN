@@ -56,6 +56,7 @@
 	ajan:event :SolveCHCEvent;
 	ajan:event :FinalizeCHCProcessEvent;
 	ajan:event :CHCFailureEvent;
+	ajan:event :TestQueueEvent ;
 	ajan:endpoint :CHCProtocolEndpoint ;
 	ajan:endpoint :startLCC ;
 	ajan:endpoint :ShareCHCPersonalInfoEndpoint ;
@@ -63,6 +64,7 @@
 	ajan:endpoint :ShareCHCSimilaritiesEndpoint ;
 	ajan:endpoint :ReceiveCHCSimilaritiesEndpoint ;
 	ajan:endpoint :FinalizeCHCProcessEndpoint;
+	ajan:endpoint :TestQueueEventEndpoint ;
 	ajan:behavior :PopulateLARRepos;
 	ajan:behavior :LCCProtocolBehavior ;
 	ajan:behavior :CHCProtocolBehavior ;
@@ -73,7 +75,8 @@
 	ajan:behavior :ReceivingCHCSimilaritiesBehavior;
 	ajan:behavior :SolvingCHCBehavior;
 	ajan:behavior :FinalizingCHCProcessBehavior;
-	ajan:behavior :CHCFailureBehavior.
+	ajan:behavior :CHCFailureBehavior ;
+	ajan:behavior :TestQueueEventBehavior.
 
 
 #------------MAJAN Stuff-------------------
@@ -140,6 +143,12 @@
 	rdfs:label "Behavior to run when something fails in CHC Protocol/Process" ;
 	ajan:trigger :CHCFailureEvent ;
 	ajan:bt behaviors:CHCFailureBT.
+	
+:TestQueueEventBehavior
+	a ajan:Behavior ;
+	rdfs:label "Test Queue Event Behavior" ;
+	ajan:trigger :TestQueueEvent ;
+	ajan:bt behaviors:TestQueueBT.
 
 #----Behaviors-------
 
@@ -187,7 +196,11 @@
 	ajan:capability "finalizeCHCProcess" ;
 	ajan:event :FinalizeCHCProcessEvent .
 
-
+:TestQueueEventEndpoint 
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to test queue event Behavior" ;
+	ajan:capability "testQueueEvent" ;
+	ajan:event :TestQueueEvent .
 
 #----Endpoints-------
 
@@ -210,11 +223,11 @@
 	rdfs:label "Share CHC Personal Info Event" .
 
 :ReceiveCHCPersonalInfoEvent
-	a ajan:ModelEvent ;
+	a ajan:ModelQueueEvent ;
 	rdfs:label "Receive CHC Personal Info Event" .
 
 :ShareCHCSimilaritiesEvent
-	a ajan:ModelEvent ;
+	a ajan:ModelQueueEvent ;
 	rdfs:label "Share CHC Similarities Event" .
 
 :ReceiveCHCSimilaritiesEvent
@@ -232,6 +245,10 @@
 :CHCFailureEvent
 	a ajan:ModelEvent ;
 	rdfs:label "CHC Protocol/Process Failed Event" .
+
+:TestQueueEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Test Queue Event" .
 
 #----Events-------
 

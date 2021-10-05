@@ -28,6 +28,7 @@ public class ModelQueueEvent extends DefaultQueueEvent {
 
 	@Override
 	public void setEventInformation(final Object information) {
+            System.out.println("ModelQueueEvent: SetEventInformation");
 //		Model model = AgentUtil.setNamedGraph(((Model)information).iterator(), getUrl());
 //		this.queueInformation.add(model);
 
@@ -36,6 +37,7 @@ public class ModelQueueEvent extends DefaultQueueEvent {
 	}
 
 	private ModelEventInformation getEventInfo(final Object information) {
+            System.out.println("ModelQueueEvent: getEventInfo");
 		ModelEventInformation info = new ModelEventInformation();
 		info.setEvent(getUrl());
 		info.setModel(((Model)information));
