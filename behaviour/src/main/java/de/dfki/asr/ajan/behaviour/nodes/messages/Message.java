@@ -93,6 +93,7 @@ public class Message extends AbstractTDBLeafTask {
                         }
                         request.setPayload(payload);
                         LOG.info("Executing request {}", request.toString());
+ //                       LOG.info("Sending Payload: " + payload);
                         if (!checkResponse(request.execute())) {
                             LOG.info(toString() + " FAILED due to malformed response model");
                             return new LeafStatus(Status.FAILED, toString() + " FAILED");

@@ -57,9 +57,12 @@ public class Agent {
 
 	public void setEndpointEvent(final String capability, final Object input) {
 		if (endpoints.containsKey(capability)) {
-			Endpoint endpoint = endpoints.get(capability);
-			Event event = endpoint.getEvent();
-			event.setEventInformation(input);
+                    System.out.println("TTTTRRRRUUUUEEEEE");
+                    Endpoint endpoint = endpoints.get(capability);
+                    System.out.println("endpoint:"+endpoint);
+                    Event event = endpoint.getEvent();
+                    System.out.println("event:"+event);
+                    event.setEventInformation(input);
 		}
 	}
 

@@ -27,6 +27,7 @@ import de.dfki.asr.ajan.model.Behavior;
 import io.swagger.annotations.ApiOperation;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import javax.ws.rs.Consumes;
@@ -40,6 +41,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,11 +117,11 @@ public class AgentResource {
 		if (capability == null) {
 			return null;
 		}
-//		Set<Resource> set = ((Model)input).contexts();
-//		for (Iterator<Statement> it = ((Model)input).iterator(); it.hasNext();) {
-//			Statement st = it.next();
-//			LOG.info("s--" + st);
-//		}
+		Set<Resource> set = ((Model)input).contexts();
+		for (Iterator<Statement> it = ((Model)input).iterator(); it.hasNext();) {
+			Statement st = it.next();
+			LOG.info("s--" + st);
+		}
 		agent.setEndpointEvent(capability, input);
 		return agent;
 	}

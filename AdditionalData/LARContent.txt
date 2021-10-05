@@ -1,0 +1,35 @@
+@prefix : <http://www.semanticweb.org/welcome#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ajan: <http://www.ajan.de/ajan-ns#> .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent1> ajan:agentId "majanAgent1" ;
+	:hasStatus :in_coordination ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent2> ajan:agentId "majanAgent2" ;
+	:hasStatus :active ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent3> ajan:agentId "majanAgent3" ;
+	:hasStatus :active ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent4> ajan:agentId "majanAgent4" ;
+	:hasStatus :in_coordination ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent5> ajan:agentId "majanAgent5" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent6> ajan:agentId "majanAgent6" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent7> ajan:agentId "majanAgent7" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent8" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .

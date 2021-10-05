@@ -41,6 +41,7 @@ public class ModelEvent extends DefaultEvent {
 	@Override
 	public void setEventInformation(final Object information) {
 		//this.information = AgentUtil.setNamedGraph(((Model)information).iterator(), url);
+                System.out.println("SetEventInformation:-----info---"+information);
 		this.information = getEventInfo(information);
 		notifyListeners();
 	}

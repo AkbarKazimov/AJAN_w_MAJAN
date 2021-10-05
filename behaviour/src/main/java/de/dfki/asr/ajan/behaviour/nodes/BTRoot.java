@@ -96,7 +96,11 @@ public class BTRoot extends BehaviorTree<AgentTaskInformation> implements TreeNo
 
 	@Override
 	public void run () {
+            System.out.println("Start Root BT label: "+label);
+            System.out.println("Start Root BT block: "+block);
+
 		if (!block) {
+                    System.out.println("root bt running-----===---");
 			block = true;
 			long before = System.currentTimeMillis();
 			this.step();
