@@ -65,6 +65,10 @@ public class MAJANVocabulary {
         // Broadcast
         public final static IRI BROADCAST = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Broadcast");
 
-       
+        public final static IRI ChcUseCaseObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CHCUseCase");
+        public final static IRI UseCaseIdPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasId");
+        public final static IRI ComputedForPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#isComputedForProblemId");
+        public final static IRI ChcDistanceScoreObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CHCDistanceScore");
+        public final static IRI DistanceScorePre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasDistanceScore");
 
 }

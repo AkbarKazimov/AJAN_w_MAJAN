@@ -147,15 +147,22 @@
 													]
 													:WriteSimilaritiesRequestContent2Execution
 													:Broadcast4SimilarityValues
+													:WriteCHCPreferences2Execution
+													:ComputeSimilarities4CHC
+													:WriteSimilarities2LAKR
 													:Wait4SimilarityValues
-#													[
-#														a bt:Priority ;
-#														bt:hasChildren (
-#															:ConditionReceivedCompleteSimilarityValues
-#															:WriteZeroSimilarity4NotRespondingAgents
-#																		)																														
-#													]
-#													:EventProducerSolverCHCEvent
+													[
+														a bt:Priority ;
+														bt:hasChildren (
+																[
+																	a bt:Invert ;
+																	bt:hasChild 
+																			:ConditionAnyoneNotReturnedSimilarities
+																]
+															:WriteZeroSimilarity4NotRespondingAgents
+																		)																														
+													]
+													:EventProducerSolverCHCEvent
 															)																														
 										]
 										:EventProducerCHCFailureEvent
@@ -171,7 +178,6 @@
 					bt:hasChildren (
 								:HandleShareCHCPersonalInfoEvent
 								:WriteCHCPersonalInfo2Exec
-#								:Wait1Sec
 								:Message2DedicatedPersonalInfo
 								:Message2WPMUpdateStatus2InCoordination
 								:WriteAgentInvolvedInCHC
@@ -190,10 +196,14 @@
 	a bt:Root ;
 	rdfs:label "ReceiveCHCPersonalInfoBT Behavior Tree" ;
 	bt:hasChild [
-					a bt:Sequence ;
-					bt:hasChildren (
-								:ReceivingCHCPersonalInfoSBT
-									)
+				a bt:UntilFail ;
+				bt:hasChild [
+							a bt:Sequence ;
+							bt:hasChildren (
+										:HandleReceiveCHCPersonalInfoEvent
+										:WritePersonalInfo2LAKR							
+											)
+							]
 				] .
 
 :ReceivingCHCPersonalInfoSBT
@@ -217,11 +227,11 @@
 							a bt:Sequence ;
 							bt:hasChildren (
 								:HandleShareCHCSimilaritiesEvent
-#								:WriteCHCPreferences2Execution
-								:UpdateCHCPrefInstance2LAKR
-#								:ComputeSimilarities4CHC
-							#	:MessageSimilarities2Dedicated
-							#	:WriteSimilarities2LAKR
+								:WriteCHCPreferences2Execution
+#								:UpdateCHCPrefInstance2LAKR
+								:ComputeSimilarities4CHC
+								:MessageSimilarities2Dedicated
+								:WriteSimilarities2LAKR
 											)
 								]
 				] .
@@ -231,11 +241,14 @@
 	a bt:Root ;
 	rdfs:label "ReceivingCHCSimilaritiesBT Behavior Tree" ;
 	bt:hasChild [
-					a bt:Sequence ;
-					bt:hasChildren (
-								:HandleReceiveCHCSimilaritiesEvent
-								:WriteReceivedSimilarities2LAKR		
+					a bt:UntilFail ;
+					bt:hasChild [
+									a bt:Sequence ;
+									bt:hasChildren (
+										:HandleReceiveCHCSimilaritiesEvent
+										:WriteReceivedSimilarities2LAKR		
 										)
+								]
 				] .
 
 :SolvingCHCBT
@@ -249,11 +262,13 @@
 								a bt:Sequence ;
 								bt:hasChildren (
 										:HandleSolveCHCEvent
-										:UpdateRemoveDuplicateSimilarities
+#										:UpdateRemoveDuplicateSimilarities
 										:WriteComputedReciprocalSimilarities
-										:HDBSCAN
-										:BroadcastHDBSCANResult
-										:EventProducerFinalizeCHCProcessEvent
+#										:HDBSCAN
+										:HdbscanAlgorithm
+#										:BroadcastHDBSCANResult
+#										:WriteCHCResult2LAKR
+#										:EventProducerFinalizeCHCProcessEvent
 												)																														
 							]
 							:EventProducerCHCFailureEvent
@@ -1373,7 +1388,28 @@ CONSTRUCT {
 }
 """^^xsd:string
 	] .
+
 	
+:EventProducerComputeSimilaritiesBT
+	a bt:EventProducer ;
+	rdfs:label "EventProducer: to Compute Similarities" ;
+	ajan:event agents:ShareCHCSimilaritiesEvent ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string ;
+				] .	
+
+
 :Wait4PersonalInfo 
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Personal Info for CHC" ;
@@ -1481,6 +1517,10 @@ CONSTRUCT {
 						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
 						
 						CONSTRUCT {
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:isRunningCHC	?chcId ;
+									welcome:hasAddress	?agentAddress .
+									
 							?pAgentUri	welcome:hasCHCPersonalInfo	?bnode2 ;
 										ajan:agentId	?pAgentId .
 										
@@ -1501,6 +1541,9 @@ CONSTRUCT {
 							?sharePref	?sharePred		?shareObj.
 						}
 						WHERE {
+							?du		rdf:type	welcome-git:Registered ;
+									welcome:hasAgentAddress	?agentAddress .
+									
 							?dAgent	rdf:type	ajan:Agent ;
 									welcome:isRunningCHC ?chcId ;
 									ajan:agentId	?dAgentId.
@@ -1533,6 +1576,7 @@ CONSTRUCT {
 						}
  """^^xsd:string ;
 	] .
+	
 :Broadcast4SimilarityValues
 	a bt:Broadcast ;
 	rdfs:label "Broadcast: Request agents to return their Similarity values for CHC"^^xsd:string ;
@@ -1575,6 +1619,10 @@ CONSTRUCT {
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
 						CONSTRUCT {
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:isRunningCHC	?chcId ;
+									welcome:hasAddress	?agentAddress .
+							
 							?pAgentUri	welcome:hasCHCPersonalInfo	?bnode2 ;
 										ajan:agentId	?pAgentId .
 										
@@ -1595,6 +1643,10 @@ CONSTRUCT {
 							?sharePref	?sharePred		?shareObj.	
 						}
 						WHERE {
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:isRunningCHC	?chcId ;
+									welcome:hasAddress	?agentAddress .
+						
 							?pAgentUri	welcome:hasCHCPersonalInfo	?bnode2 ;
 										ajan:agentId	?pAgentId .
 										
@@ -1663,20 +1715,45 @@ CONSTRUCT {
 
 
 
-:ConditionReceivedCompleteSimilarityValues
+:ConditionAnyoneNotReturnedSimilarities
 	a bt:Condition ;
 	rdfs:label "Condition: Did all participating agents return their Similarity values?" ;
 	bt:query ( [
 		a bt:AskQuery ;
-		bt:originBase ajan:ExecutionKnowledge ;
+		bt:originBase ajan:AgentKnowledge ;
 		bt:sparql """
-					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
-					ASK
-					WHERE {
-							?s ?p ?o .
-					}"""^^xsd:string ;
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				ASK 
+				WHERE {
+						{
+							SELECT ?numOfAgents (count(?smlValue) AS ?total) 
+							WHERE {
+								?dAgent	rdf:type	ajan:Agent ;
+								welcome:isRunningCHC ?chcId ;
+								ajan:agentId	?dAgentId.	
+
+								?bnode	rdf:type	welcome:CHCUseCase;
+								welcome:hasId		?chcId;
+								welcome:hasNumberOfAgents	?numOfAgents;
+								welcome:hasParticipants		?pAgentId .	
+
+								?agentUri	welcome:hasCHCSimilarityValue	?smlBnode .
+
+								?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+								ajan:hasSubject ?pAgentId ;
+								ajan:hasObject ?oAgentId ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasSimilarityScore ?smlValue .	
+								} GROUP BY ?numOfAgents
+						}
+
+						FILTER(?total = (?numOfAgents * (?numOfAgents-1)))
+
+					}
+					
+					"""^^xsd:string ;
 		]) .
 
 
@@ -1686,11 +1763,12 @@ CONSTRUCT {
 	bt:query [
 		a bt:ConstructQuery ;
 		bt:originBase ajan:AgentKnowledge ;
-		bt:targetBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
 		bt:sparql """
 			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
 			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			# not assigning zero to non respondents here. But when computing Reciprocal score, if there is no similarity value, it is taken as zero. 
 			CONSTRUCT  {
 				?agentName rdf:type ajan:Agent .
 			}
@@ -1794,7 +1872,7 @@ CONSTRUCT {
 						welcome:hasShareWithPreference		?sharePref.
 						
 				?rentPref	?rentPred	?rentObj.
-				?share		?sharePred	?shareObj.
+				?sharePref		?sharePred	?shareObj.
 				
 				}
 			WHERE { 
@@ -2184,8 +2262,8 @@ CONSTRUCT {
 							welcome:hasEthnicPreference ?ethPref .
 							
 					OPTIONAL {
-						?agePref	welcome:lowerBound	?lowerAge;
-									welcome:higherBound ?higherAge.
+						?agePref	welcome:lowerBound	?lowerAge ;
+									welcome:higherBound ?higherAge .
 							}
 					{BIND(BNODE() AS ?bnode)}
 							
@@ -2199,7 +2277,7 @@ CONSTRUCT {
 	bt:query [
 		a bt:ConstructQuery ;
 		bt:originBase ajan:ExecutionKnowledge ;
-		bt:targetBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
 		bt:sparql """
 				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
@@ -2207,7 +2285,9 @@ CONSTRUCT {
 				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 				CONSTRUCT  {
-					?smlBnode	rdf:type	welcome:SimilarityValue ;
+					?subAgent	welcome:hasCHCSimilarityValue	?smlBnode .
+					
+					?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
 								ajan:hasSubject ?subAgentId ;
 								ajan:hasObject ?pAgentId ;
 								welcome:isComputedForProblemId  ?chcId ;
@@ -2215,7 +2295,7 @@ CONSTRUCT {
 						}
 				WHERE { 
 						{
-						SELECT ?subAgentId ?pAgentId ?chcId (MAX(?totalSml) AS ?maxTotalSml)
+						SELECT ?subAgent ?subAgentId ?pAgentId ?chcId (MAX(?totalSml) AS ?maxTotalSml)
 						WHERE { 
 						
 						# to retrieve Preferences of the subject agent from Execution. 
@@ -2353,7 +2433,7 @@ CONSTRUCT {
 						BIND(xsd:float(((?ageSml * ?ageWeight) + (?genSml * ?genWeight) + (?famSml * ?famWeight) + (?natSml * ?natWeight) + (?relSml * ?relWeight) + 
 						(?ethSml * ?ethWeight) + (?locSml * ?locWeight) + (?accSml * ?accWeight) + (?rentSml * ?rentWeight) + (?shareSml * ?shareWeight))/10.0) AS ?totalSml).						
 						
-						} GROUP BY ?smlBnode ?subAgentId ?pAgentId ?chcId
+						} GROUP BY ?smlBnode ?subAgentId ?pAgentId ?chcId ?subAgent
 						}
 						BIND(BNODE() AS ?smlBnode)					
 				
@@ -2402,11 +2482,32 @@ CONSTRUCT {
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
 						CONSTRUCT {
-							?agent welcome:hasSimilarityValues "Similarity values blank node"^^xsd:string .
-						}
+							?agent	welcome:hasCHCSimilarityValue	?smlBnode .
+
+							?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+										ajan:hasSubject ?agentId ;
+										ajan:hasObject ?pAgentId ;
+										welcome:isComputedForProblemId  ?chcId ;
+										ajan:hasSimilarityScore ?smlValue .	
+								}
 						WHERE {
-							?agent rdf:type ajan:Agent .
+							?agent	rdf:type	ajan:Agent ;
+									ajan:agentId	?agentId .
+							
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:isRunningCHC	?chcId .
+									
+							?agent	welcome:hasCHCSimilarityValue	?smlBnode .
+							
+							?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+										ajan:hasSubject ?agentId ;
+										ajan:hasObject ?pAgentId ;
+										welcome:isComputedForProblemId  ?chcId ;
+										ajan:hasSimilarityScore ?smlValue .	
+										
 						}"""^^xsd:string
 			]
 		] ;    
@@ -2414,19 +2515,75 @@ CONSTRUCT {
 	bt:queryUri [
 		a bt:SelectQuery ;
 		a bt:QueryUri ;
-		bt:originBase ajan:AgentKnowledge ;
+		bt:originBase ajan:ExecutionKnowledge ;
 		bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
 					SELECT ?requestURI
 					WHERE {
-					  VALUES ?requestURI { "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent1?capability=receiveCHCSimilarities" }
+						?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+								welcome:isRunningCHC	?chcId ;
+								welcome:hasAddress	?agentAddress .
+					
+					BIND(CONCAT(?agentAddress, "?capability=receiveCHCSimilarities") AS ?requestURI )
+
+					#VALUES ?requestURI { "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent1?capability=receiveCHCSimilarities" }
 					}"""^^xsd:string
+	] .
+	
+	
+
+:WriteSimilarities2LAKR
+	a bt:Write ;
+	rdfs:label "Write: CHC Similarity values to Agent Knowledge" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			CONSTRUCT	{
+			
+					?agentUri	welcome:hasCHCSimilarityValue	?smlBnode .
+					?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+									ajan:hasSubject ?agentId ;
+									ajan:hasObject ?pAgentId ;
+									welcome:isComputedForProblemId  ?chcId ;
+									ajan:hasSimilarityScore ?smlValue .	
+			
+					}
+			WHERE 	{ 	
+						
+						# to retrieve ?chcId if this is a participant agent
+						#OPTIONAL {
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:isRunningCHC	?chcId .
+						#		}
+									
+						# to retrieve ?chcId if this is a dedicated agent
+						#OPTIONAL {
+						#	?agent	rdf:type	ajan:Agent ;
+						#			welcome:isRunningCHC ?chcId .
+						#		}
+						
+						?agentUri	welcome:hasCHCSimilarityValue	?smlBnode .
+						
+						?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+									ajan:hasSubject ?agentId ;
+									ajan:hasObject ?pAgentId ;
+									welcome:isComputedForProblemId  ?chcId ;
+									ajan:hasSimilarityScore ?smlValue .	
+					} """^^xsd:string ;
 	] .
 #---------------SharingCHCSimilarities BT Nodes -----------------
 
 #---------------ReceiveCHCSimilarities BT Nodes---------------------
 :HandleReceiveCHCSimilaritiesEvent
-	a bt:HandleEvent ;
-	rdfs:label "EventHandler: Receive CHC Similarities" ;
+	a bt:HandleQueueEvent ;
+	rdfs:label "QueueEventHandler: Receive CHC Similarities" ;
 	bt:event agents:ReceiveCHCSimilaritiesEvent ;
 	bt:validate [
 					a bt:ConstructQuery ;
@@ -2451,7 +2608,7 @@ CONSTRUCT {
 	bt:query [
 		a bt:ConstructQuery ;
 		bt:originBase ajan:ExecutionKnowledge ;
-		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
 		bt:sparql """
 			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
@@ -2514,20 +2671,135 @@ CONSTRUCT {
 	rdfs:label "Write: Reciprocal Similarity values to lakr" ;
 	bt:query [
 		a bt:ConstructQuery ;
-		bt:originBase ajan:ExecutionKnowledge ;
-		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:originBase ajan:AgentKnowledge  ;
+		bt:targetBase ajan:AgentKnowledge ;
 		bt:sparql """
 			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
 			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 			CONSTRUCT  {
-				?s ?p ?o .
-				}
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC ?chcId ;
+							ajan:agentId	?dAgentId.	
+							
+					?bnode	rdf:type	welcome:CHCUseCase;
+							welcome:hasId		?chcId;
+							welcome:hasNumberOfAgents	?numOfAgents;
+							welcome:hasParticipants		?pAgentId .	
+							
+					?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
+								ajan:hasSubject ?pAgentId ;
+								ajan:hasObject ?oAgentId ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasReciprocalScore	?bReciprocalScore .
+					}
 			WHERE { 
-				?s ?p ?o .
-			} """^^xsd:string ;
+			
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC ?chcId ;
+							ajan:agentId	?dAgentId.	
+
+					?bnode	rdf:type	welcome:CHCUseCase;
+							welcome:hasId		?chcId;
+							welcome:hasNumberOfAgents	?numOfAgents;
+							welcome:hasParticipants		?pAgentId .	
+			
+
+					OPTIONAL {
+						?agentUri welcome:hasCHCSimilarityValue	?smlBnode .
+						?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+									ajan:hasSubject ?pAgentId ;
+									ajan:hasObject ?oAgentId ;
+									welcome:isComputedForProblemId  ?chcId ;
+									ajan:hasSimilarityScore ?smlValue .
+					}
+					
+					OPTIONAL {
+						?agentUri2 welcome:hasCHCSimilarityValue	?smlBnode2 .
+						?smlBnode2	rdf:type	welcome:CHCSimilarityValue ;
+									ajan:hasSubject ?oAgentId ;
+									ajan:hasObject ?pAgentId ;
+									welcome:isComputedForProblemId  ?chcId ;
+									ajan:hasSimilarityScore ?smlValue2 .
+					}
+					
+					BIND(0 AS ?reciprocalScore) .
+					BIND(IF(!BOUND(?smlValue), 0, ?smlValue) AS ?bSmlValue) .
+					BIND(IF(!BOUND(?smlValue2), 0, ?smlValue2) AS ?bSmlValue2) .
+					
+					BIND(IF(?bSmlValue > 0 && ?bSmlValue2 > 0, 2/((1/?bSmlValue)+(1/?bSmlValue2)), ?reciprocalScore) AS ?bReciprocalScore) .
+					
+					#BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
+
+					BIND(BNODE() AS ?rrsBnode) .
+								} """^^xsd:string ;
 	] .		
 	
+
+
+:HdbscanAlgorithm
+	a bt:HDBSCAN ;
+	rdfs:label "Run HDBSCAN Algorithm to Solve CHC" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:AgentKnowledge ;
+				bt:targetBase ajan:AgentKnowledge ;
+				bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+						CONSTRUCT {
+								?bnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasNumberOfAgents	?numOfAgents;
+										welcome:hasParticipants		?pAgentId ;
+										welcome:hasPerfectMatchScore ?perfectMatchScore .
+					
+								?dsnBnode	rdf:type	welcome:CHCDistanceScore ;
+											ajan:hasSubject ?pAgentId ;
+											ajan:hasObject ?oAgentId ;
+											welcome:isComputedForProblemId  ?chcId ;
+											ajan:hasDistanceScore	?distanceScore .		
+						}
+						WHERE {
+			
+								?agent	rdf:type	ajan:Agent ;
+										welcome:isRunningCHC ?chcId ;
+										ajan:agentId	?dAgentId.	
+							
+								?bnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasNumberOfAgents	?numOfAgents;
+										welcome:hasParticipants		?pAgentId ;
+										welcome:hasAgeWeight ?ageWeight;
+										welcome:hasGenderWeight ?genWeight;
+										welcome:hasFamilyWeight	?famWeight;
+										welcome:hasNationalityWeight	?natWeight;
+										welcome:hasReligionWeight	?relWeight;
+										welcome:hasEthnicityWeight	?ethWeight;
+										welcome:hasLocationWeight	?locWeight;
+										welcome:hasAccessibilityWeight	?accWeight;
+										welcome:hasRentPeriodWeight	?rentWeight;
+										welcome:hasShareWithWeight	?shareWeight.
+							
+										BIND(1 AS ?matchScore)
+										BIND(0 AS ?unmatchScore)
+										BIND(10 AS ?numberOfPreferences)
+										BIND((?matchScore * (?ageWeight + ?genWeight + ?famWeight + ?natWeight + ?relWeight + ?ethWeight + ?locWeight + ?accWeight + ?rentWeight + ?shareWeight))/?numberOfPreferences AS ?perfectMatchScore)
+
+								?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
+											ajan:hasSubject ?pAgentId ;
+											ajan:hasObject ?oAgentId ;
+											welcome:isComputedForProblemId  ?chcId ;
+											ajan:hasReciprocalScore	?bReciprocalScore .
+								
+								BIND((?perfectMatchScore - ?bReciprocalScore) AS ?distanceScore)
+								BIND(BNODE() AS ?dsnBnode)
+				}
+					"""^^xsd:string ;
+			] .
+
 
 :BroadcastHDBSCANResult
 	a bt:Broadcast ;
