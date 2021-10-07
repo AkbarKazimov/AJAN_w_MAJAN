@@ -239,7 +239,7 @@
 	rdfs:label "Solve CHC Problem Event" .
 
 :FinalizeCHCProcessEvent
-	a ajan:ModelEvent ;
+	a ajan:ModelQueueEvent ;
 	rdfs:label "Finalize CHC Process Event" .
 	
 :CHCFailureEvent

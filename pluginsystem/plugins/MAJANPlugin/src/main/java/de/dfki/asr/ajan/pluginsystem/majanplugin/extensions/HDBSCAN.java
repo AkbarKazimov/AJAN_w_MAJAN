@@ -117,13 +117,13 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
 
         Repository repo = BTUtil.getInitializedRepository(getObject(), hdbscanInputQuery.getOriginBase());
         Model rdfInputModel = hdbscanInputQuery.getResult(repo);
-        System.out.println("---1--"+hdbscanInputQuery.getOriginBase());
-        System.out.println("---2--"+repo);
-        System.out.println("---3--"+repo.isInitialized());
+        //System.out.println("---1--"+hdbscanInputQuery.getOriginBase());
+       // System.out.println("---2--"+repo);
+       // System.out.println("---3--"+repo.isInitialized());
         
         
         
-        Utils.printRDF4JModel(rdfInputModel, LOG);
+       // Utils.printRDF4JModel(rdfInputModel, LOG);
 
         // Extract MacProblemId from model
         Set<Value> valueSet = rdfInputModel.filter(null, MAJANVocabulary.UseCaseIdPre, null).objects();
@@ -258,7 +258,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         
 
         Model responseModel = builder.build();
-        //Utils.printRDF4JModel(responseModel, LOG);
+        Utils.printRDF4JModel(responseModel, LOG);
 
         if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
