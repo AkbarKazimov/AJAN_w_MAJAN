@@ -129,8 +129,10 @@
 #																		)																														
 #													]
 # <end>
-													:WriteCHCProblemInstance
-													:UpdateAgentRunningCHC
+													:WriteChcProblemInstance2Execution
+													:WriteChcPiAndChcRunningFlag2Lakr
+													:UpdateExtractChcPersonalInfo
+													#:JustFail
 													:WritePersonalInfoRequestContent2Execution
 													:Broadcast4PersonalInfo
 													:InsertCHCWasBroadcasted2Execution
@@ -177,7 +179,7 @@
 								:WriteCHCPersonalInfo2Exec
 								:Message2DedicatedPersonalInfo
 								:Message2WPMUpdateStatus2InCoordination
-								:WriteAgentInvolvedInCHC
+								:AddAgentInvolvedInCHCFlag
 								# CHC Personal Info is written from A.K to E.K. Then I attach the Id of CHC Process to the CHC Personal Info and send this info to 
 								# Dedicated agent. Lastly, I write "?agent :isInvolvedInCHC ?chcId." to A.K.
 								# If it is necessary to write the CHC Personal Info for a particulat CHC Process (i.e. set of triples in which CHC Id is attached to Personal Info),
@@ -259,9 +261,7 @@
 								a bt:Sequence ;
 								bt:hasChildren (
 										:HandleSolveCHCEvent
-#										:UpdateRemoveDuplicateSimilarities
 										:WriteComputedReciprocalSimilarities
-#										:HDBSCAN
 										:HdbscanAlgorithm
 										:WriteCHCResultRequestContent2Execution
 										:BroadcastHDBSCANResult
@@ -281,16 +281,35 @@
 					bt:hasChildren (
 								:HandleFinalizeCHCProcessEvent
 								:WriteAgentId2Execution
-								:Message2AppResultOfCHC
-								:WriteCHCResult2Lakr
-#								:UpdateRemoveAgentInCHCFlag
-#								[
-#									a bt:Priority ;
-#									bt:hasChildren (
-#											:ConditionAgentInvolvedInAnyMAC
-#											:Message2WPMUpdateStatus2Active
-#													)
-#								]
+								[
+									a bt:Priority ;
+									bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:ConditionCHCSucceeded
+												:Message2AppResultOfCHC
+												:WriteCHCResult2Lakr
+											)
+										]
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:Message2AppChcFailure
+												:UpdateChcStatus2Failure
+												#:WriteChcFailed2Lakr
+											)
+										]
+									)
+								]
+								:RemoveAgentInCHCFlag
+								[
+									a bt:Priority ;
+									bt:hasChildren (
+											:ConditionAgentInAnyMAC
+											:Message2WPMUpdateStatus2Active
+													)
+								]
 									)
 				] .
 				
@@ -303,6 +322,7 @@
 					a bt:Sequence ;
 					bt:hasChildren (
 										:HandleCHCFailureEvent
+										:WriteAgentId2Execution
 										:EventProducerFinalizeCHCProcessEvent
 										[
 											a bt:Priority ;
@@ -816,7 +836,69 @@ CONSTRUCT {
 							ajan:agentId	?agentName .
 			} """^^xsd:string ;
 	] .
-		
+	
+:WriteCHCFlags2Execution
+	a bt:Write ;
+	rdfs:label "Write: ID of all CHC Flags to Execution" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 	
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			CONSTRUCT  {
+				?agentUri	rdf:type	ajan:Agent ;
+							ajan:agentId	?agentName ;
+							welcome:isInvolvedInCHC	?involvedChcId ;
+							welcome:isRunningCHC	?runningChcId .		
+				
+			}
+			WHERE { 
+				?agentUri	rdf:type	ajan:Agent ;
+							ajan:agentId	?agentName .
+							
+				OPTIONAL {
+					?agentUri	welcome:isInvolvedInCHC	?involvedChcId .	
+				}
+				OPTIONAL {
+					?agentUri	welcome:isRunningCHC	?runningChcId .		
+				}
+			} """^^xsd:string ;
+	] .
+	
+:WriteCHCFlags2Lakr
+	a bt:Write ;
+	rdfs:label "Write: ID of the existing CHC Flags to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 	
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			CONSTRUCT  {
+				?agentUri	rdf:type	ajan:Agent ;
+							ajan:agentId	?agentName ;
+							welcome:isInvolvedInCHC	?involvedChcId ;
+							welcome:isRunningCHC	?runningChcId .		
+				
+			}
+			WHERE { 
+				?agentUri	rdf:type	ajan:Agent ;
+							ajan:agentId	?agentName .
+							
+				OPTIONAL {
+					?agentUri	welcome:isInvolvedInCHC	?involvedChcId .	
+				}
+				OPTIONAL {
+					?agentUri	welcome:isRunningCHC	?runningChcId .		
+				}
+			} """^^xsd:string ;
+	] .		
+	
 :MessageAlreadyRunningCHCProcess
 	a bt:Message ;
 	rdfs:label "Message: Send Already running a CHC Process to TCN"^^xsd:string ;
@@ -1140,7 +1222,158 @@ CONSTRUCT {
 	rdfs:comment "" ;
 	bt:milliseconds "1000"^^xsd:int .
 
+:JustFail
+	a bt:Fail ;
+	rdfs:label "fail node"^^xsd:string .
+	
+	
+:WriteChcProblemInstance2Execution
+	a bt:Write ;
+	rdfs:label "Write: CHC Problem Instance to Execution Knowledge" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:LocalAgentsKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 	
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome-sw: <http://www.semanticweb.org/welcome#>
 
+				CONSTRUCT	{
+						#?agent	rdf:type	ajan:Agent .
+						
+						?bnode	rdf:type	welcome:MACUseCase, welcome:CHCUseCase;
+									welcome:hasStatus	"running"^^xsd:string;
+									welcome:hasId		?uniqueChcId;
+									welcome:hasSolver	"HDBSCAN"^^xsd:string;
+									welcome:hasNumberOfAgents	?numOfAgents;
+									welcome:hasParticipants		?name;
+									welcome:hasAgeWeight		"10"^^xsd:int;
+									welcome:hasGenderWeight		"9"^^xsd:int;
+									welcome:hasFamilyWeight		"5"^^xsd:int;
+									welcome:hasNationalityWeight	"8"^^xsd:int;
+									welcome:hasReligionWeight		"6"^^xsd:int;
+									welcome:hasEthnicityWeight		"7"^^xsd:int;
+									welcome:hasLocationWeight		"2"^^xsd:int;
+									welcome:hasAccessibilityWeight	"3"^^xsd:int;
+									welcome:hasRentPeriodWeight		"1"^^xsd:int;
+									welcome:hasShareWithWeight		"4"^^xsd:int.
+						#?agent ajan:agentId ?name.
+						
+							}
+				WHERE	{
+					BIND(SHA1(xsd:string(NOW())) AS ?uniqueChcId)
+
+					{
+						SELECT ?agent ?name
+						WHERE	{
+							?agent	rdf:type	ajan:Agent ;
+									welcome-sw:hasStatus	?status ;
+									ajan:agentId	?name.
+							FILTER(?status=welcome-sw:active || ?status=welcome-sw:in_coordination) 
+								}
+					}
+					{
+						SELECT (count(?agent) as ?numOfAgents)
+						WHERE	{
+							?agent rdf:type ajan:Agent .
+							?agent welcome-sw:hasStatus ?status.
+							FILTER(?status=welcome-sw:active || ?status=welcome-sw:in_coordination) 
+								}
+					}
+					{
+						BIND(BNODE() AS ?bnode)
+					}
+						}
+ """^^xsd:string ;
+	] .	
+
+
+:WriteChcPiAndChcRunningFlag2Lakr
+	a bt:Write ;
+	rdfs:label "Write: CHC Problem Instance and Running CHC Flag to Agent Knowledge" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 	
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome-sw: <http://www.semanticweb.org/welcome#>
+
+				CONSTRUCT	{
+						?agent	welcome:isRunningCHC ?chcId .
+						
+						?bnode	rdf:type	welcome:MACUseCase, welcome:CHCUseCase;
+									welcome:hasStatus	"running"^^xsd:string;
+									welcome:hasId		?chcId;
+									welcome:hasSolver	"HDBSCAN"^^xsd:string;
+									welcome:hasNumberOfAgents	?numOfAgents;
+									welcome:hasParticipants		?name;
+									welcome:hasAgeWeight		"10"^^xsd:int;
+									welcome:hasGenderWeight		"9"^^xsd:int;
+									welcome:hasFamilyWeight		"5"^^xsd:int;
+									welcome:hasNationalityWeight	"8"^^xsd:int;
+									welcome:hasReligionWeight		"6"^^xsd:int;
+									welcome:hasEthnicityWeight		"7"^^xsd:int;
+									welcome:hasLocationWeight		"2"^^xsd:int;
+									welcome:hasAccessibilityWeight	"3"^^xsd:int;
+									welcome:hasRentPeriodWeight		"1"^^xsd:int;
+									welcome:hasShareWithWeight		"4"^^xsd:int.
+				}
+				WHERE	{
+						?agent	rdf:type ajan:Agent .	
+								
+						?bnode	rdf:type	welcome:MACUseCase, welcome:CHCUseCase;
+									welcome:hasStatus	"running"^^xsd:string;
+									welcome:hasId		?chcId;
+									welcome:hasSolver	"HDBSCAN"^^xsd:string;
+									welcome:hasNumberOfAgents	?numOfAgents;
+									welcome:hasParticipants		?name;
+									welcome:hasAgeWeight		"10"^^xsd:int;
+									welcome:hasGenderWeight		"9"^^xsd:int;
+									welcome:hasFamilyWeight		"5"^^xsd:int;
+									welcome:hasNationalityWeight	"8"^^xsd:int;
+									welcome:hasReligionWeight		"6"^^xsd:int;
+									welcome:hasEthnicityWeight		"7"^^xsd:int;
+									welcome:hasLocationWeight		"2"^^xsd:int;
+									welcome:hasAccessibilityWeight	"3"^^xsd:int;
+									welcome:hasRentPeriodWeight		"1"^^xsd:int;
+									welcome:hasShareWithWeight		"4"^^xsd:int.
+						}
+ """^^xsd:string ;
+	] .
+	
+:WriteAgentRunningChcFlag2Lakr
+	a bt:Write ;
+	rdfs:label "Write: CHC Problem Instance to Agent Knowledge" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 	
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome-sw: <http://www.semanticweb.org/welcome#>
+
+				CONSTRUCT	{
+						?agent	welcome:isRunningCHC ?chcId .
+
+				}
+				WHERE	{
+						?agent	rdf:type ajan:Agent .
+						
+						?bnode	rdf:type welcome:CHCUseCase;
+								welcome:hasStatus	"running"^^xsd:string;
+								welcome:hasId		?chcId.
+						}
+ """^^xsd:string ;
+	] .	
+	
+	
 :WriteCHCProblemInstance
 	a bt:Write ;
 	rdfs:label "Write: CHC Problem Instance to Agent Knowledge" ;
@@ -1201,8 +1434,69 @@ CONSTRUCT {
  """^^xsd:string ;
 	] .
 
+:UpdateExtractChcPersonalInfo
+	a bt:Update ;
+	rdfs:label "Update: Create CHC Personal Info in LAKR" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 
-:UpdateAgentRunningCHC
+
+					INSERT {	
+						?agent welcome:hasCHCPersonalInfo ?bnode2 .
+						
+						?bnode2	rdf:type	welcome:CHCPersonalInfo;
+								welcome:hasCHCId	?chcId ;
+								welcome:hasAge	?age;
+								welcome:hasGender	?gender;
+								welcome:hasFamily	?family;
+								welcome:hasNationality	?nationality;
+								welcome:hasReligion		?religion;
+								welcome:hasEthnicity 	?ethnicity;
+								welcome:hasLocationPreference	?locPref;
+								welcome:hasAccessibilityPreference	?accessPref;
+								welcome:hasRentPeriodPreference		?rentPref;
+								welcome:hasShareWithPreference		?sharePref.
+						
+						?rentPref	?rentPred	?rentObj.
+						?share		?sharePred	?shareObj.
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent .
+						
+						?agent	welcome:isRunningCHC ?chcId .
+
+						welcome-git:DialogueUser 
+							welcome:hasAge	?age;
+							welcome:hasGender	?gender;
+							welcome:hasFamily	?family;
+							welcome:hasNationality	?nationality;
+							welcome:hasReligion		?religion;
+							welcome:hasEthnicity 	?ethnicity;
+							welcome:hasLocationPreference	?locPref;
+							welcome:hasAccessibilityPreference	?accessPref;
+							welcome:hasRentPeriodPreference		?rentPref;
+							welcome:hasShareWithPreference		?sharePref.
+				
+						OPTIONAL{ 
+							?rentPref	?rentPred	?rentObj.
+						}
+						OPTIONAL{
+							?sharePref	?sharePred		?shareObj.
+						}
+						{BIND(BNODE() AS ?bnode2)}
+					}
+					"""^^xsd:string ;
+		]) .
+
+
+:AddAgentRunningCHCFlag
 	a bt:Update ;
 	rdfs:label "Update: Insert the id of CHC problem instance to Agent Knowledge" ;
 	bt:query ([
@@ -2058,7 +2352,7 @@ CONSTRUCT {
 	] .		
 
 
-:WriteAgentInvolvedInCHC
+:AddAgentInvolvedInCHCFlag
 	a bt:Write ;
 	rdfs:label "Write: CHC Id in which the agent is participating to LAKR" ;
 	bt:query [
@@ -2192,7 +2486,7 @@ CONSTRUCT {
 #---------------SharingCHCSimilarities BT Nodes -----------------
 :HandleShareCHCSimilaritiesEvent
 	a bt:HandleQueueEvent ;
-	rdfs:label "HandleQueueEvent: Share CHC Similarities" ;
+	rdfs:label "HandleQueueEvent: Share CHC Similarities Event" ;
 	bt:event agents:ShareCHCSimilaritiesEvent ;
 	bt:validate [
 					a bt:ConstructQuery ;
@@ -2484,7 +2778,7 @@ CONSTRUCT {
 
 :MessageSimilarities2Dedicated
 	a bt:Message ;
-	rdfs:label "Message: Similarity values to Dedicated agent"^^xsd:string ;
+	rdfs:label "Message: Return Similarity values to Dedicated agent"^^xsd:string ;
 	rdfs:comment ""^^xsd:string ;
 	bt:targetBase ajan:ExecutionKnowledge ;  
 	bt:binding [
@@ -2967,7 +3261,7 @@ CONSTRUCT {
 						
 						CONSTRUCT {
 							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
-									welcome:isRunningCHC	?chcId ;
+									welcome:hasFinishedCHC	?chcId ;
 									welcome:hasAddress	?agentAddress .
 							
 							?chcBnode	rdf:type	welcome:CHCUseCase;
@@ -3000,6 +3294,9 @@ CONSTRUCT {
 							?chcBnode	rdf:type	welcome:CHCUseCase;
 									welcome:hasId		?chcId;
 									welcome:hasParticipants		?pAgentId .		
+
+
+
 
 									}"""^^xsd:string
 			]
@@ -3060,43 +3357,115 @@ CONSTRUCT {
 							?chcBnode	rdf:type	welcome:CHCUseCase;
 										welcome:hasId		?chcId;
 										welcome:hasParticipants		?pAgentId ;
-										welcome:hasCHCSolution	?clusteringBnode .																	
-										
-							
+										welcome:hasStatus	"succeeded" ;
+										welcome:hasCHCSolution	?clusteringBnode .
 							?clusteringBnode	rdf:type	clan:Clustering ;
-												mac:isSolutionOf	?chcId ;
-												mac:hasMembers		?clusterBnode .
+									mac:isSolutionOf	?chcId ;
+									mac:hasMembers		?clusterBnode .
 							
 							?clusterBnode	rdf:type	clan:Cluster ;
-											mac:hasMembers	?clusterMember ;
-											clan:isClusterOf	?clusteringBnode .
-										
+									mac:hasMembers	?clusterMember ;
+									clan:isClusterOf	?clusteringBnode .
 						}
 						WHERE {
 							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
-									welcome:isRunningCHC	?chcId .
-#									welcome:hasAddress	?agentAddress .
-									
+									welcome:hasFinishedCHC	?chcId ;
+									welcome:hasAddress	?agentAddress .
+							
 							?chcBnode	rdf:type	welcome:CHCUseCase;
 										welcome:hasId		?chcId;
 										welcome:hasParticipants		?pAgentId ;
 										welcome:hasCHCSolution	?clusteringBnode .
-										
-							#?thisAgent	rdf:type	ajan:Agent ;
-							#			ajan:agentId	?thisAgentId .
 							
 							?clusteringBnode	rdf:type	clan:Clustering ;
-												mac:isSolutionOf	?chcId ;
-												mac:hasMembers		?clusterBnode .
+									mac:isSolutionOf	?chcId ;
+									mac:hasMembers		?clusterBnode .
 							
 							?clusterBnode	rdf:type	clan:Cluster ;
-											mac:hasMembers	?clusterMember ;
-											clan:isClusterOf	?clusteringBnode .
+									mac:hasMembers	?clusterMember ;
+									clan:isClusterOf	?clusteringBnode .			
+							
 						}
  """^^xsd:string ;
 	] .
 
 
+:UpdateChcStatus2Failure
+	a bt:Update ;
+	rdfs:label "Update: CHC status to Failed in LAKR" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+
+					DELETE {
+						?chcBnode welcome:hasStatus ?chcStatus .
+					}
+					INSERT {	
+						?chcBnode welcome:hasStatus "Failed"^^xsd:string .
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent .
+						
+						
+						OPTIONAL {
+							?agent	welcome:isRunningCHC ?chcId .
+		
+							?chcBnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasStatus	?chcStatus ;
+										welcome:hasId		?chcId;
+										welcome:hasParticipants		?pAgentId .
+						}						
+					}
+					"""^^xsd:string ;
+		]) .
+
+:WriteChcFailed2Lakr
+	a bt:Write ;
+	rdfs:label "Write: CHC Failed to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+						PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+						PREFIX clan: <http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+
+						CONSTRUCT {		
+							?dAgent	ajan:agentId ?dAgentId .
+						
+							?chcBnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasParticipants		?pAgentId ;
+										welcome:hasStatus	"failed" .																	
+										
+						}
+						WHERE {
+							?dAgent	ajan:agentId ?dAgentId .
+							
+							OPTIONAL {
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:hasFinishedCHC	?chcId .
+									
+							?chcBnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasParticipants		?pAgentId .
+							}
+							
+						}
+ """^^xsd:string ;
+	] .
+	
 :EventProducerFinalizeCHCProcessEvent
 	a bt:EventProducer ;
 	rdfs:label "EventProducer: Finalize CHC Process Event" ;
@@ -3113,13 +3482,16 @@ CONSTRUCT {
 						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
 						
 						CONSTRUCT {
+							?dAgent	ajan:agentId ?dAgentId .
+							
 							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
-									welcome:isRunningCHC	?chcId ;
+									welcome:hasFinishedCHC	?chcId ;
 									welcome:hasAddress	?agentAddress .
 							
 							?chcBnode	rdf:type	welcome:CHCUseCase;
 										welcome:hasId		?chcId;
 										welcome:hasParticipants		?pAgentId ;
+										#welcome:hasStatus	?defaultChcStatus ;
 										welcome:hasCHCSolution	?clusteringBnode .
 							
 							?clusteringBnode	rdf:type	clan:Clustering ;
@@ -3132,21 +3504,35 @@ CONSTRUCT {
 						}
 						WHERE {
 							?dAgent	rdf:type	ajan:Agent ;
-									welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									ajan:agentId ?dAgentId .
+									
+							OPTIONAL {
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
 									welcome:isRunningCHC	?chcId ;
 									welcome:hasAddress	?agentAddress .
+							}
+							#BIND("failed"^^xsd:string AS ?defaultChcStatus)
 							
-							?clusteringBnode	rdf:type	clan:Clustering ;
-									mac:isSolutionOf	?chcId ;
-									mac:hasMembers		?clusterBnode .
+							OPTIONAL {
+								?chcBnode	rdf:type	welcome:CHCUseCase;
+											#welcome:hasStatus	?chcStatus ;
+											welcome:hasId		?chcId ;
+											welcome:hasParticipants		?pAgentId .		
+							}
 							
-							?clusterBnode	rdf:type	clan:Cluster ;
-									mac:hasMembers	?clusterMember ;
-									clan:isClusterOf	?clusteringBnode .
+							OPTIONAL {
+								?clusteringBnode	rdf:type	clan:Clustering ;
+										mac:isSolutionOf	?chcId ;
+										mac:hasMembers		?clusterBnode .
+								?clusterBnode	rdf:type	clan:Cluster ;	
+										mac:hasMembers	?clusterMember ;
+										clan:isClusterOf	?clusteringBnode .
+								#BIND("succeeded"^^xsd:string AS ?defaultChcStatus)
+							}
+							
+
 									
-							?chcBnode	rdf:type	welcome:CHCUseCase;
-									welcome:hasId		?chcId;
-									welcome:hasParticipants		?pAgentId .		
+							
 
 							}
 """^^xsd:string ;
@@ -3237,10 +3623,11 @@ CONSTRUCT {
 							?clusterBnode	mac:hasMembers	?otherAgentId .
 						}
 						WHERE {
+						
 							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
-									welcome:isRunningCHC	?chcId ;
+									welcome:hasFinishedCHC	?chcId ;
 									welcome:hasAddress	?agentAddress .
-									
+							
 							?thisAgent	rdf:type	ajan:Agent ;
 										ajan:agentId	?thisAgentId .
 							
@@ -3273,8 +3660,80 @@ CONSTRUCT {
 	] .
 
 
+												
+:Message2AppChcFailure
+	a bt:Message ;
+	rdfs:label "Message: Inform TCN that CHC failed"^^xsd:string ;
+	rdfs:comment ""^^xsd:string ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "application/ld+json"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "application/ld+json"
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:to ;
+					http-core:fieldValue "APP"
+			]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:ExecutionKnowledge ;
+				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+						PREFIX clan: <http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
 
-:UpdateRemoveAgentInCHCFlag
+						CONSTRUCT {
+							welcome:TcnChcRequest	welcome:hasResult	"Failed" .
+						}
+						WHERE {
+						
+							?s ?p ?o .
+						}
+						"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					SELECT ?requestURI
+					WHERE {
+					  VALUES ?requestURI { "http://localhost:8092/app/inform" }
+					}"""^^xsd:string
+	] .
+
+
+:RemoveAgentInCHCFlag
 	a bt:Update ;
 	rdfs:label "Update: remove chc id if agent either running or involved in it" ;
 	bt:query ([
@@ -3285,19 +3744,48 @@ CONSTRUCT {
 					PREFIX ajan: <http://www.ajan.de/ajan-ns#> 
 					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
 					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-					INSERT {
-						?agent welcome:hasCHCInvolvedIn "chc1" .
+					DELETE {
+							?agentUri	welcome:isInvolvedInCHC	?chcId ;
+										welcome:isRunningCHC	?chcId .	
 					}
 					WHERE {
-						?agent rdf:type ajan:Agent .
-					}
+					
+						
+						?chcBnode	rdf:type	welcome:CHCUseCase .
+						
+						OPTIONAL {
+							?chcBnode	welcome:hasCHCSolution	?clusteringBnode .	
+						}
+						
+						OPTIONAL {
+							?chcBnode	welcome:hasStatus	?chcStatus .
+						}
+									
+						FILTER(BOUND(?clusteringBnode) || (LCASE(STR(?chcStatus)) = "failed"))
+						
+						?chcBnode	welcome:hasId		?chcId .
+						
+						?agentUri	rdf:type	ajan:Agent ;
+									ajan:agentId	?agentName .	
+									
+						OPTIONAL {
+							?agentUri	welcome:isRunningCHC	?chcId .		
+							#FILTER(?runningChcId = ?chcId)
+						}
+						
+						OPTIONAL {
+							?agentUri	welcome:isInvolvedInCHC	?chcId .	
+							#FILTER(?involvedChcId = ?chcId)
+						}
+						
+
+						}
 					"""^^xsd:string ;
 		]) .	
-
-
-:ConditionAgentInvolvedInAnyMAC
+		
+:ConditionCHCSucceeded
 	a bt:Condition ;
-	rdfs:label "Condition: is agent involved in any coordination use case?" ;
+	rdfs:label "Condition: has CHC process finished with success?" ;
 	bt:query ( [
 		a bt:AskQuery ;
 		bt:originBase ajan:ExecutionKnowledge ;
@@ -3307,8 +3795,49 @@ CONSTRUCT {
 					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
 					ASK
 					WHERE {
-							?s ?p ?o .
-					}"""^^xsd:string ;
+						?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string .
+						
+						OPTIONAL {
+							?dAgent	welcome:hasFinishedCHC	?chcId .
+							
+							?chcBnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasCHCSolution	?clusteringBnode .
+						}
+
+						FILTER(BOUND(?chcId) && BOUND(?clusteringBnode))
+
+						}"""^^xsd:string ;
+		]) .
+
+:ConditionAgentInAnyMAC
+	a bt:Condition ;
+	rdfs:label "Condition: is agent involved in or running any coordination use case?" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+					ASK
+					WHERE {
+						?agentUri	rdf:type	ajan:Agent ;
+									ajan:agentId	?agentName .	
+							
+						OPTIONAL {
+							?agentUri	welcome:isRunningCHC	?involvedInChcId .		
+							#FILTER(?runningChcId = ?chcId)
+						}
+						
+						OPTIONAL {
+							?agentUri	welcome:isInvolvedInCHC	?runningChcId .	
+							#FILTER(?involvedChcId = ?chcId)
+						}		
+						
+						FILTER(BOUND(?involvedInChcId) || BOUND(?runningChcId))
+
+						}"""^^xsd:string ;
 		]) .
 		
 		
@@ -3354,17 +3883,20 @@ CONSTRUCT {
 			a actn:Payload ;
 			bt:query [
 				rdf:type bt:ConstructQuery ;
-				bt:originBase ajan:AgentKnowledge ;
+				bt:originBase ajan:ExecutionKnowledge ;
 				bt:sparql """
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
 						CONSTRUCT {
-							?agent welcome:hasStatus "Active"^^xsd:string .
+							?agent	welcome:hasStatus	"Active"^^xsd:string ;
+									ajan:agentId	?agentName .
 						}
 						WHERE {
-							?agent rdf:type ajan:Agent .
-						}"""^^xsd:string
+							?agent	rdf:type	ajan:Agent ;
+									ajan:agentId	?agentName .
+						}
+						"""^^xsd:string
 			]
 		] ;    
 	] ;
@@ -3384,7 +3916,7 @@ CONSTRUCT {
 
 :HandleCHCFailureEvent
 	a bt:HandleEvent ;
-	rdfs:label "EventHandler: CHC Failed" ;
+	rdfs:label "EventHandler: CHC Failed Event" ;
 	bt:event agents:CHCFailureEvent;
 	bt:validate [
 					a bt:ConstructQuery ;
@@ -3407,7 +3939,7 @@ CONSTRUCT {
 
 :ConditionWasCHCBuiltAndBroadcasted
 	a bt:Condition ;
-	rdfs:label "Condition: is agent involved in any coordination use case?" ;
+	rdfs:label "Condition: was CHC Use case Broadcasted?" ;
 	bt:query ( [
 		a bt:AskQuery ;
 		bt:originBase ajan:ExecutionKnowledge ;
@@ -3461,17 +3993,59 @@ CONSTRUCT {
 			a actn:Payload ;
 			bt:query [
 				rdf:type bt:ConstructQuery ;
-				bt:originBase ajan:AgentKnowledge ;
+				bt:originBase ajan:ExecutionKnowledge ;
 				bt:sparql """
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+						PREFIX clan: <http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+						
 						CONSTRUCT {
-							?agent welcome:hasCHCProcessResult "CHC Failed" .
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:hasFinishedCHC	?chcId ;
+									welcome:hasAddress	?agentAddress .
+							
+							?chcBnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasParticipants		?pAgentId ;
+										#welcome:hasStatus	?defaultChcStatus ;
+										welcome:hasCHCSolution	?clusteringBnode .
+							
+							?clusteringBnode	rdf:type	clan:Clustering ;
+									mac:isSolutionOf	?chcId ;
+									mac:hasMembers		?clusterBnode .
+							
+							?clusterBnode	rdf:type	clan:Cluster ;
+									mac:hasMembers	?clusterMember ;
+									clan:isClusterOf	?clusteringBnode .				
 						}
 						WHERE {
-							?agent rdf:type ajan:Agent .
-						}"""^^xsd:string
+							?dAgent	rdf:type	ajan:Agent ;
+									welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:isRunningCHC	?chcId ;
+									welcome:hasAddress	?agentAddress .
+
+							#BIND("failed"^^xsd:string AS ?defaultChcStatus)
+							
+							OPTIONAL {
+								?chcBnode	rdf:type	welcome:CHCUseCase;
+											#welcome:hasStatus	?chcStatus ;
+											welcome:hasId		?chcId ;
+											welcome:hasParticipants		?pAgentId .		
+							}
+							
+							OPTIONAL {
+								?clusteringBnode	rdf:type	clan:Clustering ;
+										mac:isSolutionOf	?chcId ;
+										mac:hasMembers		?clusterBnode .
+								?clusterBnode	rdf:type	clan:Cluster ;	
+										mac:hasMembers	?clusterMember ;
+										clan:isClusterOf	?clusteringBnode .
+								#BIND("succeeded"^^xsd:string AS ?defaultChcStatus)
+							}
+							"""^^xsd:string
 			]
 		] ;    
 	] ;
@@ -3480,12 +4054,31 @@ CONSTRUCT {
 		a bt:QueryUri ;
 		bt:originBase ajan:AgentKnowledge ;
 		bt:sparql """
-					SELECT ?requestURI
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+
+					SELECT DISTINCT ?requestURI
 					WHERE {
-					  VALUES ?requestURI { 
-					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent2?capability=finalizeCHCProcess" 
-					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent3?capability=finalizeCHCProcess" 
-					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent4?capability=finalizeCHCProcess"}
+
+#					  VALUES ?requestURI { 
+#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent2?capability=finalizeCHCProcess" 
+#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent3?capability=finalizeCHCProcess" 
+#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent4?capability=finalizeCHCProcess"}
+
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC	?chcId ;
+							ajan:agentId	?agentId .
+							
+					#?bnode	welcome:hasId	?chcId ;
+					#		welcome:hasParticipants	?participant .
+					#?participant 	ajan:agentId ?name.
+					
+					?bnode	welcome:hasId	?chcId ;
+							welcome:hasParticipants	?pAgentName .
+					
+					FILTER(?pAgentName != ?agentId)
+					BIND(CONCAT("http://localhost:8060/welcome/integration/coordination/ajan/agents/", ?pAgentName, "?capability=finalizeCHCProcess") AS ?requestURI )
 					}"""^^xsd:string
 	] .
 	

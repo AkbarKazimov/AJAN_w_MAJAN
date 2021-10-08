@@ -73,7 +73,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
            
     @Override
     public String toString() {
-        return "HDBSCAN (" + this.getUrl() + ")";
+        return "HDBSCAN (" + label + ")";
     }
     
     @Override
