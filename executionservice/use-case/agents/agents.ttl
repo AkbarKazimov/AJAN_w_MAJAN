@@ -44,9 +44,33 @@
 :MAJANAgent
 	a ajan:AgentTemplate ;
 	rdfs:label "MAJAN Agent to Test MAJAN Features" ;
-	ajan:event :PopulateLAREvent ;	
-	ajan:event :ReceiveLocalAgentsEvent;
-	ajan:event :StartLCCEvent ;
+#---------LCC Related----------------------
+	ajan:event	:StartLccProcessEvent ;
+	ajan:event	:LccDedicatedAgentBehaviorEvent ;
+	ajan:event	:ReceiveLccPersonalInfoEvent ;
+	ajan:event	:ComputeLccCoalitionStructuresEvent ;
+	ajan:event	:ComputeLccUtilityValuesEvent ;
+	ajan:event	:ReceiveLccUtilityValuesEvent ;
+	ajan:event	:SolveLccEvent ;
+	ajan:event	:FinalizeLccProcessEvent ;
+	ajan:event	:LccFailureEvent ;
+	ajan:endpoint	:StartLccProcessEndpoint ;
+	ajan:endpoint	:ReceiveLccPersonalInfoEndpoint ;
+	ajan:endpoint	:ComputeLccUtilityValuesEndpoint ;
+	ajan:endpoint	:ReceiveLccUtilityValuesEndpoint ;
+	ajan:endpoint	:FinalizeLccProcessEndpoint ;
+	ajan:behavior	:StartLccProcessBehavior ;
+	ajan:behavior	:LccDedicatedAgentBehavior ;
+	ajan:behavior	:ReceiveLccPersonalInfoBehavior ;
+	ajan:behavior	:ComputeLccCoalitionStructuresBehavior ;
+	ajan:behavior	:ComputeLccUtilityValuesBehavior ;
+	ajan:behavior	:ReceiveLccUtilityValuesBehavior ;
+	ajan:behavior	:SolveLccBehavior ;
+	ajan:behavior	:FinalizeLccProcessBehavior ;
+	ajan:behavior	:LccFailureBehavior ;
+
+#---------LCC Related----------------------
+#---------CHC Related----------------------
 	ajan:event :CHCProtocolEvent ;
 	ajan:event :ExecuteCHCProcessEvent;
 	ajan:event :ShareCHCPersonalInfoEvent ;
@@ -56,17 +80,12 @@
 	ajan:event :SolveCHCEvent;
 	ajan:event :FinalizeCHCProcessEvent;
 	ajan:event :CHCFailureEvent;
-	ajan:event :TestQueueEvent ;
 	ajan:endpoint :CHCProtocolEndpoint ;
-	ajan:endpoint :startLCC ;
 	ajan:endpoint :ShareCHCPersonalInfoEndpoint ;
 	ajan:endpoint :ReceiveCHCPersonalInfoEndpoint;
 	ajan:endpoint :ShareCHCSimilaritiesEndpoint ;
 	ajan:endpoint :ReceiveCHCSimilaritiesEndpoint ;
 	ajan:endpoint :FinalizeCHCProcessEndpoint;
-	ajan:endpoint :TestQueueEventEndpoint ;
-	ajan:behavior :PopulateLARRepos;
-	ajan:behavior :LCCProtocolBehavior ;
 	ajan:behavior :CHCProtocolBehavior ;
 	ajan:behavior :ExecutingCHCProcessBehavior ;
 	ajan:behavior :SharingCHCPersonaInfoBehavior ;	 
@@ -76,19 +95,75 @@
 	ajan:behavior :SolvingCHCBehavior;
 	ajan:behavior :FinalizingCHCProcessBehavior;
 	ajan:behavior :CHCFailureBehavior ;
-	ajan:behavior :TestQueueEventBehavior.
+
+#---------CHC Related----------------------
+#---------Other----------------------
+	ajan:event :TestQueueEvent ;
+	ajan:event :PopulateLAREvent ;	
+	ajan:event :ReceiveLocalAgentsEvent;
+	ajan:endpoint :TestQueueEventEndpoint ;
+	ajan:behavior :PopulateLARRepos;
+	ajan:behavior :TestQueueEventBehavior .
+#---------Other----------------------
 
 
 #------------MAJAN Stuff-------------------
 
 #----Behaviors-------
 
-:LCCProtocolBehavior
+:StartLccProcessBehavior
 	a ajan:Behavior ;
-	rdfs:label "LCC Protocol BT" ;
-	ajan:trigger :StartLCCEvent ;
-	ajan:bt behaviors:LCCProtocolBT.
+	rdfs:label "Start LCC Process Behavior" ;
+	ajan:trigger :StartLccProcessEvent ;
+	ajan:bt behaviors:StartLccProcessBt .
 
+:LccDedicatedAgentBehavior
+	a ajan:Behavior ;
+	rdfs:label "Behavior of Dedicated Agent for LCC" ;
+	ajan:trigger :LccDedicatedAgentBehaviorEvent ;
+	ajan:bt behaviors:LccDedicatedAgentBt .
+
+:ReceiveLccPersonalInfoBehavior
+	a ajan:Behavior ;
+	rdfs:label "Receive LCC Personal Info Behavior" ;
+	ajan:trigger :ReceiveLccPersonalInfoEvent ;
+	ajan:bt behaviors:ReceiveLccPersonalInfoBt .
+
+:ComputeLccCoalitionStructuresBehavior
+	a ajan:Behavior ;
+	rdfs:label "Compute LCC Coalition Structures Behavior" ;
+	ajan:trigger :ComputeLccCoalitionStructuresEvent ;
+	ajan:bt behaviors:ComputeLccCoalitionStructuresBt .
+
+:ComputeLccUtilityValuesBehavior
+	a ajan:Behavior ;
+	rdfs:label "Compute LCC Utility Values Behavior" ;
+	ajan:trigger :ComputeLccUtilityValuesEvent ;
+	ajan:bt behaviors:ComputeLccUtilityValuesBt .
+
+:ReceiveLccUtilityValuesBehavior
+	a ajan:Behavior ;
+	rdfs:label "Receive LCC Utility Values Behavior" ;
+	ajan:trigger :ReceiveLccUtilityValuesEvent ;
+	ajan:bt behaviors:ReceiveLccUtilityValuesBt .
+
+:SolveLccBehavior
+	a ajan:Behavior ;
+	rdfs:label "Solve LCC Behavior" ;
+	ajan:trigger :SolveLccEvent ;
+	ajan:bt behaviors:SolveLccBt .
+
+:FinalizeLccProcessBehavior
+	a ajan:Behavior ;
+	rdfs:label "Finalize LCC Process Behavior" ;
+	ajan:trigger :FinalizeLccProcessEvent ;
+	ajan:bt behaviors:FinalizeLccProcessBt .
+
+:LccFailureBehavior
+	a ajan:Behavior ;
+	rdfs:label "LCC Failed Behavior" ;
+	ajan:trigger :LccFailureEvent ;
+	ajan:bt behaviors:LccFailureBt .
 
 :CHCProtocolBehavior
 	a ajan:Behavior ;
@@ -154,11 +229,35 @@
 
 #----Endpoints-------
 
-:startLCC
+:StartLccProcessEndpoint
 	a ajan:Endpoint ;
-	rdfs:label "start LCC endpoint" ;
+	rdfs:label "Start LCC Process Endpoint" ;
 	ajan:capability "startLCC" ;
-	ajan:event :StartLCCEvent .
+	ajan:event :StartLccProcessEvent .
+
+:ReceiveLccPersonalInfoEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Receive LCC Personal Info Endpoint" ;
+	ajan:capability "receiveLccPersonalInfo" ;
+	ajan:event :ReceiveLccPersonalInfoEvent .
+
+:ComputeLccUtilityValuesEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Compute LCC Utility Values Endpoint" ;
+	ajan:capability "computeLccUtilityValues" ;
+	ajan:event :ComputeLccUtilityValuesEvent .
+
+:ReceiveLccUtilityValuesEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Receive LCC Utility Values Endpoint" ;
+	ajan:capability "receiveLccUtilityValues" ;
+	ajan:event :ReceiveLccUtilityValuesEvent .
+
+:FinalizeLccProcessEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Finalize LCC Process Endpoint" ;
+	ajan:capability "finalizeLccProcess" ;
+	ajan:event :FinalizeLccProcessEvent .
 
 :CHCProtocolEndpoint
 	a ajan:Endpoint ;
@@ -206,9 +305,41 @@
 
 #----Events-------
 
-:StartLCCEvent
-	a ajan:ModelEvent ;
-	rdfs:label "Receive Start LCC Event" .
+:StartLccProcessEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Start LCC Process Event" .
+
+:LccDedicatedAgentBehaviorEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "LCC Dedicated Agent Behavior Event" .
+
+:ReceiveLccPersonalInfoEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Receive LCC Personal Info Event" .
+
+:ComputeLccCoalitionStructuresEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Compute LCC Coalition Structures Event" .
+
+:ComputeLccUtilityValuesEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Compute LCC Utility Values Event" .
+
+:ReceiveLccUtilityValuesEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Receive LCC Utility Values Event" .
+
+:SolveLccEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Solve LCC Event" .
+
+:FinalizeLccProcessEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Finalize LCC Process Event" .
+
+:LccFailureEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "LCC Process Failed Event" .
 
 :CHCProtocolEvent
 	a ajan:ModelEvent ;

@@ -35,7 +35,8 @@
 
 #------------MAJAN Stuff----------------------
 
-:LCCProtocolBT
+#-------------LCC Protocol BTs --------------------------
+:StartLccProcessBt
 	a bt:BehaviorTree ;
 	a bt:Root ;
 	rdfs:label "LCC Protocol Behavior Tree" ;
@@ -48,8 +49,98 @@
 										:TestBigQuery
 									)
 				] .
+				
+:LccDedicatedAgentBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "LCC Dedicated Agent Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
+				
+:ReceiveLccPersonalInfoBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Receive LCC Personal Info Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
+
+:ComputeLccCoalitionStructuresBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Compute LCC Coalition Structures Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
+
+:ComputeLccUtilityValuesBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Compute LCC Utility Values Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
+
+:ReceiveLccUtilityValuesBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Receive LCC Utility Values Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
+
+:SolveLccBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Solve LCC Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
+
+:FinalizeLccProcessBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Finalize LCC Process Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
+
+:LccFailureBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "LCC Failure Behavior Tree" ;
+	bt:hasChild [
+			a bt:Sequence ;
+			bt:hasChildren (
+						:ConditionAgentInAnyMAC
+							)
+				] .
 
 
+
+#-------------LCC Protocol BTs --------------------------
 :CHCProtocolBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
@@ -203,17 +294,6 @@
 										:WritePersonalInfo2LAKR							
 											)
 							]
-				] .
-
-:ReceivingCHCPersonalInfoSBT
-	a bt:UntilFail ;
-	rdfs:label "UntilFail: Sub-BT for Receiving CHC Personal Info BT"^^xsd:string ;
-	bt:hasChild [
-					a bt:Sequence ;
-					bt:hasChildren (
-								:HandleReceiveCHCPersonalInfoEvent
-								:WritePersonalInfo2LAKR
-									)
 				] .
 
 :SharingCHCSimilaritiesBT
