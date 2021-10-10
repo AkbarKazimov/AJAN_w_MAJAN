@@ -68,7 +68,6 @@
 	ajan:behavior	:SolveLccBehavior ;
 	ajan:behavior	:FinalizeLccProcessBehavior ;
 	ajan:behavior	:LccFailureBehavior ;
-
 #---------LCC Related----------------------
 #---------CHC Related----------------------
 	ajan:event :CHCProtocolEvent ;
@@ -95,7 +94,6 @@
 	ajan:behavior :SolvingCHCBehavior;
 	ajan:behavior :FinalizingCHCProcessBehavior;
 	ajan:behavior :CHCFailureBehavior ;
-
 #---------CHC Related----------------------
 #---------Other----------------------
 	ajan:event :TestQueueEvent ;

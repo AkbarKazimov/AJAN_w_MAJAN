@@ -21,10 +21,10 @@ public class MAJANVocabulary {
         public final static IRI MacProblemInstanceObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#MACProblemInstance");
         public final static IRI MacProblemInstanceIdPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMacProblemId");
         public final static IRI NumberOfAgentsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasNumberOfAgents");
-        public final static IRI MustLinkConnectionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#mustLinkConnections");
-        public final static IRI MustConnectPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#mustConnect");        
-        public final static IRI CannotLinkConnectionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#cannotLinkConnections");
-        public final static IRI CannotConnectPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#cannotConnect");        
+        public final static IRI MustLinkConnectionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMustLinkConnections");
+        public final static IRI MustConnectPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMustConnect");        
+        public final static IRI CannotLinkConnectionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasCannotLinkConnections");
+        public final static IRI CannotConnectPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasCannotConnect");        
         public final static IRI ParticipantsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasParticipants");        
         public final static IRI WelcomeNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#");
         public final static IRI CsgpNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#");
@@ -39,10 +39,10 @@ public class MAJANVocabulary {
         // CSGP Vocabulary
         public final static IRI CsgpSolverType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#CSGPSolver");
         public final static IRI CoalitionGeneratorType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#CoalitionGenerator");
-        public final static IRI MinCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#minCoalitionSize");
-        public final static IRI MaxCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#maxCoalitionSize");        
-        public final static IRI FeasibleCoalitionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#feasibleCoalitions");        
-        public final static IRI CsgpCoalitionObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#CsgpCoalition");        
+        public final static IRI MinCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMinCoalitionSize");
+        public final static IRI MaxCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMaxCoalitionSize");        
+        public final static IRI FeasibleCoalitionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasFeasibleCoalitions");        
+        public final static IRI CsgpCoalitionObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CSGPCoalition");        
         public final static IRI CsgpSolverPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#solver");        
         public final static IRI CsgpSolutionPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#csgpSolution");        
         public final static IRI CsgpCoalitionStructureObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#CsgpCoalitionStructure");        
@@ -70,5 +70,7 @@ public class MAJANVocabulary {
         public final static IRI ComputedForPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#isComputedForProblemId");
         public final static IRI ChcDistanceScoreObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CHCDistanceScore");
         public final static IRI DistanceScorePre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasDistanceScore");
+        public final static IRI LccUseCaseObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#LCCUseCase");
 
+        
 }

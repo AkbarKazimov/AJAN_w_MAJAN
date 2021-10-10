@@ -17,6 +17,7 @@ import de.dfki.asr.ajan.pluginsystem.extensionpoints.NodeExtension;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.CoalitionGenerationInputException;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.ConstraintsException;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.utils.CoalitionGeneratorUtils;
+import de.dfki.asr.ajan.pluginsystem.majanplugin.utils.Utils;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.vocabularies.MAJANVocabulary;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ import lombok.Setter;
 import org.cyberborean.rdfbeans.annotations.RDF;
 import org.cyberborean.rdfbeans.annotations.RDFBean;
 import org.cyberborean.rdfbeans.annotations.RDFSubject;
+import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
@@ -77,7 +79,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
            
     @Override
     public String toString() {
-        return "CoalitionGenerator (" + this.getUrl() + ")";
+        return "CoalitionGenerator (" + label + ")";
     }
     
     @Override
@@ -111,7 +113,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
     
     private boolean areCoalitionsGenerated() throws URISyntaxException, ConstraintsException, CoalitionGenerationInputException {
         boolean responseFlag = false;
-        int numOfAgents=0, minCoalitionSize=2, maxCoalitionSize=5;
+        int numOfAgents=0, minCoalitionSize=0, maxCoalitionSize=0;
         List<int[]> mlList=new ArrayList<>(), clList=new ArrayList<>();
         List<String> agentNames=new ArrayList<>();
         
@@ -119,27 +121,27 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         Repository repo = BTUtil.getInitializedRepository(this.getObject(), coalitionGeneratorInputQuery.getOriginBase());
         Model modelResult = coalitionGeneratorInputQuery.getResult(repo);
         
-        
+        Utils.printRDF4JModel(modelResult, LOG);
       /*  Iterator<Statement> itmodelResult = modelResult.iterator();
         while(itmodelResult.hasNext()){
             LOG.info("Statement: " + itmodelResult.next().toString());
         }*/
 
-        // Extract the Problem Instance name (subject). There should be only 1 problem instance because 
+        // Extract the LCC Problem Instance subject bnode. There should be only 1 problem instance because 
         // the algorithm cannot run multiple configurations at the same time. 
         Set<Resource> subjects = modelResult.filter(null, org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, 
-                MAJANVocabulary.MacProblemInstanceObj).subjects();
-        Resource problemInstanceID_subject=null;
+                MAJANVocabulary.LccUseCaseObj).subjects();
+        Resource lccUseCaseSubject=null;
         if(!subjects.isEmpty()){
-            problemInstanceID_subject=subjects.iterator().next();
+            lccUseCaseSubject=subjects.iterator().next();
         }else{
             throw new CoalitionGenerationInputException("No problem instance is specified (i.e. no subject exists for type "+
-                    MAJANVocabulary.MacProblemInstanceObj+")");
+                    MAJANVocabulary.LccUseCaseObj+")");
         } // end
 
 
         // Extract id of Mac Problem Instance from Model
-        Set<Value> valueSet = modelResult.filter(problemInstanceID_subject, MAJANVocabulary.MacProblemInstanceIdPre, null).objects();
+      /*  Set<Value> valueSet = modelResult.filter(problemInstanceID_subject, MAJANVocabulary.MacProblemInstanceIdPre, null).objects();
         String macProblemId=null;
         if(!valueSet.isEmpty()){
             macProblemId=valueSet.iterator().next().stringValue();
@@ -147,10 +149,12 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
             throw new CoalitionGenerationInputException("Mac Problem Id is not given (i.e. no value exists for predicate "+
                     MAJANVocabulary.MacProblemInstanceIdPre+")");
         } // end
+        */
         
-        
+      
+
         // Extract NumOfAgents from Model
-        valueSet = modelResult.filter(problemInstanceID_subject, MAJANVocabulary.NumberOfAgentsPre, null).objects();
+        Set<Value> valueSet = modelResult.filter(null, MAJANVocabulary.NumberOfAgentsPre, null).objects();
         if(!valueSet.isEmpty()){
             numOfAgents=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
@@ -159,10 +163,10 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         } // end
 
         // Extract Agent Names from Model
-        valueSet=modelResult.filter(problemInstanceID_subject, MAJANVocabulary.ParticipantsPre, null).objects();
+        valueSet=modelResult.filter(null, MAJANVocabulary.ParticipantsPre, null).objects();
         if(valueSet.size()!=numOfAgents){
             throw new CoalitionGenerationInputException("Amount of participating agents is different "
-                    + "from the given \"numberOfAgents\" information.");
+                    + "than the given \"numberOfAgents\" value.");
         }
         Iterator<Value> valueIterator = valueSet.iterator();
         while(valueIterator.hasNext()){
@@ -170,19 +174,24 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         } // end
         
         // Extract Minimum and Maximum Coalition Size from Model
-        valueSet = modelResult.filter(problemInstanceID_subject, MAJANVocabulary.MinCoalitionSizePre, null).objects();
+        valueSet = modelResult.filter(null, MAJANVocabulary.MinCoalitionSizePre, null).objects();
         if(!valueSet.isEmpty()){
             minCoalitionSize=Integer.valueOf(valueSet.iterator().next().stringValue());
+        }else{
+            throw new CoalitionGenerationInputException("Minimum Coalition Size is not given (i.e. no value exists for predicate "+
+                    MAJANVocabulary.MinCoalitionSizePre+")");
         }
-        valueSet = modelResult.filter(problemInstanceID_subject, MAJANVocabulary.MaxCoalitionSizePre, null).objects();
+        valueSet = modelResult.filter(null, MAJANVocabulary.MaxCoalitionSizePre, null).objects();
         if(!valueSet.isEmpty()){
             maxCoalitionSize=Integer.valueOf(valueSet.iterator().next().stringValue());
+        }else{
+            throw new CoalitionGenerationInputException("Maximum Coalition Size is not given (i.e. no value exists for predicate "+
+                    MAJANVocabulary.MaxCoalitionSizePre+")");
         } // end
 
         
         // Extract Must Link Connections from Model
-        Set<Resource> bNodesAsSubject = Models.objectResources(modelResult.filter(problemInstanceID_subject,
-                MAJANVocabulary.MustLinkConnectionsPre, null));
+        Set<Resource> bNodesAsSubject = Models.objectResources(modelResult.filter(null, MAJANVocabulary.MustLinkConnectionsPre, null));
 
         for(Resource rsr:bNodesAsSubject){
             Set<Value> mlPairs=modelResult.filter(rsr, MAJANVocabulary.MustConnectPre, null).objects();
@@ -197,8 +206,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         
         
         // Extract Cannot Link Connections from Model
-        bNodesAsSubject = Models.objectResources(modelResult.filter(problemInstanceID_subject, 
-                MAJANVocabulary.CannotLinkConnectionsPre, null));
+        bNodesAsSubject = Models.objectResources(modelResult.filter(null, MAJANVocabulary.CannotLinkConnectionsPre, null));
 
         for(Resource rsr:bNodesAsSubject){
             Set<Value> clPairs=modelResult.filter(rsr, MAJANVocabulary.CannotConnectPre, null).objects();
@@ -212,7 +220,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         } // end
         
         // Print the result
-        /*System.out.println("Results:\nnum:"+numOfAgents);
+        System.out.println("Results:\nnum:"+numOfAgents);
         System.out.println("min:"+minCoalitionSize);
         System.out.println("max:"+maxCoalitionSize);
         
@@ -229,7 +237,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         for (int[] is : clList) {
             System.out.println("CL1:"+is[0]);
             System.out.println("CL2:"+is[1]);
-        }*/
+        }
         
 
         
@@ -241,17 +249,19 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         
         // Adding Coalitions to the Problem Instance Subject
         for(int i=0;i<feasibleCoalitions.size();i++){
-            builder.subject(problemInstanceID_subject)
-                    .add(MAJANVocabulary.FeasibleCoalitionsPre, "welcome:"+macProblemId+"_coalition"+(i+1))
-                    .subject("welcome:"+macProblemId+"_coalition"+(i+1))
-                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CsgpCoalitionObj)
-                    .add(MAJANVocabulary.CsgpValuePre, ThreadLocalRandom.current().nextDouble(-5,5));
+            BNode coalitionBnode = MAJANVocabulary.FACTORY.createBNode();
+            builder.subject(lccUseCaseSubject)
+                    .add(MAJANVocabulary.FeasibleCoalitionsPre, coalitionBnode)
+                    .subject(coalitionBnode)
+                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CsgpCoalitionObj);
+                    //.add(MAJANVocabulary.CsgpValuePre, ThreadLocalRandom.current().nextDouble(-5,5));
         
             
             // Adding Agents to Coalitions
             for(int j=0;j<feasibleCoalitions.get(i).length;j++){
-                builder.add(MAJANVocabulary.MembersPre, 
-                        MAJANVocabulary.FACTORY.createIRI(agentNames.get(feasibleCoalitions.get(i)[j]-1)));
+               // builder.add(MAJANVocabulary.MembersPre, 
+                    //    MAJANVocabulary.FACTORY.createIRI(agentNames.get(feasibleCoalitions.get(i)[j]-1)));
+                builder.add(MAJANVocabulary.MembersPre, agentNames.get(feasibleCoalitions.get(i)[j]-1));
             }
             // TODO: demeli bele. birinci agentlarin irilarinnan list yarat. sonra hemin listi bir bNoda elave ele. 
             // sonra hemin bNodu :coalition1 :members :bNode kimi modele at. 

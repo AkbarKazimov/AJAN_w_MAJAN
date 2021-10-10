@@ -41,13 +41,39 @@
 	a bt:Root ;
 	rdfs:label "LCC Protocol Behavior Tree" ;
 	bt:hasChild [
-					a bt:Sequence ;
-					bt:hasChildren (
-										#:CoalitionGenerator
-										#:CSGPSolver
-										#:ConditionLSRPopulated
-										:TestBigQuery
-									)
+		a bt:UntilFail ;
+		bt:hasChild (
+			[
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandleStartLccProcessEvent
+						:WriteAgentId2Execution
+						:WriteRootAddress2Exec
+						:UpdateLccProblem
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+									[
+										a bt:Sequence ;
+										bt:hasChildren (
+												:ConditionDedicatedAgent
+												:ProduceLccDedicatedAgentBehaviorEvent
+														)
+									]
+									[
+										a bt:Sequence ;
+										bt:hasChildren (
+												:WriteLccPersonalInfo2Exec
+												:Message2DedicatedLccPersonalInfo
+												:WriteLccPersonalInfo2LakrWithLccId
+														)
+									]		
+										)
+						]
+						:WriteLccProblem2Lakr
+							)
+			]			
+						)
 				] .
 				
 :LccDedicatedAgentBt
@@ -55,21 +81,64 @@
 	a bt:Root ;
 	rdfs:label "LCC Dedicated Agent Behavior Tree" ;
 	bt:hasChild [
-			a bt:Sequence ;
-			bt:hasChildren (
-						:ConditionAgentInAnyMAC
-							)
+		a bt:UntilFail ;
+		bt:hasChild (
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+							:HandleLccDedicatedAgentEvent
+							[	
+								a bt:Priority ;
+								bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+													:WriteLccPersonalInfo2Exec
+													:WriteLccPersonalInfo2LakrWithLccId
+#													:InsertLccPersonalInfo2Lakr
+													:Wait4LccPersonalInfo
+													:WriteCompleteLccPersonalInfo2Exec
+													[
+														a bt:Priority ;
+														bt:hasChildren (
+																:ConditionAllReturnedLccPersonalInfo
+													#			[
+													#				a bt:Sequence ;
+													#				bt:hasChildren (
+													#						:MessageRequestLccPersonalInfo
+													#						:Wait4LccPersonalInfo
+													#						:ConditionAllReturnedLccPersonalInfo
+													#								)
+													#			]
+																		)
+													]
+													:ProduceComputeCoalitionsEvent
+															)
+										]
+										:ProduceLccFailedEvent
+												)
+							]
+									)
+				]
+						)
 				] .
 				
+	
 :ReceiveLccPersonalInfoBt
 	a bt:BehaviorTree ;
 	a bt:Root ;
 	rdfs:label "Receive LCC Personal Info Behavior Tree" ;
 	bt:hasChild [
-			a bt:Sequence ;
-			bt:hasChildren (
-						:ConditionAgentInAnyMAC
-							)
+		a bt:UntilFail ;
+		bt:hasChild (
+			[
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandleReceiveLccPersonalInfoEvent
+						:WriteLccPersonalInfoOfSender2Lakr
+								)
+			]
+					)
 				] .
 
 :ComputeLccCoalitionStructuresBt
@@ -77,10 +146,54 @@
 	a bt:Root ;
 	rdfs:label "Compute LCC Coalition Structures Behavior Tree" ;
 	bt:hasChild [
-			a bt:Sequence ;
-			bt:hasChildren (
-						:ConditionAgentInAnyMAC
-							)
+		a bt:UntilFail ;
+		bt:hasChild (
+			[
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandleComputeCoalitionsEvent
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+									[
+										a bt:Sequence ;
+										bt:hasChildren (
+												:ComputeLccCannotLinkConnections
+#												:CoalitionGenerator
+												:GenerateFeasibleCoalitions4Lcc
+												[
+													a bt:Priority ;
+													bt:hasChildren (
+															[
+																a bt:Invert ;
+																bt:hasChild (
+																		:ConditionAnyFeasibleCoalition
+																			)
+															]
+															:ProduceFinalizeLccProcessEvent
+																	)
+												]
+#												:BroadcastCoalitions2ReceiveUtilities
+#												:ComputeUtilityValues
+#												:WriteUtilityValues2Lakr
+#												:Wait4UtilityValues
+#												:WriteCompleteUtilities2Exec
+#												[
+#													a bt:Priority ;
+#													bt:hasChildren (
+#															:ConditionAllReturnedLccUtilities
+#															:AddUtilitiesToNonSenders
+#																	)
+#												]
+#												:ProduceSolveLccEvent
+														)
+									]
+									:ProduceLccFailedEvent
+											)
+						]
+								)
+			]
+					)
 				] .
 
 :ComputeLccUtilityValuesBt
@@ -140,7 +253,877 @@
 
 
 
-#-------------LCC Protocol BTs --------------------------
+#-------------LCC Protocol BTs END--------------------------
+#-------------LCC Protocol BT Nodes START--------------------------
+:HandleStartLccProcessEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "EventHandler: start LCC Process Event" ;
+	bt:event agents:StartLccProcessEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE { 
+						?s ?p ?o .				
+					}"""^^xsd:string ;
+				] .
+
+
+
+:WriteRootAddress2Exec
+	a bt:Write ;
+	rdfs:label "Write: Root Address of Agents to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					CONSTRUCT {
+						?agent	welcome:hasRootAddress	?rootAddress .								
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent .								
+						?du		rdf:type	welcome-git:Registered ;
+								welcome:hasRootAddress	?rootAddress .					
+					}
+
+		
+		"""^^xsd:string ;
+	] .
+
+:ConditionDedicatedAgent
+	a bt:Condition ;
+	rdfs:label "Condition: Is this Dedicated Agent?" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+					ASK
+					WHERE {
+						?agent	rdf:type	ajan:Agent ;
+								ajan:agentId	?agentId .
+						
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasDedicatedAgent	?agentId .
+						}"""^^xsd:string ;
+		]) .
+		
+:ProduceLccDedicatedAgentBehaviorEvent
+	a bt:EventProducer ;
+	rdfs:label "EventProducer: LCC Dedicated Agent Behavior Event" ;
+	ajan:event agents:LccDedicatedAgentBehaviorEvent ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string ;
+				] .
+
+
+:WriteLccPersonalInfo2Exec
+	a bt:Write ;
+	rdfs:label "Write: LCC Personal Info to Exec for the particular LCC Process" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					CONSTRUCT {
+						?agent	welcome:hasLCCPersonalInfo	?bnode .
+						
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId .
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent .
+						
+						welcome-git:DialogueUser 
+							welcome:hasGender	?gender ;
+							welcome:hasNationality	?nationality ;
+							welcome:hasLccCpl		?lccCpl ;
+							welcome:hasAttendedLessonIDs 	?attendedLessonId .
+
+							{BIND(BNODE() AS ?bnode)}
+					}
+
+		
+		"""^^xsd:string ;
+	] .
+	
+	
+
+:Message2DedicatedLccPersonalInfo
+	a bt:Message ;
+	rdfs:label "Message: Return Personal Info to Dedicated agent for CHC"^^xsd:string ;
+	rdfs:comment ""^^xsd:string ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "text/turtle"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "text/turtle"
+				]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:ExecutionKnowledge ;
+				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+						CONSTRUCT {
+							?agent	ajan:agentId	?agentName ;
+									welcome:hasLCCPersonalInfo	?bnode .
+							
+							?bnode	rdf:type	welcome:LCCPersonalInfo ;
+									welcome:hasGender	?gender ;
+									welcome:hasNationality	?nationality ;
+									welcome:hasLccCpl		?lccCpl ;
+									welcome:hasAttendedLessonIDs 	?attendedLessonId ;
+									welcome:hasId	?lccId .
+						}
+						WHERE {
+							?agent	rdf:type ajan:Agent ;
+									ajan:agentId	?agentName ;
+									welcome:hasLCCPersonalInfo	?bnode .
+						
+							?bnode	rdf:type	welcome:LCCPersonalInfo ;
+									welcome:hasGender	?gender ;
+									welcome:hasNationality	?nationality ;
+									welcome:hasLccCpl		?lccCpl ;
+									welcome:hasAttendedLessonIDs 	?attendedLessonId .
+						
+							?bnode2	rdf:type	welcome:LCCUseCase ;
+									welcome:hasId	?lccId .	
+									
+				}"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+
+					SELECT DISTINCT ?requestURI
+					WHERE {
+					#  VALUES ?requestURI { "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent1?capability=receiveCHCPersonalInfo"}
+					 
+					?agent	rdf:type	ajan:Agent ;
+							welcome:hasRootAddress ?rootAddress .
+							
+					?bnode	rdf:type	welcome:LCCUseCase ;
+							welcome:hasDedicatedAgent	?dAgentId ;
+							welcome:hasId	?lccId .	
+									
+					BIND(CONCAT(?rootAddress, ?dAgentId, "?capability=receiveLccPersonalInfo") AS ?requestURI )
+					}"""^^xsd:string
+	] .	
+
+:WriteLccPersonalInfo2LakrWithLccId
+	a bt:Write ;
+	rdfs:label "Write: LCC Personal Info to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					CONSTRUCT {
+						?agent	welcome:hasLCCPersonalInfo	?bnode .
+						
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId ;
+								welcome:hasId	?lccId .
+								
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent ;
+								welcome:hasLCCPersonalInfo ?bnode .
+								
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId .		
+								
+						?bnode2	rdf:type	welcome:LCCUseCase ;
+								welcome:hasId	?lccId .
+					
+					
+					}
+
+		
+		"""^^xsd:string ;
+	] .
+	
+:UpdateLccProblem
+	a bt:Update ;
+	rdfs:label "Update: Add necessary LCC Problem Instance Fields" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					INSERT {
+						?bnode	welcome:hasNumberOfAgents	?numOfAgents ;
+								welcome:hasMinCoalitionSize	"2" ;
+								welcome:hasMaxCoalitionSize	"5" .
+					}
+					WHERE{
+						?agent	rdf:type ajan:Agent .
+						{
+							?bnode	rdf:type	welcome:LCCUseCase ;
+									welcome:hasParticipants	?pAgentId ;
+									welcome:hasLessonId	?lessonId ;
+									welcome:hasDedicatedAgent	?dAgentId ;
+									welcome:hasId	?lccId . 
+						}
+						{
+							SELECT (count(?pAgentId) as ?numOfAgents)
+							WHERE {
+								?bnode	rdf:type	welcome:LCCUseCase ;
+										welcome:hasParticipants	?pAgentId .
+							}
+						}
+					}
+					"""^^xsd:string ;
+		]) .
+
+:WriteLccProblem2Lakr
+	a bt:Write ;
+	rdfs:label "Write: LCC Problem Instance to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					CONSTRUCT {
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								?p	?o .
+					}
+					WHERE {
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								?p	?o .
+					}		
+		"""^^xsd:string ;
+	] .
+	
+	
+:HandleLccDedicatedAgentEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "EventHandler: dedicated agent behavior Event" ;
+	bt:event agents:LccDedicatedAgentBehaviorEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE { 
+						?s ?p ?o .				
+					}"""^^xsd:string ;
+				] .
+
+:Wait4LccPersonalInfo 
+	a bt:Wait ;
+	rdfs:label "Wait: wait for agents to return their Personal Info for LCC" ;
+	rdfs:comment "" ;
+	bt:milliseconds "5000"^^xsd:int .
+
+
+:WriteCompleteLccPersonalInfo2Exec
+	a bt:Write ;
+	rdfs:label "Write: LCC Personal Info of all participant agents to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					CONSTRUCT {
+						?agent	ajan:agentId	?agentId ;
+								welcome:hasLCCPersonalInfo ?bnode .
+								
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId ;
+								welcome:hasId	?lccId .
+
+					}
+					WHERE {
+						?agent	ajan:agentId	?agentId ;
+								welcome:hasLCCPersonalInfo ?bnode .
+								
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId ;
+								welcome:hasId	?lccId .
+					}
+
+		
+		"""^^xsd:string ;
+	] .
+
+:ConditionAllReturnedLccPersonalInfo
+	a bt:Condition ;
+	rdfs:label "Condition: did all LCC agents return their Personal Info?" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+			ASK 
+			WHERE
+			{
+				?bnode	rdf:type	welcome:LCCUseCase ;
+						welcome:hasParticipants	?pAgentId ;
+						welcome:hasId	?lccId .
+
+				?agentUri	welcome:hasLCCPersonalInfo	?bnode2 ;
+							ajan:agentId	?pAgentId .
+				
+				?bnode2		rdf:type	welcome:LCCPersonalInfo ;
+							welcome:hasId	?lccId .
+			}
+						"""^^xsd:string ;
+		]) .
+
+
+:InsertLccPersonalInfo2Lakr
+	a bt:Update ;
+	rdfs:label "Update: Create LCC Personal Info in LAKR" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					
+					INSERT {
+						?agent	welcome:hasLCCPersonalInfo	?bnode .
+						
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId .
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent .
+						
+						welcome-git:DialogueUser 
+							welcome:hasGender	?gender ;
+							welcome:hasNationality	?nationality ;
+							welcome:hasLccCpl		?lccCpl ;
+							welcome:hasAttendedLessonIDs 	?attendedLessonId .
+
+							{BIND(BNODE() AS ?bnode)
+					}
+		
+		
+		
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+
+
+					 {	
+						?agent welcome:hasCHCPersonalInfo ?bnode2 .
+						
+						?bnode2	rdf:type	welcome:CHCPersonalInfo;
+								welcome:hasCHCId	?chcId ;
+								welcome:hasAge	?age;
+								welcome:hasGender	?gender;
+								welcome:hasFamily	?family;
+								welcome:hasNationality	?nationality;
+								welcome:hasReligion		?religion;
+								welcome:hasEthnicity 	?ethnicity;
+								welcome:hasLocationPreference	?locPref;
+								welcome:hasAccessibilityPreference	?accessPref;
+								welcome:hasRentPeriodPreference		?rentPref;
+								welcome:hasShareWithPreference		?sharePref.
+						
+						?rentPref	?rentPred	?rentObj.
+						?share		?sharePred	?shareObj.
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent .
+						
+						?agent	welcome:isRunningCHC ?chcId .
+
+						welcome-git:DialogueUser 
+							welcome:hasAge	?age;
+							welcome:hasGender	?gender;
+							welcome:hasFamily	?family;
+							welcome:hasNationality	?nationality;
+							welcome:hasReligion		?religion;
+							welcome:hasEthnicity 	?ethnicity;
+							welcome:hasLocationPreference	?locPref;
+							welcome:hasAccessibilityPreference	?accessPref;
+							welcome:hasRentPeriodPreference		?rentPref;
+							welcome:hasShareWithPreference		?sharePref.
+				
+						OPTIONAL{ 
+							?rentPref	?rentPred	?rentObj.
+						}
+						OPTIONAL{
+							?sharePref	?sharePred		?shareObj.
+						}
+						{BIND(BNODE() AS ?bnode2)}
+					}
+					"""^^xsd:string ;
+		]) .
+		
+:HandleReceiveLccPersonalInfoEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "EventHandler: Receive LCC Personal Info Event" ;
+	bt:event agents:ReceiveLccPersonalInfoEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE { 
+						?s ?p ?o .				
+					}"""^^xsd:string ;
+				] .		
+
+:WriteLccPersonalInfoOfSender2Lakr
+	a bt:Write ;
+	rdfs:label "Write: LCC Personal Info of the sender agent to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					CONSTRUCT {
+						?agent	ajan:agentId	?agentId ;
+								welcome:hasLCCPersonalInfo ?bnode .	
+
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId ;
+								welcome:hasId	?lccId .
+								
+					}
+					WHERE {
+						?agent	ajan:agentId	?agentId ;
+								welcome:hasLCCPersonalInfo ?bnode .	
+
+						?bnode	rdf:type	welcome:LCCPersonalInfo ;
+								welcome:hasGender	?gender ;
+								welcome:hasNationality	?nationality ;
+								welcome:hasLccCpl		?lccCpl ;
+								welcome:hasAttendedLessonIDs 	?attendedLessonId ;
+								welcome:hasId	?lccId .
+					
+					}
+
+		
+		"""^^xsd:string ;
+	] .
+	
+:ProduceComputeCoalitionsEvent
+	a bt:EventProducer ;
+	rdfs:label "EventProducer: Compute Possible Coalitions Event" ;
+	ajan:event agents:ComputeLccCoalitionStructuresEvent ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string ;
+				] .
+
+
+:ProduceLccFailedEvent
+	a bt:EventProducer ;
+	rdfs:label "EventProducer: LCC Failed Event" ;
+	ajan:event agents:LccFailureEvent ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string ;
+				] .
+
+:HandleComputeCoalitionsEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "EventHandler: Compute Coalition Structures Event" ;
+	bt:event agents:ComputeLccCoalitionStructuresEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE { 
+						?s ?p ?o .				
+					}"""^^xsd:string ;
+				] .	
+				
+:ComputeLccCannotLinkConnections
+	a bt:Write ;
+	rdfs:label "Write: Compute LCC Cannot Link Connections" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+
+					CONSTRUCT {
+						?bnode	welcome:hasCannotLinkConnections	?cannotLinkBnode .
+						
+						?cannotLinkBnode	welcome:hasCannotConnect	?pAgentId, ?pAgentId2 .
+
+					}					
+					WHERE {
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasLessonId	?lessonId ;
+								welcome:hasParticipants	?pAgentId .
+
+						FILTER(xsd:integer(?lessonId) != 1)
+						?agentUri	ajan:agentId	?pAgentId ;
+									welcome:hasLCCPersonalInfo	?bnode2 .
+									
+						?agentUri2	ajan:agentId	?pAgentId2 ;
+									welcome:hasLCCPersonalInfo	?bnode3 .
+
+						FILTER(?pAgentId != ?pAgentId2)
+
+						BIND((xsd:integer(?lessonId) - 1) AS ?previousLessonId)
+
+						FILTER NOT EXISTS {
+							?bnode2	welcome:hasAttendedLessonIDs	?previousLessonId .
+						}
+						FILTER NOT EXISTS {
+							?bnode3	welcome:hasAttendedLessonIDs	?previousLessonId .
+						}
+						FILTER(?pAgentId < ?pAgentId2)
+						BIND(BNODE() AS ?cannotLinkBnode)
+					}
+		"""^^xsd:string ;
+	] .				
+				
+:GenerateFeasibleCoalitions4Lcc
+	a bt:CoalitionGenerator ;
+	rdfs:label "CoalitionGenerator: Generate Feasible Coalitions for LCC" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:ExecutionKnowledge ;
+				bt:targetBase ajan:ExecutionKnowledge ;
+				bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					Construct {
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasParticipants	?pAgentId ;
+								welcome:hasNumberOfAgents	?numOfAgents ;
+								welcome:hasMinCoalitionSize	"2" ;
+								welcome:hasMaxCoalitionSize	"5" ;
+								welcome:hasCannotLinkConnections	?cannotLinkBnode ;
+								welcome:hasMustLinkConnections	?mustLinkBnode .
+								
+						?cannotLinkBnode	welcome:hasCannotConnect	?clAgentId, ?clAgentId2 .
+						?mustLinkBnode	welcome:hasMustConnect	?mlAgentId, ?mlAgentId2 .
+					}
+					Where{
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasParticipants	?pAgentId ;
+								welcome:hasNumberOfAgents	?numOfAgents ;
+								welcome:hasMinCoalitionSize	"2" ;
+								welcome:hasMaxCoalitionSize	"5" .
+								
+						OPTIONAL {
+							?bnode welcome:hasCannotLinkConnections	?cannotLinkBnode .
+							
+							?cannotLinkBnode	welcome:hasCannotConnect	?clAgentId, ?clAgentId2 .
+						}
+						OPTIONAL {
+							?bnode welcome:hasMustLinkConnections	?mustLinkBnode .
+							
+							?mustLinkBnode	welcome:hasMustConnect	?mlAgentId, ?mlAgentId2 .
+						}
+					}
+					"""^^xsd:string ;
+			] .
+
+:ConditionAnyFeasibleCoalition
+	a bt:Condition ;
+	rdfs:label "Condition: Is there any LCC Feasible Coalition?" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+			ASK 
+			WHERE
+			{
+				?bnode	rdf:type	welcome:LCCUseCase ;
+						welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+				
+				?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+										welcome:hasMembers	?cmAgentId .
+				FILTER(BOUND(?cmAgentId))
+			}
+						"""^^xsd:string ;
+		]) .
+		
+:ProduceFinalizeLccProcessEvent
+	a bt:EventProducer ;
+	rdfs:label "EventProducer: Finalize LCC Process either with Success or Failure" ;
+	ajan:event agents:FinalizeLccProcessEvent ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+						CONSTRUCT {
+							?s ?p ?o .
+						}
+						WHERE {
+							?s ?p ?o .
+						}"""^^xsd:string ;
+				] .
+:BroadcastCoalitions2ReceiveUtilities
+	a bt:Broadcast ;
+	rdfs:label "Broadcast: LCC Feasible Coalitions to Receive Utility Values"^^xsd:string ;
+	rdfs:comment ""^^xsd:string ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "text/turtle"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "text/turtle"
+				]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:ExecutionKnowledge ;
+				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+						PREFIX clan: <http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+						
+						CONSTRUCT {
+							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
+									welcome:hasFinishedCHC	?chcId ;
+									welcome:hasAddress	?agentAddress .
+							
+							?chcBnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasParticipants		?pAgentId ;
+										#welcome:hasStatus	?defaultChcStatus ;
+										welcome:hasCHCSolution	?clusteringBnode .
+							
+							?clusteringBnode	rdf:type	clan:Clustering ;
+									mac:isSolutionOf	?chcId ;
+									mac:hasMembers		?clusterBnode .
+							
+							?clusterBnode	rdf:type	clan:Cluster ;
+									mac:hasMembers	?clusterMember ;
+									clan:isClusterOf	?clusteringBnode .				
+						}
+						WHERE {
+							?bnode	rdf:type	welcome:LCCUseCase ;
+									welcome:hasFeasibleCoalitions	?bnode2 .
+							
+							
+							}
+							"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+
+					SELECT DISTINCT ?requestURI
+					WHERE {
+
+#					  VALUES ?requestURI { 
+#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent2?capability=finalizeCHCProcess" 
+#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent3?capability=finalizeCHCProcess" 
+#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent4?capability=finalizeCHCProcess"}
+
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC	?chcId ;
+							ajan:agentId	?agentId .
+							
+					#?bnode	welcome:hasId	?chcId ;
+					#		welcome:hasParticipants	?participant .
+					#?participant 	ajan:agentId ?name.
+					
+					?bnode	welcome:hasId	?chcId ;
+							welcome:hasParticipants	?pAgentName .
+					
+					FILTER(?pAgentName != ?agentId)
+					BIND(CONCAT("http://localhost:8060/welcome/integration/coordination/ajan/agents/", ?pAgentName, "?capability=finalizeCHCProcess") AS ?requestURI )
+					}"""^^xsd:string
+	] .			
+#-------------LCC Protocol BT Nodes END--------------------------
+
+
+
+#-------------CHC Protocol BTs START--------------------------
+
 :CHCProtocolBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
@@ -227,7 +1210,7 @@
 													:WritePersonalInfoRequestContent2Execution
 													:Broadcast4PersonalInfo
 													:InsertCHCWasBroadcasted2Execution
-													:Wait4PersonalInfo
+													:Wait4ChcPersonalInfo
 													[
 														a bt:Priority ;
 														bt:hasChildren (
@@ -268,7 +1251,7 @@
 					bt:hasChildren (
 								:HandleShareCHCPersonalInfoEvent
 								:WriteCHCPersonalInfo2Exec
-								:Message2DedicatedPersonalInfo
+								:Message2DedicatedChcPersonalInfo
 								:Message2WPMUpdateStatus2InCoordination
 								:AddAgentInvolvedInCHCFlag
 								# CHC Personal Info is written from A.K to E.K. Then I attach the Id of CHC Process to the CHC Personal Info and send this info to 
@@ -1825,7 +2808,7 @@ CONSTRUCT {
 				] .	
 
 
-:Wait4PersonalInfo 
+:Wait4ChcPersonalInfo 
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Personal Info for CHC" ;
 	rdfs:comment "" ;
@@ -2317,7 +3300,7 @@ CONSTRUCT {
 			} """^^xsd:string ;
 	] .
 
-:Message2DedicatedPersonalInfo
+:Message2DedicatedChcPersonalInfo
 	a bt:Message ;
 	rdfs:label "Message: Return Personal Info to Dedicated agent for CHC"^^xsd:string ;
 	rdfs:comment ""^^xsd:string ;
