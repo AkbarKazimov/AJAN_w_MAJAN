@@ -117,11 +117,11 @@ public class AgentResource {
 		if (capability == null) {
 			return null;
 		}
-		Set<Resource> set = ((Model)input).contexts();
+	/*	Set<Resource> set = ((Model)input).contexts();
 		for (Iterator<Statement> it = ((Model)input).iterator(); it.hasNext();) {
 			Statement st = it.next();
 			LOG.info("s--" + st);
-		}
+		}*/
 		agent.setEndpointEvent(capability, input);
 		return agent;
 	}

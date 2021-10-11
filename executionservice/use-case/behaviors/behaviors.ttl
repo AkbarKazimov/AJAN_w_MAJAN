@@ -161,21 +161,19 @@
 												:ComputeLccCannotLinkConnections
 #												:CoalitionGenerator
 												:GenerateFeasibleCoalitions4Lcc
-												[
-													a bt:Priority ;
-													bt:hasChildren (
-															[
-																a bt:Invert ;
-																bt:hasChild (
-																		:ConditionAnyFeasibleCoalition
-																			)
-															]
-															:ProduceFinalizeLccProcessEvent
-																	)
-												]
-#												:BroadcastCoalitions2ReceiveUtilities
-#												:ComputeUtilityValues
-#												:WriteUtilityValues2Lakr
+											#	[
+											#		a bt:Priority ;
+											#		bt:hasChildren (
+															:ConditionAnyFeasibleCoalitionExists
+											#				:ProduceFinalizeLccProcessEvent
+											#						)
+											#	]
+												:BroadcastCoalitions2ReceiveUtilities
+												:RemoveUnnecessaryCoalitions
+#												:ComputeLccCoalitionInfo
+												:WriteLccPreferences2Exec
+												:ComputeLccUtilityValues
+												:WriteLccUtilities2Lakr
 #												:Wait4UtilityValues
 #												:WriteCompleteUtilities2Exec
 #												[
@@ -200,12 +198,26 @@
 	a bt:BehaviorTree ;
 	a bt:Root ;
 	rdfs:label "Compute LCC Utility Values Behavior Tree" ;
-	bt:hasChild [
-			a bt:Sequence ;
-			bt:hasChildren (
-						:ConditionAgentInAnyMAC
-							)
-				] .
+	bt:hasChild	[
+		a bt:UntilFail ;
+		bt:hasChild (
+			[		
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandleComputeLccUtilitiesEvent
+						:WriteAllLccInfo2Exec
+#						:RemoveUnnecessaryLccInfoFromExec
+						:WriteAgentId2Execution
+						:RemoveUnnecessaryCoalitions
+#						:ComputeLccCoalitionInfo
+						:WriteLccPreferences2Exec
+						:ComputeLccUtilityValues
+						:MessageLccUtilities2Dedicated
+						:WriteLccUtilities2Lakr
+								)
+			]
+					)
+				].
 
 :ReceiveLccUtilityValuesBt
 	a bt:BehaviorTree ;
@@ -382,7 +394,7 @@
 
 :Message2DedicatedLccPersonalInfo
 	a bt:Message ;
-	rdfs:label "Message: Return Personal Info to Dedicated agent for CHC"^^xsd:string ;
+	rdfs:label "Message: Return Personal Info to Dedicated agent for LCC"^^xsd:string ;
 	rdfs:comment ""^^xsd:string ;
 	bt:targetBase ajan:ExecutionKnowledge ;  
 	bt:binding [
@@ -971,7 +983,7 @@
 					"""^^xsd:string ;
 			] .
 
-:ConditionAnyFeasibleCoalition
+:ConditionAnyFeasibleCoalitionExists
 	a bt:Condition ;
 	rdfs:label "Condition: Is there any LCC Feasible Coalition?" ;
 	bt:query ( [
@@ -980,7 +992,9 @@
 		bt:sparql """
 			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
 			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+			
 			ASK 
 			WHERE
 			{
@@ -988,11 +1002,12 @@
 						welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
 				
 				?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
-										welcome:hasMembers	?cmAgentId .
+										mac:hasMembers	?cmAgentId .
 				FILTER(BOUND(?cmAgentId))
 			}
 						"""^^xsd:string ;
 		]) .
+		
 		
 :ProduceFinalizeLccProcessEvent
 	a bt:EventProducer ;
@@ -1012,6 +1027,8 @@
 							?s ?p ?o .
 						}"""^^xsd:string ;
 				] .
+				
+				
 :BroadcastCoalitions2ReceiveUtilities
 	a bt:Broadcast ;
 	rdfs:label "Broadcast: LCC Feasible Coalitions to Receive Utility Values"^^xsd:string ;
@@ -1058,29 +1075,41 @@
 						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
 						
 						CONSTRUCT {
-							?dAgent	welcome:hasMacRole	"Dedicated"^^xsd:string ;
-									welcome:hasFinishedCHC	?chcId ;
-									welcome:hasAddress	?agentAddress .
+							?bnode	rdf:type	welcome:LCCUseCase ;
+									welcome:hasId	?lccId ;
+									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													mac:hasMembers	?mAgentId .
 							
-							?chcBnode	rdf:type	welcome:CHCUseCase;
-										welcome:hasId		?chcId;
-										welcome:hasParticipants		?pAgentId ;
-										#welcome:hasStatus	?defaultChcStatus ;
-										welcome:hasCHCSolution	?clusteringBnode .
-							
-							?clusteringBnode	rdf:type	clan:Clustering ;
-									mac:isSolutionOf	?chcId ;
-									mac:hasMembers		?clusterBnode .
-							
-							?clusterBnode	rdf:type	clan:Cluster ;
-									mac:hasMembers	?clusterMember ;
-									clan:isClusterOf	?clusteringBnode .				
+							# Select Complete LCC Personal Info
+							?pAgent	ajan:agentId	?pAgentId ;
+									welcome:hasLCCPersonalInfo ?lccPsnlInfo .	
+
+							?lccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+											welcome:hasGender	?gender ;
+											welcome:hasNationality	?nationality ;
+											welcome:hasLccCpl		?lccCpl ;
+											welcome:hasId	?lccId .				
 						}
 						WHERE {
+							# Select Feasible Coalitions
 							?bnode	rdf:type	welcome:LCCUseCase ;
-									welcome:hasFeasibleCoalitions	?bnode2 .
+									welcome:hasId	?lccId ;
+									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													mac:hasMembers	?mAgentId .
 							
-							
+							# Select Complete LCC Personal Info
+							?pAgent	ajan:agentId	?pAgentId ;
+									welcome:hasLCCPersonalInfo ?lccPsnlInfo .	
+
+							?lccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+											welcome:hasGender	?gender ;
+											welcome:hasNationality	?nationality ;
+											welcome:hasLccCpl		?lccCpl ;
+											welcome:hasId	?lccId .
 							}
 							"""^^xsd:string
 			]
@@ -1089,7 +1118,7 @@
 	bt:queryUri [
 		a bt:SelectQuery ;
 		a bt:QueryUri ;
-		bt:originBase ajan:AgentKnowledge ;
+		bt:originBase ajan:ExecutionKnowledge ;
 		bt:sparql """
 					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
@@ -1098,26 +1127,455 @@
 					SELECT DISTINCT ?requestURI
 					WHERE {
 
-#					  VALUES ?requestURI { 
-#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent2?capability=finalizeCHCProcess" 
-#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent3?capability=finalizeCHCProcess" 
-#					  "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent4?capability=finalizeCHCProcess"}
-
+					?bnode	rdf:type	welcome:LCCUseCase ;
+							welcome:hasId	?lccId ;
+							welcome:hasParticipants	?pAgentId .
+					
 					?agent	rdf:type	ajan:Agent ;
-							welcome:isRunningCHC	?chcId ;
 							ajan:agentId	?agentId .
-							
-					#?bnode	welcome:hasId	?chcId ;
-					#		welcome:hasParticipants	?participant .
-					#?participant 	ajan:agentId ?name.
 					
-					?bnode	welcome:hasId	?chcId ;
-							welcome:hasParticipants	?pAgentName .
-					
-					FILTER(?pAgentName != ?agentId)
-					BIND(CONCAT("http://localhost:8060/welcome/integration/coordination/ajan/agents/", ?pAgentName, "?capability=finalizeCHCProcess") AS ?requestURI )
+					FILTER(?pAgentId != ?agentId)
+					BIND(CONCAT("http://localhost:8060/welcome/integration/coordination/ajan/agents/", ?pAgentId, "?capability=computeLccUtilityValues") AS ?requestURI )
 					}"""^^xsd:string
-	] .			
+	] .	
+
+
+:HandleComputeLccUtilitiesEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "EventHandler: Compute LCC Utility Values Event" ;
+	bt:event agents:ComputeLccUtilityValuesBt ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+						?bnode	rdf:type	welcome:LCCUseCase, welcome:CurrentlyRunningLCC .
+					}
+					WHERE { 
+						?s ?p ?o .
+						?bnode	rdf:type	welcome:LCCUseCase .
+					}"""^^xsd:string ;
+				] .		
+				
+:WriteAllLccInfo2Exec
+	a bt:Write ;
+	rdfs:label "Write: All LCC Problem Instances Info to Execution" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				
+				CONSTRUCT  {
+					?bnode	rdf:type	welcome:LCCUseCase ;
+							welcome:hasGenderWeight		?gWeight ;
+							welcome:hasNationalityWeight	?nWeight ;
+							welcome:hasId	?lccId .
+				}
+				WHERE {
+					?bnode	rdf:type	welcome:LCCUseCase ;
+							welcome:hasGenderWeight		?gWeight ;
+							welcome:hasNationalityWeight	?nWeight ;
+							welcome:hasId	?lccId .
+				} """^^xsd:string ;
+	] .
+	
+
+:RemoveUnnecessaryLccInfoFromExec
+	a bt:Update ;
+	rdfs:label "Update: Remove Unnecessary LCC Problem Instances from Exec" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+					
+					DELETE {
+						?bnode	rdf:type	welcome:TempLCCUseCase ;
+								welcome:hasGenderWeight		?gWeight ;
+								welcome:hasNationalityWeight	?nWeight ;
+								welcome:hasId ?lccId .
+					}
+					WHERE{
+						# this is retrieved from LAKR of this agent. All LCCUseCase s are retrieved. 
+						?bnode	rdf:type	welcome:TempLCCUseCase ;
+								welcome:hasGenderWeight		?gWeight ;
+								welcome:hasNationalityWeight	?nWeight .
+								
+						# this is received from Dedicated agent. It also sends the id of LCCUseCase. 
+						?bnode2	rdf:type	welcome:LCCUseCase ;
+								welcome:hasFeasibleCoalitions	?feasibleCoalitionNode ;
+								welcome:hasId ?lccId .
+								
+						FILTER(BOUND(?feasibleCoalitionNode))
+						
+						#		?p	?o .
+						#		welcome:hasId ?lccId .
+						
+						# here we select the LCCUseCases which have a different ID than the one which is sent by Dedicated Agent. 
+						# We need to retrieve the correct LCC USE CASE specific to this agent from LAKR. Because the LCCUseCase problem instance contains 
+						# the weights of preferences sent by Teacher. 
+						FILTER NOT EXISTS {
+							?bnode	welcome:hasId ?lccId .
+						}
+					}
+					"""^^xsd:string ;
+		]) .	
+
+:RemoveUnnecessaryCoalitions
+	a bt:Update ;
+	rdfs:label "Update: Remove Unnecessary Coalitions" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+					
+					DELETE {
+						?bnode	welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+												?p			?o .					
+					}
+					WHERE{
+						?agent	rdf:type	ajan:Agent ;
+								ajan:agentId	?agentId .
+						
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+												?p			?o .
+						
+						FILTER NOT EXISTS {
+							?feasibleCoalitionNode	mac:hasMembers	?agentId .
+						}
+					}
+					"""^^xsd:string ;
+		]) .
+		
+
+:ComputeLccCoalitionInfo
+	a bt:Update ;
+	rdfs:label "Update: Compute Coalition Information - common gender and nationality" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+					
+					DELETE {
+						?bnode	welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+												?p			?o .					
+					}
+					WHERE{
+					
+					{
+						?agent	rdf:type	ajan:Agent ;
+								ajan:agentId	?agentId .
+						
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+												mac:hasMembers	?mAgentId .
+						
+						FILTER NOT EXISTS {
+							?feasibleCoalitionNode	mac:hasMembers	?agentId .
+						}
+						
+						?mAgent	ajan:agentId	?mAgentId ;
+								welcome:hasLCCPersonalInfo ?lccPsnlInfo .	
+
+						?lccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+										welcome:hasGender	?gender ;
+										welcome:hasNationality	?nationality ;
+										welcome:hasLccCpl		?lccCpl ;
+										welcome:hasId	?lccId .
+					}	
+					}
+					"""^^xsd:string ;
+		]) .
+
+
+:WriteLccPreferences2Exec
+	a bt:Write ;
+	rdfs:label "Write: LCC Individual Preferences to Execution" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				
+				CONSTRUCT  {
+						?agent	rdf:type ajan:Agent ;
+								ajan:agentId	?subAgentId ;
+								welcome:hasLCCPreferencesInfo	?bnode .
+								
+						?bnode	rdf:type	welcome:LCCPreferencesInfo ;
+								welcome:hasGenderPreference ?genPref ;
+								welcome:hasNationPreference ?natPref .
+				}
+				WHERE {
+					?agent	rdf:type ajan:Agent ;
+							ajan:agentId	?subAgentId .
+							
+					?du		rdf:type	welcome-git:Registered ;
+							welcome:hasGenderPreference ?genPref ;
+							welcome:hasNationPreference ?natPref .
+
+					{BIND(BNODE() AS ?bnode)}
+							
+				} """^^xsd:string ;
+	] .
+
+
+	
+	
+:ComputeLccUtilityValues
+	a bt:Update ;
+	rdfs:label "Update: Compute Utility Values" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+                INSERT {
+                    ?feasibleCoalitionNode  welcome:hasUtilityValue ?uVbnode .
+                    ?uVbnode    rdf:type    welcome:UtilityValue ;
+                                welcome:hasComputedBy   ?agentId ;    
+                                welcome:hasValue        ?ttlV .
+                }
+                WHERE {
+					{
+						SELECT ?feasibleCoalitionNode ?agentId (SUM(?uValue) AS ?ttlV)
+						WHERE {
+							# get This agent
+							?agent	rdf:type	ajan:Agent ;
+									ajan:agentId	 ?agentId .
+									
+							# get Feasible Coalitions which are sent by Dedicated agent
+							?bnode	rdf:type	welcome:LCCUseCase, welcome:CurrentlyRunningLCC ;
+									welcome:hasId	?lccId ;
+									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+							
+							
+							# get Weights for Preferences from the LCC info which is written from LAKR to Exec as Temporary LCC Info
+							?tempLccInfo	rdf:type	welcome:LCCUseCase ;
+											welcome:hasId	?lccId ;
+											welcome:hasGenderWeight		?gWeight ;
+											welcome:hasNationalityWeight	?nWeight .
+											
+							# make sure that coalition contains This agent
+							FILTER EXISTS { ?feasibleCoalitionNode  mac:hasMembers	?agentId . }
+					
+							# get a member of a coalition
+							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													mac:hasMembers	?mAgentId .
+											
+							# make sure that the member is different than This agent
+							FILTER(?mAgentId != ?agentId)
+					
+							# get gender of member agent
+							?mAgent	ajan:agentId	 ?mAgentId ;
+									welcome:hasLCCPersonalInfo ?mLccPsnlInfo .
+							?mLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+											welcome:hasGender	 ?mGender ;
+											welcome:hasNationality	?mNation .
+									
+							# get gender of This agent
+							?agent welcome:hasLCCPersonalInfo ?aLccPsnlInfo .
+							?aLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+											welcome:hasGender	 ?aGender ;
+											welcome:hasNationality	?aNation .
+									
+							# get gender preference of This agent
+							?agent	welcome:hasLCCPreferencesInfo	?aLccPrfInfo .
+							?aLccPrfInfo	rdf:type	welcome:LCCPreferencesInfo ;
+											welcome:hasGenderPreference	?aGenderPref ;
+											welcome:hasNationPreference	?aNationPref .
+					
+							BIND(IF(LCASE(?aGenderPref) = "dont mind" || (?aGenderPref = ?mGender), xsd:float(?gWeight), -xsd:float(?gWeight)) AS ?genderUValue)
+					
+							BIND(IF(LCASE(?aNationPref) = "dont mind" || (LCASE(?aNationPref) = "same" && ?aNation = ?mNation) || (LCASE(?aNationPref) = "mixed" && ?aNation != ?mNation), xsd:float(?nWeight), -xsd:float(?nWeight)) AS ?nationUValue)
+																
+							BIND((?genderUValue + ?nationUValue) AS ?uValue)
+							
+			#				BIND(IF(LCASE(?aGenderPref) = "dont mind" ||
+			#				((LCASE(?aGenderPref) = "same") && ?aGender = ?mGender) ||
+			#				((LCASE(?aGenderPref) = "mixed") && ?aGender != ?mGender),1 ,-1) AS ?uv)
+			
+						} GROUP BY ?feasibleCoalitionNode ?agentId
+					}	
+					BIND(BNODE() AS ?uVbnode)
+                }
+					"""^^xsd:string ;
+		]) .	
+
+:MessageLccUtilities2Dedicated
+	a bt:Message ;
+	rdfs:label "Message: Return LCC Utility Values to Dedicated agent for LCC"^^xsd:string ;
+	rdfs:comment ""^^xsd:string ;
+	bt:targetBase ajan:ExecutionKnowledge ;  
+	bt:binding [
+		a http-core:Request ;
+		http-core:httpVersion "1.1"^^xsd:string ;
+		http-core:mthd http-methods:POST ;
+		bt:headers [
+			a bt:SelectQuery;
+			a bt:QueryUri ;
+			bt:originBase ajan:AgentKnowledge ;
+			bt:sparql """
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				SELECT ?hdrName ?userID
+				WHERE {
+					   VALUES ?hdrName {"X-User-ID"}
+					   ?du rdf:type welcome:DialogueUser .
+					   ?du welcome:hasUserId ?userID .
+				}"""^^xsd:string
+		] ;
+		http-core:headers ([
+					a http-core:Header ;						
+					http-core:hdrName http-headers:accept ;
+					http-core:fieldValue "text/turtle"^^xsd:string 
+				][
+					a http-core:Header ;
+					http-core:hdrName http-headers:content-type ;
+					http-core:fieldValue "text/turtle"
+				]
+		) ;	
+		http-core:body [
+			a actn:Payload ;
+			bt:query [
+				rdf:type bt:ConstructQuery ;
+				bt:originBase ajan:ExecutionKnowledge ;
+				bt:sparql """
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+						CONSTRUCT {
+							?bnode	rdf:type	welcome:LCCUseCase ;
+									welcome:hasId ?lccId ;
+									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													welcome:hasUtilityValue ?uVbnode .
+													
+							?uVbnode    rdf:type    welcome:UtilityValue ;
+										welcome:hasComputedBy   ?agentId ;    
+										welcome:hasValue        ?utilityValue .					
+						}
+						WHERE {
+							?bnode	rdf:type	welcome:LCCUseCase ;
+									welcome:hasId ?lccId ;
+									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													welcome:hasUtilityValue ?uVbnode .
+													
+							?uVbnode    rdf:type    welcome:UtilityValue ;
+										welcome:hasComputedBy   ?agentId ;    
+										welcome:hasValue        ?utilityValue .						
+		
+				}"""^^xsd:string
+			]
+		] ;    
+	] ;
+	bt:queryUri [
+		a bt:SelectQuery ;
+		a bt:QueryUri ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+
+					SELECT DISTINCT ?requestURI
+					WHERE {
+					#  VALUES ?requestURI { "http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent1?capability=receiveCHCPersonalInfo"}
+					 
+					?agent	rdf:type	ajan:Agent ;
+							welcome:hasRootAddress ?rootAddress .
+							
+					?bnode	rdf:type	welcome:LCCUseCase ;
+							welcome:hasDedicatedAgent	?dAgentId ;
+							welcome:hasId	?lccId .	
+									
+					BIND(CONCAT(?rootAddress, ?dAgentId, "?capability=receiveLccUtilityValues") AS ?requestURI )
+					}"""^^xsd:string
+	] .	
+	
+
+
+:WriteLccUtilities2Lakr
+	a bt:Write ;
+	rdfs:label "Write: LCC Utility Values to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				
+				CONSTRUCT  {
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasId ?lccId ;
+								welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+												welcome:hasUtilityValue ?uVbnode .
+												
+						?uVbnode    rdf:type    welcome:UtilityValue ;
+									welcome:hasComputedBy   ?agentId ;    
+									welcome:hasValue        ?utilityValue .	
+				}
+				WHERE {
+						?bnode	rdf:type	welcome:LCCUseCase ;
+								welcome:hasId ?lccId ;
+								welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+									
+						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+												welcome:hasUtilityValue ?uVbnode .
+												
+						?uVbnode    rdf:type    welcome:UtilityValue ;
+									welcome:hasComputedBy   ?agentId ;    
+									welcome:hasValue        ?utilityValue .	
+							
+				} """^^xsd:string ;
+	] .
 #-------------LCC Protocol BT Nodes END--------------------------
 
 

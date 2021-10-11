@@ -220,7 +220,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         } // end
         
         // Print the result
-        System.out.println("Results:\nnum:"+numOfAgents);
+       /* System.out.println("Results:\nnum:"+numOfAgents);
         System.out.println("min:"+minCoalitionSize);
         System.out.println("max:"+maxCoalitionSize);
         
@@ -237,7 +237,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         for (int[] is : clList) {
             System.out.println("CL1:"+is[0]);
             System.out.println("CL2:"+is[1]);
-        }
+        }*/
         
 
         
@@ -288,7 +288,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
     public List<int[]> generateCoalitions(int numOfAgents, List<int[]> mlList, List<int[]> clList, int minSize, int maxSize) {
         List<int[]> coalitions=new ArrayList<>();
         
-        for(int i=1;i<Math.pow(2, numOfAgents);i++) {
+        for(int i=1;i <Math.pow(2, numOfAgents);i++) {
             int[] coalitionInByte = CoalitionGeneratorUtils.convertCombinationFromBitToByteFormat(i, numOfAgents);
             
             if(coalitionInByte.length<minSize ||
