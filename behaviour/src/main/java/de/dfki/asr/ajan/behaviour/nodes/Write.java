@@ -84,6 +84,11 @@ public class Write extends AbstractTDBLeafTask {
 	private void performWrite() throws ConditionEvaluationException {
 		try {
 			Model model = getInputModel();
+                       // System.out.println("Write -> Statements -> Start");
+                      //  for (Statement statement : model) {
+                     //       System.out.println(statement);
+                      //  }
+                      //  System.out.println("Write -> Statements -> End");
 			if (query.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())) {
 				this.getObject().getExecutionBeliefs().update(model);
 			} else if (query.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())) {

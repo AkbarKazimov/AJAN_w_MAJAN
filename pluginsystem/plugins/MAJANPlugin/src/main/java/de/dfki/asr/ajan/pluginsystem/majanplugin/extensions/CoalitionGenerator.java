@@ -247,12 +247,14 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         ModelBuilder builder=new ModelBuilder();
         builder.setNamespace("welcome", MAJANVocabulary.WelcomeNamespace.toString());
         
+        String lccId = "1234";
         // Adding Coalitions to the Problem Instance Subject
         for(int i=0;i<feasibleCoalitions.size();i++){
             BNode coalitionBnode = MAJANVocabulary.FACTORY.createBNode();
+            Resource coalitionRsr = MAJANVocabulary.FACTORY.createIRI(MAJANVocabulary.WelcomeNamespace.toString() +lccId +"coalition"+i); 
             builder.subject(lccUseCaseSubject)
-                    .add(MAJANVocabulary.FeasibleCoalitionsPre, coalitionBnode)
-                    .subject(coalitionBnode)
+                    .add(MAJANVocabulary.FeasibleCoalitionsPre, coalitionRsr)
+                    .subject(coalitionRsr)
                     .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CsgpCoalitionObj);
                     //.add(MAJANVocabulary.CsgpValuePre, ThreadLocalRandom.current().nextDouble(-5,5));
         
@@ -271,6 +273,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         }
         
         Model responseModel=builder.build();
+        Utils.printRDF4JModel(responseModel, LOG);
         if(coalitionGeneratorInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
         }else if(coalitionGeneratorInputQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){
