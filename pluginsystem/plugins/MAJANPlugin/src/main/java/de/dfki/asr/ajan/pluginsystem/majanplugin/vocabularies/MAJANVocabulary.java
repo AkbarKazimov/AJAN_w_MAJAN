@@ -33,10 +33,11 @@ public class MAJANVocabulary {
         public final static IRI MacNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#");
         public final static IRI MembersPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#hasMembers");        
         public final static IRI SolutionOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#isSolutionOf");
-        public final static IRI MemberOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#isMemberOf");        
-
+        public final static IRI MemberOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#isMemberOf");
+        
 
         // CSGP Vocabulary
+        public final static IRI BOSSType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#BOSS");
         public final static IRI CsgpSolverType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#CSGPSolver");
         public final static IRI CoalitionGeneratorType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#CoalitionGenerator");
         public final static IRI MinCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMinCoalitionSize");

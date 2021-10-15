@@ -40,6 +40,21 @@ public abstract class AbstractBeliefBase {
 		update(model, model, false);
 	}
 
+        public void insert(final Model model){
+            synchronized (BELIEFBASE_LOCK) {
+                Repository repo = initialize();
+                try (RepositoryConnection connection = repo.getConnection()) {
+                    connection.begin(IsolationLevels.SERIALIZABLE);
+                    insertModel(model, connection);
+                    connection.commit();
+                }
+            }
+        }
+        private void insertModel(final Model model, final RepositoryConnection connection){
+            model.forEach((statement) -> {
+                connection.add(statement.getSubject(), statement.getPredicate(), statement.getObject(), statement.getContext());
+            });
+        }
 	public void update(final Model add, final Model remove, final boolean mode) {
 		synchronized (BELIEFBASE_LOCK) {
 			Repository repo = initialize();

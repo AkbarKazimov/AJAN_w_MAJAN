@@ -99,6 +99,7 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
                         setRequestUriList();
                         
                         for (String requestUri: requestUriList) {
+                    //        System.out.println("RequestURI:" + requestUri);
                             binding.setRequestURI(new URI(requestUri));
                             request = new HttpConnection(binding);
                             String payload = null;
@@ -106,6 +107,8 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
                                 payload = getInput(binding);
                             }
                             request.setPayload(payload);
+                     //       System.out.println("Broadcast:Payload--->");
+                     //       System.out.println(payload);
                             LOG.info("Executing request {}", request.toString());
  //                           LOG.info("Sending Payload: " + payload);
 
@@ -175,17 +178,21 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
         
         @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
 	protected void setRequestUriList() throws URISyntaxException, MessageEvaluationException {
+                requestUriList.clear();
 		Repository repo = BTUtil.getInitializedRepository(getObject(), queryURI.getOriginBase());
 		List<BindingSet> result = queryURI.getResult(repo);
+                LOG.info("ResultSize: " + result.size());
 		if (result.isEmpty()) {
 			throw new MessageEvaluationException("No ?requestURI defined in Message description");
 		}
                 for (BindingSet bindingSet : result) {
                     Value strValue = bindingSet.getValue("requestURI");
+                    LOG.info("rqsURI: " + strValue);
                     if (strValue == null) {
                         throw new MessageEvaluationException("No ?requestURI defined in Message description");
                     } else {
                         requestUriList.add(strValue.stringValue());
+                        LOG.info("ADDED_ rqsURI_list size: " + requestUriList.size());
                     }
                 }
 	}

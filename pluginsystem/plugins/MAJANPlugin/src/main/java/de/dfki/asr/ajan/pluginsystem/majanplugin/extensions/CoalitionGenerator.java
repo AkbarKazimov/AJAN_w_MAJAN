@@ -114,6 +114,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
     private boolean areCoalitionsGenerated() throws URISyntaxException, ConstraintsException, CoalitionGenerationInputException {
         boolean responseFlag = false;
         int numOfAgents=0, minCoalitionSize=0, maxCoalitionSize=0;
+        String lccId = "";
         List<int[]> mlList=new ArrayList<>(), clList=new ArrayList<>();
         List<String> agentNames=new ArrayList<>();
         
@@ -141,20 +142,19 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
 
 
         // Extract id of Mac Problem Instance from Model
-      /*  Set<Value> valueSet = modelResult.filter(problemInstanceID_subject, MAJANVocabulary.MacProblemInstanceIdPre, null).objects();
-        String macProblemId=null;
+        Set<Value> valueSet = modelResult.filter(null, MAJANVocabulary.UseCaseIdPre, null).objects();
         if(!valueSet.isEmpty()){
-            macProblemId=valueSet.iterator().next().stringValue();
+            lccId = valueSet.iterator().next().stringValue();
         }else{
-            throw new CoalitionGenerationInputException("Mac Problem Id is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.MacProblemInstanceIdPre+")");
+            throw new CoalitionGenerationInputException("Mac Use Case Id is not given (i.e. no value exists for predicate "+
+                    MAJANVocabulary.UseCaseIdPre+")");
         } // end
-        */
+        
         
       
 
         // Extract NumOfAgents from Model
-        Set<Value> valueSet = modelResult.filter(null, MAJANVocabulary.NumberOfAgentsPre, null).objects();
+        valueSet = modelResult.filter(null, MAJANVocabulary.NumberOfAgentsPre, null).objects();
         if(!valueSet.isEmpty()){
             numOfAgents=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
@@ -247,10 +247,9 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         ModelBuilder builder=new ModelBuilder();
         builder.setNamespace("welcome", MAJANVocabulary.WelcomeNamespace.toString());
         
-        String lccId = "1234";
         // Adding Coalitions to the Problem Instance Subject
         for(int i=0;i<feasibleCoalitions.size();i++){
-            BNode coalitionBnode = MAJANVocabulary.FACTORY.createBNode();
+            //BNode coalitionBnode = MAJANVocabulary.FACTORY.createBNode();
             Resource coalitionRsr = MAJANVocabulary.FACTORY.createIRI(MAJANVocabulary.WelcomeNamespace.toString() +lccId +"coalition"+i); 
             builder.subject(lccUseCaseSubject)
                     .add(MAJANVocabulary.FeasibleCoalitionsPre, coalitionRsr)

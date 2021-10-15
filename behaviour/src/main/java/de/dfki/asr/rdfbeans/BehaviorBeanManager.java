@@ -106,6 +106,7 @@ public class BehaviorBeanManager extends RDFBeanManager {
 		registerType(QueryDomain.class);
 		registerType(LoadBehavior.class);
 		registerType(Write.class);
+                registerType(Insert.class);
 		registerType(Variable.class);
 		registerType(Bound.class);
 		registerType(Bindings.class);

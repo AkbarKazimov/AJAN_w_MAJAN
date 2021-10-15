@@ -14,3 +14,4 @@ de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\ConstraintsException.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\utils\Utils.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\CSGPSolverInputException.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\solvers\BOSS.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\BOSS.class

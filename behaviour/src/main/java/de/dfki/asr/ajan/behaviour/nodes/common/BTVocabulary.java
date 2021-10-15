@@ -37,6 +37,7 @@ public class BTVocabulary {
 	public final static IRI CONDITION = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Condition");
 	public final static IRI UPDATE = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Update");
 	public final static IRI WRITE = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Write");
+        public final static IRI INSERT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Insert");
 	public final static IRI EVENT_PRODUCER = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#EventProducer");
 	public final static IRI GOAL_PRODUCER = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#GoalProducer");
 	public final static IRI HANDLE_EVENT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#HandleEvent");
@@ -57,6 +58,7 @@ public class BTVocabulary {
 	public final static IRI QUERY_RESULT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#QueryResult");
 	public final static IRI UPDATE_RESULT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#UpdateResult");
 	public final static IRI WRITE_RESULT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#WriteResult");
+        public final static IRI INSERT_RESULT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#InsertResult");
 	public final static IRI CONSTRAINT_RESULT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#ConditionResult");
 	public final static IRI VALIDATE_RESULT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#ValidateResult");
 	public final static IRI CONTENT_RESULT = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#ContentResult");

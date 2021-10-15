@@ -45,8 +45,8 @@ import org.eclipse.rdf4j.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@RDFBean("bt:Write")
-public class Write extends AbstractTDBLeafTask {
+@RDFBean("bt:Insert")
+public class Insert extends AbstractTDBLeafTask {
 	@Getter @Setter
 	@RDFSubject
 	private String url;
@@ -62,17 +62,17 @@ public class Write extends AbstractTDBLeafTask {
 //	@RDF("bt:context")
 //	@Getter @Setter
 //	private URI context;
-	private static final Logger LOG = LoggerFactory.getLogger(Write.class);
+	private static final Logger LOG = LoggerFactory.getLogger(Insert.class);
 
 	@Override
 	public Resource getType() {
-		return BTVocabulary.WRITE;
+		return BTVocabulary.INSERT;
 	}
 
 	@Override
 	public LeafStatus executeLeaf() {
 		try {
-			performWrite();
+			performInsert();
 			LOG.info(toString() + " SUCCEEDED");
 			return new LeafStatus(Status.SUCCEEDED, toString() + " SUCCEEDED");
 		} catch (ConditionEvaluationException ex) {
@@ -81,22 +81,22 @@ public class Write extends AbstractTDBLeafTask {
 		}
 	}
 
-	private void performWrite() throws ConditionEvaluationException {
+	private void performInsert() throws ConditionEvaluationException {
 		try {
 			Model model = getInputModel();
-                    //    LOG.info("Write -> Statements -> Start");
-                    //    for (Statement statement : model) {
-                    //        LOG.info(statement.toString());
-                    //    }
-                    //    LOG.info("Write -> Statements -> End");
+                       // System.out.println("Write -> Statements -> Start");
+                      //  for (Statement statement : model) {
+                     //       System.out.println(statement);
+                      //  }
+                      //  System.out.println("Write -> Statements -> End");
 			if (query.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())) {
-				this.getObject().getExecutionBeliefs().update(model);
+				this.getObject().getExecutionBeliefs().insert(model);
 			} else if (query.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())) {
-				this.getObject().getAgentBeliefs().update(model);
+				this.getObject().getAgentBeliefs().insert(model);
 			} else if (query.getTargetBase().toString().equals(AJANVocabulary.LOCAL_SERVICES_KNOWLEDGE.toString())) {
-				this.getObject().getLocalServicesBeliefs().update(model);
+				this.getObject().getLocalServicesBeliefs().insert(model);
 			} else if (query.getTargetBase().toString().equals(AJANVocabulary.LOCAL_AGENTS_KNOWLEDGE.toString())) {
-				this.getObject().getLocalAgentsBeliefs().update(model);
+				this.getObject().getLocalAgentsBeliefs().insert(model);
 			}
 		} catch (URISyntaxException | QueryEvaluationException ex) {
 			throw new ConditionEvaluationException(ex);
@@ -123,14 +123,14 @@ public class Write extends AbstractTDBLeafTask {
 	@Override
 	public Model getModel(final Model model, final BTRoot root, final BTUtil.ModelMode mode) {
 		if (mode.equals(BTUtil.ModelMode.DETAIL)) {
-			query.setResultModel(getInstance(root.getInstance()), BTVocabulary.WRITE_RESULT, model);
+			query.setResultModel(getInstance(root.getInstance()), BTVocabulary.INSERT_RESULT, model);
 		}
 		return super.getModel(model, root, mode);
 	}
 
 	@Override
 	public String toString() {
-		return "Write (" + label + ")";
+		return "Insert (" + label + ")";
 	}
 
 	@Override
