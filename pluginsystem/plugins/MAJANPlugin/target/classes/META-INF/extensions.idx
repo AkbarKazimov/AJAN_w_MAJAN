@@ -4,3 +4,4 @@ de.dfki.asr.ajan.pluginsystem.majanplugin.extensions.Broadcast
 de.dfki.asr.ajan.pluginsystem.majanplugin.extensions.CSGPSolver
 de.dfki.asr.ajan.pluginsystem.majanplugin.extensions.CoalitionGenerator
 de.dfki.asr.ajan.pluginsystem.majanplugin.extensions.HDBSCAN
+de.dfki.asr.ajan.pluginsystem.majanplugin.extensions.SquareRoot

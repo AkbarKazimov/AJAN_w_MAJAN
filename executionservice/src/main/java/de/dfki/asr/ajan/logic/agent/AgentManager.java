@@ -216,7 +216,7 @@ public class AgentManager {
                 if (!agentMap.containsKey(agent.getId())) {
 			throw new IllegalArgumentException("Agent with ID " + agent.getId() + " could not be found");
 		}
-		//tripleStoreManager.removeTripleDataBase(agent.getBeliefs());
+		tripleStoreManager.removeTripleDataBase(agent.getBeliefs());
                 //tripleStoreManager.removeTripleDataBase(agent.getServiceBeliefs());
                 //tripleStoreManager.removeTripleDataBase(agent.getLocalAgentsBeliefs());
 		//agentMap.remove(agent.getName());

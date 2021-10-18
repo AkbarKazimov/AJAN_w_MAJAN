@@ -8,6 +8,8 @@ C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\
 C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\CSGPSolver.java
 C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\CoalitionGenerationInputException.java
 C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\HDBSCAN.java
+C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\SquareRoot.java
+C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\AjanMathInputException.java
 C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\CoalitionGenerator.java
 C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\MAJANPlugin.java
 C:\AJAN\AJAN_w_MAJAN\pluginsystem\plugins\MAJANPlugin\src\main\java\de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\CSGPSolverInputException.java

@@ -76,6 +76,12 @@ public class MAJANVocabulary {
         public final static IRI ChcDistanceScoreObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CHCDistanceScore");
         public final static IRI DistanceScorePre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasDistanceScore");
         public final static IRI LccUseCaseObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#LCCUseCase");
-
         
+        public final static IRI SquareRootType = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#SquareRoot");
+        
+        public final static IRI MATH_SUBJECT = FACTORY.createIRI("http://www.ajan.de/ajan-ns#MathSubject");
+        public final static IRI math_HAS_VALUE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasValue");
+        public final static IRI math_HAS_RESULT_PREDICATE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasResultPredicate");
+        
+
 }

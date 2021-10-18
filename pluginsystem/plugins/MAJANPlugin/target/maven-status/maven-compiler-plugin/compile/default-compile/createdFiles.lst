@@ -1,3 +1,4 @@
+de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\AjanMathInputException.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\HDBSCANInputException.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\MyException.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\CoalitionGenerator.class
@@ -10,6 +11,7 @@ META-INF\extensions.idx
 de\dfki\asr\ajan\pluginsystem\majanplugin\vocabularies\MAJANVocabulary.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\Broadcast.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\HDBSCAN.class
+de\dfki\asr\ajan\pluginsystem\majanplugin\extensions\SquareRoot.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\ConstraintsException.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\utils\Utils.class
 de\dfki\asr\ajan\pluginsystem\majanplugin\exceptions\CSGPSolverInputException.class

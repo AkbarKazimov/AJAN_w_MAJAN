@@ -166,24 +166,18 @@
 											#		a bt:Priority ;
 											#		bt:hasChildren (
 															:ConditionAnyFeasibleCoalitionExists
-											#				:ProduceFinalizeLccProcessEvent
+											#				:ProduceFinalizeLccEvent
 											#						)
 											#	]
 												:BroadcastCoalitions2ReceiveUtilities
 												:WriteLccPreferences2Exec
 												#:InsertLccUseCaseAmount
+												:ComputeSdOfLccCoalitions
 												:UpdateComputeUtilityValuesLcc
 												#:ComputeLccUtilities
 												:InsertLccUtilities2Lakr
 												:Wait4UtilityValues
 												:ComputeLccCoalitionValues
-#												[
-#													a bt:Priority ;
-#													bt:hasChildren (
-#															:ConditionAllReturnedLccUtilities
-#															:AddUtilitiesToNonSenders
-#																	)
-#												]
 												:ProduceSolveLccEvent
 												:ClearExecutionKnowledge
 														)
@@ -225,12 +219,15 @@
 	a bt:Root ;
 	rdfs:label "Receive LCC Utility Values BT" ;
 	bt:hasChild [
-		a bt:UntilFail ;
-		bt:hasChild (
-			[
-				a bt:Sequence ;
-				bt:hasChildren (
-						:HandleReceiveLccUtilitiesEvent
+		a bt:Sequence ;
+		bt:hasChildren (
+				[
+					a bt:UntilFail ;
+					bt:hasChild (
+						[
+							a bt:Sequence ;
+							bt:hasChildren (
+								:HandleReceiveLccUtilitiesEvent
 				#		:ReplaceLccProcessType
 				#		:WriteAllIncompleteLccProcess2Ek
 				#		:RemoveUnmatchingLccProcesses
@@ -239,9 +236,12 @@
 				#		:WriteLccUtilitiesOfSender2Lakr
 						:InsertLccUtilitiesOfSender2Lakr
 						:ClearExecutionKnowledge
+											)
+			
+						]
 								)
-			]
-					)
+				]
+						)
 				] .
 
 
@@ -1604,6 +1604,71 @@
 
 
 
+:ComputeSdOfLccCoalitions
+	a bt:SquareRoot ;
+	rdfs:label "SquareRoot: Compute LCC SDs" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:ExecutionKnowledge ;
+				bt:targetBase ajan:AgentKnowledge ;
+				bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+					
+					Construct {
+						?feasibleCoalitionNode	rdf:type	ajan:MathSubject ;
+												ajan:hasValue	?unrootedSd ;
+												ajan:hasResultPredicate	welcome:hasStandardDeviation .
+						
+						# This node creates triples in the following format: 
+						# ?feasibleCoalitionNode welcome:hasStandardDeviation	?finalValue .
+						
+					}
+					Where{
+						SELECT ?feasibleCoalitionNode ((SUM(?sd)/?groupSize) AS ?unrootedSd)
+						WHERE {
+							{
+								SELECT ?feasibleCoalitionNode (SUM(?lccCpl) AS ?totalCpl) (COUNT(?mAgentId) AS ?groupSize)
+								WHERE {
+									# Select Feasible Coalitions
+									?bnode	rdf:type	welcome:LCCUseCase ;
+											welcome:hasId	?lccId ;
+											welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+
+									?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+											mac:hasMembers	?mAgentId .
+
+									# Select Complete LCC Personal Info
+									?mAgentUri ajan:agentId  ?mAgentId ;
+											welcome:hasLCCPersonalInfo ?lccPsnlInfo .	
+									?lccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+											welcome:hasLccCpl		?lccCpl ;
+											welcome:hasId	?lccId .
+								} GROUP BY ?feasibleCoalitionNode 
+							}
+							BIND((?totalCpl/?groupSize) AS ?mean)
+							{
+								SELECT ?feasibleCoalitionNode ?lccCpl 
+								WHERE {
+									?feasibleCoalitionNode	 mac:hasMembers	?mAgentId .
+									# Select Complete LCC Personal Info
+									?mAgentUri ajan:agentId  ?mAgentId ;
+											welcome:hasLCCPersonalInfo ?lccPsnlInfo .	
+									?lccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+											welcome:hasLccCpl		?lccCpl .
+								} GROUP BY ?feasibleCoalitionNode ?lccCpl ?mAgentId
+							}
+							BIND( ( (xsd:float(?mean) - xsd:float(?lccCpl)) * (xsd:float(?mean) - xsd:float(?lccCpl))) AS ?sd )
+						}GROUP BY ?feasibleCoalitionNode ?groupSize
+				  
+					}
+					"""^^xsd:string ;
+			] .
+			
 :UpdateComputeUtilityValuesLcc
 	a bt:Update ;
 	rdfs:label "Update: Compute Utility Values LCC" ;
@@ -2227,11 +2292,12 @@
 				}
 				WHERE{
 					{
-						SELECT ?feasibleCoalition (SUM(?utilityValue) AS ?sumOfUtilities)
+						SELECT ?feasibleCoalition ?sdValue	?sdWeight (SUM(?utilityValue) AS ?sumOfUtilities)
 						WHERE {
 							?lccUseCase	rdf:type	welcome:LCCUseCase ;
 										welcome:hasStatus	?lccStatus ;
 										welcome:hasId	?lccId ;
+										welcome:hasSdWeight	?sdWeight ;
 										welcome:hasFeasibleCoalitions	?feasibleCoalition .
 							#FILTER NOT EXISTS { ?lccUseCase	welcome:hasStatus	"Complete" .}
 							FILTER(LCASE(?lccStatus) = "running")
@@ -2242,9 +2308,42 @@
 							?utilityValueNode	rdf:type	welcome:UtilityValue ;
 												welcome:hasValue	?utilityValue .
 							}
-						} GROUP BY ?feasibleCoalition 
+							OPTIONAL {
+								?feasibleCoalition	welcome:hasStandardDeviation	?sdValue .
+							}
+						} GROUP BY ?feasibleCoalition ?sdValue	?sdWeight
 					}
-					BIND(IF(BOUND(?sumOfUtilities), ?sumOfUtilities, 0) AS ?coalitionValue)
+					#BIND(IF(BOUND(?sumOfUtilities), ((?sumOfUtilities * (1-?sdWeight)) - (?sdWeight * ?sdValue)), 0) AS ?coalitionValue)
+                    BIND(IF(BOUND(?sumOfUtilities), ?sumOfUtilities, 0) AS ?boundSumOfUtils)
+                    BIND(xsd:float(?sdValue) AS ?fSdValue)
+                    BIND(xsd:float(?sdWeight) AS ?fSdWeight)
+                    BIND(xsd:float(?boundSumOfUtils) AS ?fBoundSumOfUtils)
+                    BIND( ((1-?fSdWeight) * ?fBoundSumOfUtils) - (?fSdWeight * ?fSdValue) AS ?coalitionValue)
+				
+				
+					#{
+					#	SELECT ?feasibleCoalition ?sdValue	?sdWeight (SUM(?utilityValue) AS ?sumOfUtilities)
+					#	WHERE {
+					#		?lccUseCase	rdf:type	welcome:LCCUseCase ;
+					#					welcome:hasStatus	?lccStatus ;
+					#					welcome:hasId	?lccId ;
+					#					welcome:hasSdWeight	?sdWeight ;
+					#					welcome:hasFeasibleCoalitions	?feasibleCoalition .
+					#		#FILTER NOT EXISTS { ?lccUseCase	welcome:hasStatus	"Complete" .}
+					#		FILTER(LCASE(?lccStatus) = "running")
+							
+					#		?feasibleCoalition	rdf:type	welcome:CSGPCoalition .
+					#		OPTIONAL {
+					#		?feasibleCoalition	welcome:hasUtilityValue	?utilityValueNode .
+					#		?utilityValueNode	rdf:type	welcome:UtilityValue ;
+					#							welcome:hasValue	?utilityValue .
+					#		}
+					#		OPTIONAL {
+					#			?feasibleCoalition	welcome:hasStandardDeviation	?sdValue .
+					#		}
+					#	} GROUP BY ?feasibleCoalition ?sdValue	?sdWeight
+					#}
+					#BIND(IF(BOUND(?sumOfUtilities), ?sumOfUtilities, 0) AS ?coalitionValue)
 				}
 					"""^^xsd:string ;
 		]) .	
