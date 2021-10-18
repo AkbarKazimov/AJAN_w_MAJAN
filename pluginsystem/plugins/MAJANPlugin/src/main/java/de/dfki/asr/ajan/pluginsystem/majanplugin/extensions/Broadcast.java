@@ -110,7 +110,7 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
                      //       System.out.println("Broadcast:Payload--->");
                      //       System.out.println(payload);
                             LOG.info("Executing request {}", request.toString());
- //                           LOG.info("Sending Payload: " + payload);
+                            LOG.info("Sending Payload: " + payload);
 
                             if (!checkResponse(request.execute(), requestUri)) {
                                 LOG.info(toString() + " FAILED due to malformed response model");

@@ -17,6 +17,7 @@ import de.dfki.asr.ajan.pluginsystem.extensionpoints.NodeExtension;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.CSGPSolverInputException;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.CoalitionGenerationInputException;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.ConstraintsException;
+import de.dfki.asr.ajan.pluginsystem.majanplugin.utils.Utils;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.vocabularies.MAJANVocabulary;
 import general.Combinations;
 import java.io.IOException;
@@ -120,7 +121,6 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
     
     private boolean solve() throws URISyntaxException, CSGPSolverInputException {
         // double nonexistentCoalitionValue = ?
-        String solverName;
         int numOfAgents;
         List<Value> agentNames = new ArrayList<>();
         // coalition in byte as Key and coalition value as Value of the map
@@ -130,6 +130,8 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
         Repository repo = BTUtil.getInitializedRepository(this.getObject(), csgpInputQuery.getOriginBase());
         Model modelResult = csgpInputQuery.getResult(repo);
 
+        Utils.printRDF4JModel(modelResult, LOG);
+        
         // Extract the Problem Instance. There should be only 1 problem instance because 
         // the algorithm cannot run multiple configurations at the same time. 
         Set<Resource> subjects = modelResult.filter(null, org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, 
@@ -141,26 +143,19 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             throw new CSGPSolverInputException("No problem instance is specified (i.e. no subject exists for type "+
                     MAJANVocabulary.MacProblemInstanceObj+")");
         } // end
+       // LOG.info("lcc_subject:"+problemInstance_subject);
         
         // Extract id of Mac Problem Instance from Model
-        Set<Value> valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.MacProblemInstanceIdPre, null).objects();
+        Set<Value> valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.UseCaseIdPre, null).objects();
         String macProblemId=null;
         if(!valueSet.isEmpty()){
             macProblemId=valueSet.iterator().next().stringValue();
         }else{
             throw new CSGPSolverInputException("Mac Problem Id is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.MacProblemInstanceIdPre+")");
+                    MAJANVocabulary.UseCaseIdPre+")");
         } // end
+       // LOG.info("id:"+macProblemId);
         
-        // Extract Solver name from Model
-        valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.CsgpSolverPre, null).objects();
-        if(!valueSet.isEmpty()){
-            solverName=valueSet.iterator().next().stringValue();
-        }else{
-            throw new CSGPSolverInputException("Number of agents is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.NumberOfAgentsPre+")");
-        } // end
-
         // Extract NumOfAgents from Model
         valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.NumberOfAgentsPre, null).objects();
         if(!valueSet.isEmpty()){
@@ -169,7 +164,8 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             throw new CSGPSolverInputException("Number of agents is not given (i.e. no value exists for predicate "+
                     MAJANVocabulary.NumberOfAgentsPre+")");
         } // end
-
+       // LOG.info("numOfAgents:"+numOfAgents);
+        
         // Extract Agent Names from Model
         valueSet=modelResult.filter(problemInstance_subject, MAJANVocabulary.ParticipantsPre, null).objects();
         if(valueSet.size()!=numOfAgents){
@@ -181,23 +177,31 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             agentNames.add(valueIterator.next());
         } // end
         
-        // Extract Coalitions from Model
+       // for(Value agentId:agentNames){
+      //      LOG.info("agentName:"+agentId);
+      //  }
+      //  LOG.info("pref:" + modelResult.filter(problemInstance_subject, MAJANVocabulary.FeasibleCoalitionsPre, null).size());
+        // Extract Coalition Values from Model
         Set<Resource> coalitionsAsResource = Models.objectResources(modelResult.filter(problemInstance_subject, 
                 MAJANVocabulary.FeasibleCoalitionsPre, null));
+      //  LOG.info("coalitions size:"+coalitionsAsResource.size());
         Resource[] coalitionRsrs = new Resource[(int)Math.pow(2,numOfAgents)];
         for(Resource coalitionRsr:coalitionsAsResource){
-            Set<Value> memberAgents=modelResult.filter(coalitionRsr, MAJANVocabulary.MembersPre, null).objects();
+            Set<Value> memberAgents=modelResult.filter(coalitionRsr, MAJANVocabulary.HAS_MEMBERS, null).objects();
+         //   LOG.info("members:"+memberAgents.size());
             int[] coalitionInByte = new int[memberAgents.size()];
             
             // Extract Coalition value from Model
-            valueSet = modelResult.filter(coalitionRsr, MAJANVocabulary.CsgpValuePre, null).objects();
-            double coalitionValue;
+            valueSet = modelResult.filter(coalitionRsr, MAJANVocabulary.HAS_VALUE, null).objects();
+            double coalitionValue=0;
             if(valueSet.isEmpty()){
                 continue;
             }else{
                 coalitionValue=Double.valueOf(valueSet.iterator().next().stringValue());
             } // end
-                
+            
+          //  LOG.info("Coalition:"+coalitionRsr);
+         //   LOG.info("Its Value:"+coalitionValue);
             // Create Coalitions in Byte Format
             Iterator<Value> itMA = memberAgents.iterator();
             for (int i = 0; i < coalitionInByte.length; i++) {
@@ -211,21 +215,19 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
         } // end
 
         Map<int[][], Double[]> solutions=null;
-        if(solverName.toLowerCase().equals("boss")){
-            LOG.info("CSGPSolver " + solverName + " started!");
-            BOSS boss=new BOSS();
+       // if(solverName.toLowerCase().equals("boss")){
+            LOG.info("BOSS started!");
+            csgpSolver.BOSS boss = new csgpSolver.BOSS();
+            solutions = boss.execute(numOfAgents, coalitionsData);
+//            BOSS boss=new BOSS();
             //solutions =  boss.run(numOfAgents, coalitionsData);
-            LOG.info("CSGPSolver " + solverName + " completed!");
-
-        }else{
-            throw new CSGPSolverInputException("Unknown Solver Name: "+ solverName);
-        }
+            LOG.info("BOSS finished!");
         
-       /* System.out.println("Solution size: " + solutions.size());
+        LOG.info("Solution size: " + solutions.size());
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
-            System.out.println("Rank: " + solution.getValue()[1] + " CS: " + general.General.convertArrayToString(solution.getKey()) + 
+            LOG.info("Rank: " + solution.getValue()[1] + " CS: " + general.General.convertArrayToString(solution.getKey()) + 
                     " Value: " + solution.getValue()[0]);
-        }*/
+        }
         
         // System.out.println("Feasible Coalitions Amount is "+feasibleCoalitions.size());
         ModelBuilder builder=new ModelBuilder();
@@ -239,11 +241,12 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             int rank = solution.getValue()[1].intValue();
             String solutionStr = "csgp:" + macProblemId + "_CS" + rank;  
             builder.subject(problemInstance_subject)
-                    .add(MAJANVocabulary.CsgpSolutionPre, solutionStr)
+                    .add(MAJANVocabulary.HAS_SOLUTION, solutionStr)
                     .subject(solutionStr)
-                    .add(MAJANVocabulary.CsgpValuePre, solution.getValue()[0])
-                    .add(MAJANVocabulary.CsgpCsRankPre, solution.getValue()[1])
-                    .add(MAJANVocabulary.CsgpSolutionOfPre, problemInstance_subject);
+                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.COALITION_STRUCTURE)
+                    .add(MAJANVocabulary.HAS_VALUE, solution.getValue()[0])
+                    .add(MAJANVocabulary.HAS_RANK, solution.getValue()[1])
+                    .add(MAJANVocabulary.HAS_SOLUTION_OF, problemInstance_subject);
 
             // Adding Coalitions to CSs
             for(int[] coalition:solution.getKey()){
@@ -253,7 +256,7 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
                 // because of the hard constraints, then algorithm will stop adding this particular solution to model which means,
                 // some coalitions of this particular CS can be added to model but the CS will not be complete. 
                 if(coalitionRsrs[coalitionInBit]!=null){
-                    builder.add(MAJANVocabulary.MembersPre,
+                    builder.add(MAJANVocabulary.HAS_MEMBERS,
                             coalitionRsrs[coalitionInBit]);       
                 }else{
                     break;
@@ -261,6 +264,7 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             } // end
         }
         Model responseModel=builder.build();
+        Utils.printRDF4JModel(responseModel, LOG);
         if(csgpInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
         }else if(csgpInputQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){

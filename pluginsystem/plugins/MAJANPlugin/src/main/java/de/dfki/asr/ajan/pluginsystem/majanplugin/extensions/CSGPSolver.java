@@ -17,7 +17,6 @@ import de.dfki.asr.ajan.pluginsystem.extensionpoints.NodeExtension;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.CSGPSolverInputException;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.CoalitionGenerationInputException;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.exceptions.ConstraintsException;
-import de.dfki.asr.ajan.pluginsystem.majanplugin.extensions.solvers.BOSS;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.vocabularies.MAJANVocabulary;
 import general.Combinations;
 import java.io.IOException;
@@ -186,7 +185,7 @@ public class CSGPSolver extends AbstractTDBLeafTask implements NodeExtension, Tr
                 MAJANVocabulary.FeasibleCoalitionsPre, null));
         Resource[] coalitionRsrs = new Resource[(int)Math.pow(2,numOfAgents)];
         for(Resource coalitionRsr:coalitionsAsResource){
-            Set<Value> memberAgents=modelResult.filter(coalitionRsr, MAJANVocabulary.MembersPre, null).objects();
+            Set<Value> memberAgents=modelResult.filter(coalitionRsr, MAJANVocabulary.HAS_MEMBERS, null).objects();
             int[] coalitionInByte = new int[memberAgents.size()];
             
             // Extract Coalition value from Model
@@ -210,11 +209,11 @@ public class CSGPSolver extends AbstractTDBLeafTask implements NodeExtension, Tr
 
         } // end
 
-        Map<int[][], Double[]> solutions;
+        Map<int[][], Double[]> solutions=null;
         if(solverName.toLowerCase().equals("boss")){
             LOG.info("CSGPSolver " + solverName + " started!");
-            BOSS boss=new BOSS();
-            solutions =  boss.run(numOfAgents, coalitionsData);
+         //   BOSS boss=new BOSS();
+         //   solutions =  boss.run(numOfAgents, coalitionsData);
             LOG.info("CSGPSolver " + solverName + " completed!");
 
         }else{
@@ -253,7 +252,7 @@ public class CSGPSolver extends AbstractTDBLeafTask implements NodeExtension, Tr
                 // because of the hard constraints, then algorithm will stop adding this particular solution to model which means,
                 // some coalitions of this particular CS can be added to model but the CS will not be complete. 
                 if(coalitionRsrs[coalitionInBit]!=null){
-                    builder.add(MAJANVocabulary.MembersPre,
+                    builder.add(MAJANVocabulary.HAS_MEMBERS,
                             coalitionRsrs[coalitionInBit]);       
                 }else{
                     break;

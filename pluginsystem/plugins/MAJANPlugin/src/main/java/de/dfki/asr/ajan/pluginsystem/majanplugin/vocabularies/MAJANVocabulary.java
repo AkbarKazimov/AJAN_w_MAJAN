@@ -31,7 +31,7 @@ public class MAJANVocabulary {
         public final static IRI AjanNamespace = FACTORY.createIRI("http://www.ajan.de/ajan-ns#");
         public final static IRI ClanNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#");
         public final static IRI MacNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#");
-        public final static IRI MembersPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#hasMembers");        
+        public final static IRI HAS_MEMBERS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#hasMembers");        
         public final static IRI SolutionOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#isSolutionOf");
         public final static IRI MemberOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#isMemberOf");
         
@@ -46,10 +46,14 @@ public class MAJANVocabulary {
         public final static IRI CsgpCoalitionObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CSGPCoalition");        
         public final static IRI CsgpSolverPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#solver");        
         public final static IRI CsgpSolutionPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#csgpSolution");        
-        public final static IRI CsgpCoalitionStructureObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#CsgpCoalitionStructure");        
+        public final static IRI COALITION_STRUCTURE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CoalitionStructure");        
         public final static IRI CsgpValuePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#value");        
         public final static IRI CsgpCsRankPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#csRank");
         public final static IRI CsgpSolutionOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#solutionOf");        
+        public final static IRI HAS_VALUE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasValue");        
+        public final static IRI HAS_SOLUTION = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasSolution");        
+        public final static IRI HAS_RANK = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasRank");        
+        public final static IRI HAS_SOLUTION_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasSolutionOf");        
 
         
         // HDBSCAN Vocabulary

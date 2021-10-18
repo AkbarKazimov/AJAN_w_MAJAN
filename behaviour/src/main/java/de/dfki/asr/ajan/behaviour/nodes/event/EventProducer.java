@@ -43,6 +43,7 @@ import org.cyberborean.rdfbeans.annotations.RDFBean;
 import org.cyberborean.rdfbeans.annotations.RDFSubject;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.query.QueryEvaluationException;
 import org.eclipse.rdf4j.repository.Repository;
 import org.slf4j.Logger;
@@ -104,7 +105,13 @@ public class EventProducer extends AbstractTDBLeafTask implements Producer {
 	private Model getModel() throws ConditionEvaluationException {
 		try {
 			Repository repo = BTUtil.getInitializedRepository(getObject(), query.getOriginBase());
-			return query.getResult(repo);
+                        Model model = query.getResult(repo);
+                        LOG.info("event producer statements:");
+                        for(Statement stat:model){
+                            LOG.info(stat.toString());
+                        }
+                        LOG.info("event producer statements: END");
+                        return model;
 		} catch (URISyntaxException | QueryEvaluationException ex) {
 			throw new ConditionEvaluationException(ex);
 		}

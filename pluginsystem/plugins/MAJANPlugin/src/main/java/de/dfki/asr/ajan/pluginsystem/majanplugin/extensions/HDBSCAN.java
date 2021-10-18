@@ -232,10 +232,10 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                 }
             }
             builder.subject(clusteringBNode)
-                    .add(MAJANVocabulary.MembersPre, clusterBnode)
+                    .add(MAJANVocabulary.HAS_MEMBERS, clusterBnode)
                     .subject(clusterBnode)
                     .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.ClusterObj)
-                    .add(MAJANVocabulary.MembersPre, agentNames.get(i))
+                    .add(MAJANVocabulary.HAS_MEMBERS, agentNames.get(i))
                     .add(MAJANVocabulary.ClusterOfPre, clusteringBNode)
                     //.subject((Resource) agentNames.get(i))
                     //.add(MAJANVocabulary.MemberOfPre, clusterBnode)
@@ -405,10 +405,10 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                 }
             }
             builder.subject(clusteringBNode)
-                    .add(MAJANVocabulary.MembersPre, clusterBnode)
+                    .add(MAJANVocabulary.HAS_MEMBERS, clusterBnode)
                     .subject(clusterBnode)
                     .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.ClusterObj)
-                    .add(MAJANVocabulary.MembersPre, agentNames.get(i))
+                    .add(MAJANVocabulary.HAS_MEMBERS, agentNames.get(i))
                     .add(MAJANVocabulary.ClusterOfPre, clusteringBNode)
                     .subject((Resource) agentNames.get(i))
                     .add(MAJANVocabulary.MemberOfPre, clusterBnode);

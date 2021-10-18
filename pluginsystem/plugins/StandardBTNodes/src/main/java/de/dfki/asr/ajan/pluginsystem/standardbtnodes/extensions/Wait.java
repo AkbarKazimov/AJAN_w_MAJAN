@@ -29,6 +29,8 @@ import de.dfki.asr.ajan.behaviour.nodes.common.LeafStatus;
 import de.dfki.asr.ajan.behaviour.nodes.common.TreeNode;
 import de.dfki.asr.ajan.pluginsystem.standardbtnodes.exceptions.BeliefBaseUpdateException;
 import de.dfki.asr.ajan.pluginsystem.standardbtnodes.vocabularies.StandardBTVocabulary;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import lombok.Getter;
 import lombok.Setter;
 import org.cyberborean.rdfbeans.annotations.RDF;
@@ -109,6 +111,8 @@ public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode
 	}
 
 	private void startWaiting() throws BeliefBaseUpdateException {
+            LOG.info("3333333333------");
+
 		bt = this.getObject().getBt();
 		thread = new Thread(){
 			public void run(){
@@ -116,7 +120,20 @@ public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode
 					running = Status.RUNNING;
 					sleep(milliseconds);
 					running = Status.SUCCEEDED;
-					bt.setEventInformation(new LinkedHashModel());
+                                        //Queue<Object> queueInformation = new  ConcurrentLinkedQueue();
+                                        //queueInformation.add();
+                                        Object obj = bt.getObject().getEventInformation();
+                                        if(obj instanceof ConcurrentLinkedQueue){
+                                            ((ConcurrentLinkedQueue)obj).add(new LinkedHashModel());
+                                            bt.setEventInformation(obj);
+                                            LOG.info("111111----");
+                                            
+                                        }else{
+                                            LOG.info("2222222------");
+                                            bt.setEventInformation(new LinkedHashModel());
+                                        }
+                                       // bt.run();
+                                        
 				} catch (InterruptedException ex) {
 					LOG.info("Thread cancelled!");
 				}

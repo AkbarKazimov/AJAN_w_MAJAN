@@ -262,7 +262,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
             for(int j=0;j<feasibleCoalitions.get(i).length;j++){
                // builder.add(MAJANVocabulary.MembersPre, 
                     //    MAJANVocabulary.FACTORY.createIRI(agentNames.get(feasibleCoalitions.get(i)[j]-1)));
-                builder.add(MAJANVocabulary.MembersPre, agentNames.get(feasibleCoalitions.get(i)[j]-1));
+                builder.add(MAJANVocabulary.HAS_MEMBERS, agentNames.get(feasibleCoalitions.get(i)[j]-1));
             }
             // TODO: demeli bele. birinci agentlarin irilarinnan list yarat. sonra hemin listi bir bNoda elave ele. 
             // sonra hemin bNodu :coalition1 :members :bNode kimi modele at. 
