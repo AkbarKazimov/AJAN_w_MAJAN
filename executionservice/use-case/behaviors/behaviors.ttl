@@ -162,10 +162,12 @@
 										bt:hasChildren (
 												:ComputeLccCannotLinkConnections
 												:GenerateFeasibleCoalitions4Lcc
+												:ComputeLccCoalitionInfo
+												:UpdateLccCoalitionInfo
 											#	[
 											#		a bt:Priority ;
 											#		bt:hasChildren (
-															:ConditionAnyFeasibleCoalitionExists
+											#				:ConditionAnyFeasibleCoalitionExists
 											#				:ProduceFinalizeLccEvent
 											#						)
 											#	]
@@ -173,12 +175,12 @@
 												:WriteLccPreferences2Exec
 												#:InsertLccUseCaseAmount
 												:ComputeSdOfLccCoalitions
-												:UpdateComputeUtilityValuesLcc
-												#:ComputeLccUtilities
+												:ComputeUtilityValuesInLcc
+												#:UpdateComputeUtilityValuesLcc
 												:InsertLccUtilities2Lakr
 												:Wait4UtilityValues
 												:ComputeLccCoalitionValues
-												:ProduceSolveLccEvent
+												#:ProduceSolveLccEvent
 												:ClearExecutionKnowledge
 														)
 									]
@@ -203,7 +205,8 @@
 						:HandleComputeLccUtilitiesEvent
 						:WriteLccPreferences2Exec
 						:WriteAgentId2Execution
-						:UpdateComputeUtilityValuesLcc
+						:ComputeUtilityValuesInLcc
+						#:UpdateComputeUtilityValuesLcc
 						#:ComputeLccUtilities
 						:WriteRootAddress2Exec
 						:MessageLccUtilities2Dedicated
@@ -1289,6 +1292,8 @@
 									welcome:hasDedicatedAgent	?dAgentId .
 									
 							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													welcome:hasCommonGender ?cmnGender ;
+													welcome:hasCommonNation	?cmnNation ;
 													mac:hasMembers	?mAgentId .
 							
 							# Select Complete LCC Personal Info
@@ -1309,6 +1314,8 @@
 									welcome:hasDedicatedAgent	?dAgentId .
 									
 							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													welcome:hasCommonGender ?cmnGender ;
+													welcome:hasCommonNation	?cmnNation ;
 													mac:hasMembers	?mAgentId .
 							
 							# Select Complete LCC Personal Info
@@ -1518,7 +1525,7 @@
 
 :ComputeLccCoalitionInfo
 	a bt:Update ;
-	rdfs:label "Update: Compute Coalition Information - common gender and nationality" ;
+	rdfs:label "Update: Compute LCC Coalition Information - common gender and nationality" ;
 	bt:query ([
 		a bt:UpdateQuery ;
 		bt:originBase ajan:ExecutionKnowledge ;
@@ -1529,42 +1536,83 @@
 					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 					PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
-					
-					DELETE {
-						?bnode	welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
-						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
-												?p			?o .					
-					}
-					WHERE{
-					
-					{
-						?agent	rdf:type	ajan:Agent ;
-								ajan:agentId	?agentId .
-						
-						?bnode	rdf:type	welcome:LCCUseCase ;
-								welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
-									
-						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
-												mac:hasMembers	?mAgentId .
-						
-						FILTER NOT EXISTS {
-							?feasibleCoalitionNode	mac:hasMembers	?agentId .
-						}
-						
-						?mAgent	ajan:agentId	?mAgentId ;
-								welcome:hasLCCPersonalInfo ?lccPsnlInfo .	
 
-						?lccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
-										welcome:hasGender	?gender ;
-										welcome:hasNationality	?nationality ;
-										welcome:hasLccCpl		?lccCpl ;
-										welcome:hasId	?lccId .
-					}	
+					INSERT {
+							?feasibleCoalitionNode	welcome:hasCommonGender	?cG ;
+													welcome:hasCommonNation	?cN .
+					}
+					WHERE {
+						{
+							SELECT ?feasibleCoalitionNode (COUNT(DISTINCT ?gender) AS ?gS) (COUNT(DISTINCT ?nation) AS ?nS)
+							{
+								?bnode		rdf:type	 welcome:LCCUseCase ;
+											welcome:hasId	?lccId ;
+											welcome:hasFeasibleCoalitions	 ?feasibleCoalitionNode .
+								?feasibleCoalitionNode	rdf:type	 welcome:CSGPCoalition ;
+														mac:hasMembers	?mAgentId.
+								?mAgent	ajan:agentId	?mAgentId ;
+										welcome:hasLCCPersonalInfo ?mLccPsnlInfo .	
+								?mLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+												welcome:hasId	?lccId ;
+												welcome:hasGender	?gender ;
+												welcome:hasNationality	?nation .
+							} GROUP BY ?feasibleCoalitionNode
+						}
+						BIND(IF(?gS > 1, "Mixed", "Same") AS ?cG)
+						BIND(IF(?nS > 1, "Mixed", "Same") AS ?cN)
 					}
 					"""^^xsd:string ;
 		]) .
 
 
+:UpdateLccCoalitionInfo
+	a bt:Update ;
+	rdfs:label "Update: LCC Coalition Info" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+
+					DELETE{
+					?feasibleCoalitionNode	welcome:hasCommonGender	?cG ;
+											welcome:hasCommonNation	?cN .
+					}
+					INSERT{
+					?feasibleCoalitionNode	welcome:hasCommonGender	?commonGender ;
+											welcome:hasCommonNation	?commonNation .
+					}
+					WHERE {
+						?bnode		rdf:type	 welcome:LCCUseCase ;
+									welcome:hasId	?lccId ;
+									welcome:hasFeasibleCoalitions	 ?feasibleCoalitionNode .
+						?feasibleCoalitionNode	rdf:type	 welcome:CSGPCoalition ;
+												welcome:hasCommonGender	?cG ;
+												welcome:hasCommonNation	?cN .
+														
+						FILTER(LCASE(?cG) = "same" || LCASE(?cN) = "same")
+						{
+							SELECT ?gender ?nation
+							{
+								?feasibleCoalitionNode	mac:hasMembers	?mAgentId.
+								?mAgent	ajan:agentId	?mAgentId ;
+										welcome:hasLCCPersonalInfo ?mLccPsnlInfo .	
+								?mLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+												welcome:hasId	?lccId ;
+												welcome:hasGender	?gender ;
+												welcome:hasNationality	?nation .
+							} LIMIT 1
+						}
+						BIND(IF(LCASE(?cG) = "same", ?gender, ?cG) AS ?commonGender)
+						BIND(IF(LCASE(?cN) = "same", ?nation, ?cN) AS ?commonNation)							
+					}
+					"""^^xsd:string ;
+		]) .
 :WriteLccPreferences2Exec
 	a bt:Write ;
 	rdfs:label "Write: LCC Individual Preferences to Execution" ;
@@ -1582,20 +1630,20 @@
 						?agent	welcome:hasLCCPreferencesInfo	?bnode .
 								
 						?bnode	rdf:type	welcome:LCCPreferencesInfo ;
-								welcome:hasGenderPreference ?genPref ;
-								welcome:hasNationPreference ?natPref ;
-								welcome:hasGenderWeight	?gWeight ;
-								welcome:hasNationalityWeight	?nWeight .
+								welcome:hasLccGenderPreference ?genPref ;
+								welcome:hasLccNationPreference ?natPref ;
+								welcome:hasLccGenderPrefWeight	?gWeight ;
+								welcome:hasLccNationPrefWeight	?nWeight .
 				}
 				WHERE {
 					?agent	rdf:type ajan:Agent ;
 							ajan:agentId	?subAgentId .
 							
 					?du		rdf:type	welcome-git:Registered ;
-							welcome:hasGenderPreference ?genPref ;
-							welcome:hasNationPreference ?natPref ;
-							welcome:hasGenderWeight	?gWeight ;
-							welcome:hasNationalityWeight	?nWeight .
+							welcome:hasLccGenderPreference ?genPref ;
+							welcome:hasLccNationPreference ?natPref ;
+							welcome:hasLccGenderPrefWeight	?gWeight ;
+							welcome:hasLccNationPrefWeight	?nWeight .
 
 					{BIND(BNODE() AS ?bnode)}
 							
@@ -1669,6 +1717,81 @@
 					"""^^xsd:string ;
 			] .
 			
+
+:ComputeUtilityValuesInLcc
+	a bt:Update ;
+	rdfs:label "Update: Compute Utility Values in LCC" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+                INSERT {
+					?bnode	rdf:type	welcome:LCCUseCase ;
+							welcome:hasId	?lccId ;
+							welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+							
+                    ?feasibleCoalitionNode  welcome:hasUtilityValue ?uVbnode .
+                    ?uVbnode    rdf:type    welcome:UtilityValue ;
+                                welcome:hasComputedBy   ?agentId ;    
+                                welcome:hasValue        ?ttlV .
+                }
+                WHERE {
+					{
+						SELECT DISTINCT ?feasibleCoalitionNode ?agentId ?bnode ?lccId (SUM(?uValue) AS ?ttlV)
+						WHERE {
+							# get This agent
+							#?agent	rdf:type	ajan:Agent, ajan:ThisAgent ;
+							?agent	rdf:type	ajan:Agent;
+									ajan:agentId	 ?agentId .
+									
+							# get Feasible Coalitions which are sent by Dedicated agent
+							?bnode	rdf:type	welcome:LCCUseCase ;
+									welcome:hasId	?lccId ;
+									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
+							
+							# make sure that coalition contains This agent
+							FILTER EXISTS { ?feasibleCoalitionNode  mac:hasMembers	?agentId . }
+					
+							# get the coalition information
+							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
+													welcome:hasCommonGender	?commonGender ;
+													welcome:hasCommonNation	?commonNation .
+							
+							# get preferences of This agent
+							?agent	welcome:hasLCCPreferencesInfo	?aLccPrfInfo .
+							?aLccPrfInfo	rdf:type	welcome:LCCPreferencesInfo ;
+											welcome:hasLccGenderPreference	?aGenderPref ;
+											welcome:hasLccNationPreference	?aNationPref ;
+											welcome:hasLccGenderPrefWeight	?gWeight ;
+											welcome:hasLccNationPrefWeight	?nWeight .
+							
+							# get gender and nation of This agent
+							?agent welcome:hasLCCPersonalInfo ?aLccPsnlInfo .
+							?aLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
+											welcome:hasId	?lccId ;
+											welcome:hasGender	 ?aGender ;
+											welcome:hasNationality	?aNation .
+							
+							
+							BIND(IF(LCASE(?aGenderPref) = "dont mind" || (LCASE(?aGenderPref) = "same" && ?aGender = ?commonGender) || (LCASE(?aGenderPref) = "mixed" && LCASE(?commonGender) = "mixed"), xsd:float(?gWeight), -xsd:float(?gWeight)) AS ?genderUValue)
+							BIND(IF(LCASE(?aNationPref) = "dont mind" || (LCASE(?aNationPref) = "same" && ?aNation = ?commonNation) || (LCASE(?aNationPref) = "mixed" && LCASE(?commonNation) = "mixed"), xsd:float(?nWeight), -xsd:float(?nWeight)) AS ?nationUValue)
+												
+							BIND((?genderUValue + ?nationUValue) AS ?uValue)
+		
+						} GROUP BY ?feasibleCoalitionNode ?agentId ?bnode ?lccId
+					}	
+					BIND(BNODE() AS ?uVbnode)
+                }
+					"""^^xsd:string ;
+		]) .			
+
+
 :UpdateComputeUtilityValuesLcc
 	a bt:Update ;
 	rdfs:label "Update: Compute Utility Values LCC" ;
@@ -2274,6 +2397,8 @@
 	bt:milliseconds "5000"^^xsd:int .	
 
 
+
+		
 :ComputeLccCoalitionValues
 	a bt:Update ;
 	rdfs:label "Update: Compute LCC Coalition Values" ;
