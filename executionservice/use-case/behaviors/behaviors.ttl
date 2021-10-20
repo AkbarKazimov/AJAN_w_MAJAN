@@ -167,7 +167,7 @@
 											#	[
 											#		a bt:Priority ;
 											#		bt:hasChildren (
-											#				:ConditionAnyFeasibleCoalitionExists
+															:ConditionAnyFeasibleCoalitionExists
 											#				:ProduceFinalizeLccEvent
 											#						)
 											#	]
@@ -180,7 +180,7 @@
 												:InsertLccUtilities2Lakr
 												:Wait4UtilityValues
 												:ComputeLccCoalitionValues
-												#:ProduceSolveLccEvent
+												:ProduceSolveLccEvent
 												:ClearExecutionKnowledge
 														)
 									]
@@ -297,6 +297,7 @@
 				bt:hasChildren (
 						:HandleFinalizeLccEvent
 						:WriteLccResult
+						:ComputeLccRuntime
 						[
 							a bt:Priority ;
 							bt:hasChildren (
@@ -719,6 +720,7 @@
 						?macUseCaseSubject	rdf:type	welcome:LCCUseCase, welcome:MacUseCase ;
 											welcome:hasId	?macId ;
 											welcome:hasStatus	"Running" ;
+											welcome:hasStartTime	?now ;
 											?p	?o .
 					}
 					WHERE {
@@ -726,6 +728,7 @@
 						?macUseCaseSubject	rdf:type	welcome:LCCUseCase ;
 											welcome:hasId	?macId ;
 											?p	?o .
+						BIND(NOW() AS ?now)
 					}		
 		"""^^xsd:string ;
 	] .
@@ -1596,9 +1599,10 @@
 												welcome:hasCommonNation	?cN .
 														
 						FILTER(LCASE(?cG) = "same" || LCASE(?cN) = "same")
-						{
-							SELECT ?gender ?nation
-							{
+						
+						#{
+						#	SELECT ?gender ?nation
+						#	{
 								?feasibleCoalitionNode	mac:hasMembers	?mAgentId.
 								?mAgent	ajan:agentId	?mAgentId ;
 										welcome:hasLCCPersonalInfo ?mLccPsnlInfo .	
@@ -1606,8 +1610,8 @@
 												welcome:hasId	?lccId ;
 												welcome:hasGender	?gender ;
 												welcome:hasNationality	?nation .
-							} LIMIT 1
-						}
+						#	} LIMIT 1
+						#}
 						BIND(IF(LCASE(?cG) = "same", ?gender, ?cG) AS ?commonGender)
 						BIND(IF(LCASE(?cN) = "same", ?nation, ?cN) AS ?commonNation)							
 					}
@@ -2272,6 +2276,8 @@
 									
 						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
 												welcome:hasUtilityValue ?uVbnode ;
+												welcome:hasCommonGender	?cmnGender ;
+												welcome:hasCommonNation	?cmnNation ;
 												mac:hasMembers	?mAgentId .
 												
 						?uVbnode	rdf:type    welcome:UtilityValue ;
@@ -2289,9 +2295,17 @@
 									
 						?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
 												mac:hasMembers	?mAgentId .
-						#FILTER()
+
 						OPTIONAL {
-							?feasibleCoalitionNode	welcome:hasUtilityValue ?uVbnode .
+							?feasibleCoalitionNode	welcome:hasCommonGender	?cmnGender ;
+													welcome:hasCommonNation	?cmnNation .
+						}
+						
+						OPTIONAL {
+							?feasibleCoalitionNode	welcome:hasUtilityValue ?uVbnode ;
+													welcome:hasCommonGender	?cmnGender ;
+													welcome:hasCommonNation	?cmnNation .
+													
 							?uVbnode    rdf:type    welcome:UtilityValue ;
 										welcome:hasComputedBy   ?agentId ;    
 										welcome:hasValue        ?utilityValue .	
@@ -2473,6 +2487,42 @@
 					"""^^xsd:string ;
 		]) .	
 
+
+		
+:ComputeLccRuntime
+	a bt:Update ;
+	rdfs:label "Update: Compute LCC Runtime" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+				INSERT {
+					?lccUseCase	welcome:hasRuntime	?lccRuntimeInSeconds .
+				}
+				WHERE{
+					?lccUseCase	rdf:type	welcome:LCCUseCase ;
+								welcome:hasStatus	?lccStatus ;
+								welcome:hasId	?lccId .
+										
+					FILTER(LCASE(?lccStatus) = "completed" || LCASE(?lccStatus) = "failed")
+					OPTIONAL {
+						?lccUseCase	welcome:hasStartTime	?startTime ;
+									welcome:hasEndTime	?endTime .
+					}
+					FILTER(BOUND(?startTime) && BOUND(?endTime))
+						
+					BIND( (DAY(?startTime)*86400 + HOURS(?startTime)*3600 + MINUTES(?startTime)*60 + SECONDS(?startTime)) AS ?startTimeInSeconds)
+					BIND( (DAY(?endTime)*86400 + HOURS(?endTime)*3600 + MINUTES(?endTime)*60 + SECONDS(?endTime)) AS ?endTimeInSeconds)
+					BIND( ?endTimeInSeconds - ?startTimeInSeconds AS ?lccRuntimeInSeconds)
+				}
+					"""^^xsd:string ;
+		]) .
 
 :ProduceSolveLccEvent
 	a bt:EventProducer ;
@@ -3477,7 +3527,7 @@
 #							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank) && BOUND(?coalition) && 
 #										BOUND(?memberAgent), "Completed", "Failed") AS ?lccStatus) 
 							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank), "Completed", "Failed") AS ?lccStatus) 
-
+							
 							}	"""^^xsd:string ;
 				] .
 				
@@ -3538,6 +3588,7 @@
 						
 					CONSTRUCT {
 						?lccSubject	rdf:type	welcome:LCCUseCase ;
+									welcome:hasEndTime	?now ;
 									welcome:hasId	?lccId ;
 									welcome:hasSolution	?lccSolution ;
 									welcome:hasDedicatedAgent	?dAgentId ;
@@ -3574,6 +3625,7 @@
 						#				mac:hasMembers	?memberAgent .				
 						}
 						#?s ?p ?o .
+						BIND(NOW() AS ?now)
 					}
 
 		
