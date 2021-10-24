@@ -3,33 +3,101 @@
 @prefix ajan: <http://www.ajan.de/ajan-ns#> .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent1> ajan:agentId "majanAgent1" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent1" ;
 	:hasStatus :in_coordination ;
 	rdf:type ajan:Agent .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent2> ajan:agentId "majanAgent2" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent2" ;
 	:hasStatus :active ;
 	rdf:type ajan:Agent .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent3> ajan:agentId "majanAgent3" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent3" ;
 	:hasStatus :active ;
 	rdf:type ajan:Agent .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent4> ajan:agentId "majanAgent4" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent4" ;
 	:hasStatus :in_coordination ;
 	rdf:type ajan:Agent .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent5> ajan:agentId "majanAgent5" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent5" ;
 	:hasStatus :inactive ;
 	rdf:type ajan:Agent .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent6> ajan:agentId "majanAgent6" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent6" ;
 	:hasStatus :inactive ;
 	rdf:type ajan:Agent .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent7> ajan:agentId "majanAgent7" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent7" ;
 	:hasStatus :inactive ;
 	rdf:type ajan:Agent .
 
 <http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent8" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent8" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent9" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent9" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent10" ;
+	:hasAddress	"http://localhost:8060/welcome/integration/coordination/ajan/agents/majanAgent10" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent11" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent11" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent12" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent12" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent13" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent13" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent14" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent14" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent15" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent15" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent16" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent16" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent17" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent17" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent18" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent18" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent19" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent19" ;
+	:hasStatus :inactive ;
+	rdf:type ajan:Agent .
+
+<http://localhost:8080/welcome/integration/coordination/ajan/agents/majanAgent8> ajan:agentId "majanAgent20" ;
+	:hasAddress	"http://localhost:8061/welcome/integration/coordination/ajan/agents/majanAgent20" ;
 	:hasStatus :inactive ;
 	rdf:type ajan:Agent .

@@ -106,11 +106,11 @@ public class EventProducer extends AbstractTDBLeafTask implements Producer {
 		try {
 			Repository repo = BTUtil.getInitializedRepository(getObject(), query.getOriginBase());
                         Model model = query.getResult(repo);
-                        LOG.info("event producer statements:");
-                        for(Statement stat:model){
-                            LOG.info(stat.toString());
-                        }
-                        LOG.info("event producer statements: END");
+                       // LOG.info("event producer statements:");
+                        //for(Statement stat:model){
+                       //     LOG.info(stat.toString());
+                       // }
+                       // LOG.info("event producer statements: END");
                         return model;
 		} catch (URISyntaxException | QueryEvaluationException ex) {
 			throw new ConditionEvaluationException(ex);

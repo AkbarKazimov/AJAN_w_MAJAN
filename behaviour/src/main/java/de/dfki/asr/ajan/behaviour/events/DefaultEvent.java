@@ -70,11 +70,8 @@ public class DefaultEvent implements Event {
 	@Override
 	public void notifyListeners() {
 		listeners.stream().forEach((listener) -> {
-                    System.out.println("Thread started: name:---"+listener.toString());
                     new Thread(() -> listener.setEventInformation(information)).start();
 		});
-                System.out.println("Thread started: info:---"+information);
-
 	}
 
 	@Override

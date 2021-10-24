@@ -122,7 +122,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         Repository repo = BTUtil.getInitializedRepository(this.getObject(), coalitionGeneratorInputQuery.getOriginBase());
         Model modelResult = coalitionGeneratorInputQuery.getResult(repo);
         
-        Utils.printRDF4JModel(modelResult, LOG);
+       // Utils.printRDF4JModel(modelResult, LOG);
       /*  Iterator<Statement> itmodelResult = modelResult.iterator();
         while(itmodelResult.hasNext()){
             LOG.info("Statement: " + itmodelResult.next().toString());
@@ -272,7 +272,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         }
         
         Model responseModel=builder.build();
-        Utils.printRDF4JModel(responseModel, LOG);
+       // Utils.printRDF4JModel(responseModel, LOG);
         if(coalitionGeneratorInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
         }else if(coalitionGeneratorInputQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){

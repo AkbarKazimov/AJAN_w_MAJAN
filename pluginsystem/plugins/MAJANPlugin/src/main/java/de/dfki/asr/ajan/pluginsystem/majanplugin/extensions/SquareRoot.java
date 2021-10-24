@@ -129,7 +129,7 @@ public class SquareRoot extends AbstractTDBLeafTask implements NodeExtension, Tr
         Repository repo = BTUtil.getInitializedRepository(this.getObject(), query.getOriginBase());
         Model modelResult = query.getResult(repo);
         
-        Utils.printRDF4JModel(modelResult, LOG);
+        //Utils.printRDF4JModel(modelResult, LOG);
         // Extract the Subjects  
         inputSubjects = modelResult.filter(null, org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, 
                 MAJANVocabulary.MATH_SUBJECT).subjects();
@@ -175,7 +175,7 @@ public class SquareRoot extends AbstractTDBLeafTask implements NodeExtension, Tr
         
         
         Model responseModel=builder.build();
-        Utils.printRDF4JModel(responseModel, LOG);
+        //Utils.printRDF4JModel(responseModel, LOG);
         if(query.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
         }else if(query.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){

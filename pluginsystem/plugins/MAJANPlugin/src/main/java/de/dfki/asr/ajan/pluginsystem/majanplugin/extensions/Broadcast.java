@@ -110,7 +110,7 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
                      //       System.out.println("Broadcast:Payload--->");
                      //       System.out.println(payload);
                             LOG.info("Executing request {}", request.toString());
-                            LOG.info("Sending Payload: " + payload);
+                            //LOG.info("Sending Payload: " + payload);
 
                             if (!checkResponse(request.execute(), requestUri)) {
                                 LOG.info(toString() + " FAILED due to malformed response model");
@@ -187,12 +187,12 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
 		}
                 for (BindingSet bindingSet : result) {
                     Value strValue = bindingSet.getValue("requestURI");
-                    LOG.info("rqsURI: " + strValue);
+                    //LOG.info("rqsURI: " + strValue);
                     if (strValue == null) {
                         throw new MessageEvaluationException("No ?requestURI defined in Message description");
                     } else {
                         requestUriList.add(strValue.stringValue());
-                        LOG.info("ADDED_ rqsURI_list size: " + requestUriList.size());
+                       // LOG.info("ADDED_ rqsURI_list size: " + requestUriList.size());
                     }
                 }
 	}

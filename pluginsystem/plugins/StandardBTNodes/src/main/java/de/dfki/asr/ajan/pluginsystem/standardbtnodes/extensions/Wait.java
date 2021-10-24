@@ -74,14 +74,11 @@ public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode
 
 	@Override
 	public LeafStatus executeLeaf() {
-            System.out.println("Wait: executeLeaf: running: "+running);
-
 		try {
 			switch (running) {
 				case FRESH:
 				case CANCELLED:
 				{
-                                    System.out.println("Wait: executeLeaf: CANCELLED: "+running);
 					startWaiting();
 					String report = toString() + " RUNNING";
 					LOG.info(report);
@@ -89,8 +86,6 @@ public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode
 				}
 				case SUCCEEDED:
 				{
-                                    System.out.println("Wait: executeLeaf: SUCCEEDED: "+running);
-
 					running = Status.FRESH;
 					String report = toString() + " SUCCEEDED";
 					LOG.info(report);
@@ -98,7 +93,6 @@ public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode
 				}
 				default:
 				{
-                                    System.out.println("Wait: executeLeaf: default: "+running);
 					String report = toString() + " RUNNING";
 					LOG.info(report);
 					return new LeafStatus(Status.RUNNING, report);
@@ -111,8 +105,6 @@ public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode
 	}
 
 	private void startWaiting() throws BeliefBaseUpdateException {
-            LOG.info("3333333333------");
-
 		bt = this.getObject().getBt();
 		thread = new Thread(){
 			public void run(){
@@ -126,10 +118,7 @@ public class Wait extends AbstractTDBLeafTask implements NodeExtension, TreeNode
                                         if(obj instanceof ConcurrentLinkedQueue){
                                             ((ConcurrentLinkedQueue)obj).add(new LinkedHashModel());
                                             bt.setEventInformation(obj);
-                                            LOG.info("111111----");
-                                            
                                         }else{
-                                            LOG.info("2222222------");
                                             bt.setEventInformation(new LinkedHashModel());
                                         }
                                        // bt.run();

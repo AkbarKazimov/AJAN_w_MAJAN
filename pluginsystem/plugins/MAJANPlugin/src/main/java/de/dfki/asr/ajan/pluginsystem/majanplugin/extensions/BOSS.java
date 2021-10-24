@@ -130,7 +130,7 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
         Repository repo = BTUtil.getInitializedRepository(this.getObject(), csgpInputQuery.getOriginBase());
         Model modelResult = csgpInputQuery.getResult(repo);
 
-        Utils.printRDF4JModel(modelResult, LOG);
+        //Utils.printRDF4JModel(modelResult, LOG);
         
         // Extract the Problem Instance. There should be only 1 problem instance because 
         // the algorithm cannot run multiple configurations at the same time. 
@@ -264,7 +264,7 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             } // end
         }
         Model responseModel=builder.build();
-        Utils.printRDF4JModel(responseModel, LOG);
+       // Utils.printRDF4JModel(responseModel, LOG);
         if(csgpInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
         }else if(csgpInputQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){
