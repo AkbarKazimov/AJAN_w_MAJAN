@@ -215,6 +215,7 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
         } // end
 
         Map<int[][], Double[]> solutions=null;
+        //Map<int[][], Double> solutions=null;
        // if(solverName.toLowerCase().equals("boss")){
             LOG.info("BOSS started!");
             csgpSolver.BOSS boss = new csgpSolver.BOSS();
@@ -223,11 +224,11 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             //solutions =  boss.run(numOfAgents, coalitionsData);
             LOG.info("BOSS finished!");
         
-        LOG.info("Solution size: " + solutions.size());
+       /* LOG.info("Solution size: " + solutions.size());
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
             LOG.info("Rank: " + solution.getValue()[1] + " CS: " + general.General.convertArrayToString(solution.getKey()) + 
                     " Value: " + solution.getValue()[0]);
-        }
+        }*/
         
         // System.out.println("Feasible Coalitions Amount is "+feasibleCoalitions.size());
         ModelBuilder builder=new ModelBuilder();
