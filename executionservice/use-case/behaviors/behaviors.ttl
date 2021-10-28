@@ -42,8 +42,7 @@
 	rdfs:label "LCC Protocol Behavior Tree" ;
 	bt:hasChild [
 		a bt:UntilFail ;
-		bt:hasChild (
-			[
+		bt:hasChild [
 				a bt:Sequence ;
 				bt:hasChildren (
 						:HandleStartLccProcessEvent
@@ -74,8 +73,7 @@
 						:WriteLccProblem2Lakr
 						:ClearExecutionKnowledge
 							)
-			]			
-						)
+					]			
 				] .
 				
 :LccDedicatedAgentBt
@@ -84,8 +82,7 @@
 	rdfs:label "LCC Dedicated Agent Behavior Tree" ;
 	bt:hasChild [
 		a bt:UntilFail ;
-		bt:hasChild (
-				[
+		bt:hasChild [
 					a bt:Sequence ;
 					bt:hasChildren (
 							:HandleLccDedicatedAgentEvent
@@ -121,8 +118,7 @@
 												)
 							]
 									)
-				]
-						)
+						]
 				] .
 				
 	
@@ -132,16 +128,14 @@
 	rdfs:label "Receive LCC Personal Info Behavior Tree" ;
 	bt:hasChild [
 		a bt:UntilFail ;
-		bt:hasChild (
-			[
+		bt:hasChild [
 				a bt:Sequence ;
 				bt:hasChildren (
 						:HandleReceiveLccPersonalInfoEvent
 						:InsertLccPersonalInfoOfSender2Lakr
 						:ClearExecutionKnowledge
 								)
-			]
-					)
+					]
 				] .
 
 :ComputeLccCoalitionStructuresBt
@@ -150,8 +144,7 @@
 	rdfs:label "Compute LCC Coalition Structures Behavior Tree" ;
 	bt:hasChild [
 		a bt:UntilFail ;
-		bt:hasChild (
-			[
+		bt:hasChild [
 				a bt:Sequence ;
 				bt:hasChildren (
 						:HandleComputeCoalitionsEvent
@@ -178,7 +171,6 @@
 												#:InsertLccUseCaseAmount
 												:ComputeSdOfLccCoalitions
 												:ComputeUtilityValuesInLccWrite
-												#:UpdateComputeUtilityValuesLcc
 												:InsertLccUtilities2Lakr
 												:Wait4UtilityValues
 												:ComputeLccCoalitionValues
@@ -190,8 +182,7 @@
 											)
 						]
 								)
-			]
-					)
+					]
 				] .
 
 :ComputeLccUtilityValuesBt
@@ -200,24 +191,20 @@
 	rdfs:label "Compute LCC Utility Values Behavior Tree" ;
 	bt:hasChild	[
 		a bt:UntilFail ;
-		bt:hasChild (
-			[		
+		bt:hasChild [		
 				a bt:Sequence ;
 				bt:hasChildren (
 						:HandleComputeLccUtilitiesEvent
 						:WriteLccPreferences2Exec
 						:WriteAgentId2Execution
 						:ComputeUtilityValuesInLccWrite
-						#:UpdateComputeUtilityValuesLcc
-						#:ComputeLccUtilities
 						#:WriteRootAddress2Exec
 						:WriteAgentAddresses2Exec
 						:MessageLccUtilities2Dedicated
 						:InsertLccUtilities2Lakr
 						:ClearExecutionKnowledge
 								)
-			]
-					)
+					]
 				].
 
 :ReceiveLccUtilityValuesBt
@@ -229,8 +216,7 @@
 #		bt:hasChildren (
 #				[
 					a bt:UntilFail ;
-					bt:hasChild (
-						[
+					bt:hasChild [
 							a bt:Sequence ;
 							bt:hasChildren (
 								:HandleReceiveLccUtilitiesEvent
@@ -244,8 +230,7 @@
 								:ClearExecutionKnowledge
 											)
 			
-						]
-								)
+								]
 #				]
 #						)
 				] .
@@ -259,8 +244,7 @@
 	rdfs:label "Solve LCC Behavior Tree" ;
 	bt:hasChild [
 		a bt:UntilFail ;
-		bt:hasChild (
-			[
+		bt:hasChild [
 				a bt:Sequence ;
 				bt:hasChildren (
 						:HandleSolveLccEvent
@@ -285,8 +269,7 @@
 											)
 						]
 							)
-			]
-					)
+					]
 				] .
 
 :FinalizeLccProcessBt
@@ -295,8 +278,7 @@
 	rdfs:label "Finalize LCC Process Behavior Tree" ;
 	bt:hasChild [
 		a bt:UntilFail ;
-		bt:hasChild (
-			[
+		bt:hasChild [
 				a bt:Sequence ;
 				bt:hasChildren (
 						:HandleFinalizeLccEvent
@@ -310,8 +292,7 @@
 							)
 						]
 								)
-			]
-					)
+					]
 				] .
 
 :LccFailureBt
@@ -320,8 +301,7 @@
 	rdfs:label "LCC Failure Behavior Tree" ;
 	bt:hasChild [
 		a bt:UntilFail ;
-		bt:hasChild (
-			[
+		bt:hasChild [
 			a bt:Sequence ;
 			bt:hasChildren (
 						:HandleLccFailedEvent
@@ -329,8 +309,7 @@
 						:BroadcastLccFailed
 						:ProduceFinalizeLccEvent
 							)
-			]
-					)
+					]
 				] .
 
 
@@ -880,95 +859,6 @@
 		]) .
 
 
-:InsertLccPersonalInfo2Lakr
-	a bt:Update ;
-	rdfs:label "Update: Create LCC Personal Info in LAKR" ;
-	bt:query ([
-		a bt:UpdateQuery ;
-		bt:originBase ajan:AgentKnowledge ;
-		bt:sparql """
-					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
-					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
-					
-					INSERT {
-						?agent	welcome:hasLCCPersonalInfo	?bnode .
-						
-						?bnode	rdf:type	welcome:LCCPersonalInfo ;
-								welcome:hasGender	?gender ;
-								welcome:hasNationality	?nationality ;
-								welcome:hasLccCpl		?lccCpl ;
-								welcome:hasAttendedLessonIDs 	?attendedLessonId .
-					}
-					WHERE {
-						?agent	rdf:type ajan:Agent .
-						
-						welcome-git:DialogueUser 
-							welcome:hasGender	?gender ;
-							welcome:hasNationality	?nationality ;
-							welcome:hasLccCpl		?lccCpl ;
-							welcome:hasAttendedLessonIDs 	?attendedLessonId .
-
-							{BIND(BNODE() AS ?bnode)
-					}
-		
-		
-		
-					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
-					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
-
-
-					 {	
-						?agent welcome:hasCHCPersonalInfo ?bnode2 .
-						
-						?bnode2	rdf:type	welcome:CHCPersonalInfo;
-								welcome:hasCHCId	?chcId ;
-								welcome:hasAge	?age;
-								welcome:hasGender	?gender;
-								welcome:hasFamily	?family;
-								welcome:hasNationality	?nationality;
-								welcome:hasReligion		?religion;
-								welcome:hasEthnicity 	?ethnicity;
-								welcome:hasLocationPreference	?locPref;
-								welcome:hasAccessibilityPreference	?accessPref;
-								welcome:hasRentPeriodPreference		?rentPref;
-								welcome:hasShareWithPreference		?sharePref.
-						
-						?rentPref	?rentPred	?rentObj.
-						?share		?sharePred	?shareObj.
-					}
-					WHERE {
-						?agent	rdf:type ajan:Agent .
-						
-						?agent	welcome:isRunningCHC ?chcId .
-
-						welcome-git:DialogueUser 
-							welcome:hasAge	?age;
-							welcome:hasGender	?gender;
-							welcome:hasFamily	?family;
-							welcome:hasNationality	?nationality;
-							welcome:hasReligion		?religion;
-							welcome:hasEthnicity 	?ethnicity;
-							welcome:hasLocationPreference	?locPref;
-							welcome:hasAccessibilityPreference	?accessPref;
-							welcome:hasRentPeriodPreference		?rentPref;
-							welcome:hasShareWithPreference		?sharePref.
-				
-						OPTIONAL{ 
-							?rentPref	?rentPred	?rentObj.
-						}
-						OPTIONAL{
-							?sharePref	?sharePred		?shareObj.
-						}
-						{BIND(BNODE() AS ?bnode2)}
-					}
-					"""^^xsd:string ;
-		]) .
 		
 :HandleReceiveLccPersonalInfoEvent
 	a bt:HandleQueueEvent ;
@@ -1996,113 +1886,6 @@
 					"""^^xsd:string ;
 		]) .	
 
-
-:UpdateComputeUtilityValuesLcc
-	a bt:Update ;
-	rdfs:label "Update: Compute Utility Values LCC" ;
-	bt:query ([
-		a bt:UpdateQuery ;
-		bt:originBase ajan:ExecutionKnowledge ;
-		bt:sparql """
-				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
-				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
-				PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
-                INSERT {
-                    #?feasibleCoalitionNode  welcome:hasUtilityValue ?uVbnode .
-                    #?uVbnode    rdf:type    welcome:UtilityValue ;
-                     #           welcome:hasComputedBy   ?agentId ;    
-                    #            welcome:hasValue        ?ttlV .
-					
-					
-					?bnode	rdf:type	welcome:LCCUseCase ;
-									welcome:hasId	?lccId ;
-									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
-                    ?feasibleCoalitionNode  welcome:hasUtilityValue ?uVbnode .
-                    ?uVbnode    rdf:type    welcome:UtilityValue ;
-                                welcome:hasComputedBy   ?agentId ;    
-                                welcome:hasValue        ?ttlV .
-                }
-                WHERE {
-					{
-						SELECT DISTINCT ?feasibleCoalitionNode ?agentId ?bnode ?lccId (SUM(?uValue) AS ?ttlV)
-						WHERE {
-							# get This agent
-							?agent	rdf:type	ajan:Agent, ajan:ThisAgent ;
-									ajan:agentId	 ?agentId .
-									
-							# get Feasible Coalitions which are sent by Dedicated agent
-							?bnode	rdf:type	welcome:LCCUseCase ;
-									welcome:hasId	?lccId ;
-									welcome:hasFeasibleCoalitions	?feasibleCoalitionNode .
-							
-							
-							# get Weights for Preferences from the LCC info which is written from LAKR to Exec as Temporary LCC Info
-							#?tempLccInfo	rdf:type	welcome:LCCUseCase ;
-							#				welcome:hasId	?lccId ;
-							#				welcome:hasGenderWeight		?gWeight ;
-							#				welcome:hasNationalityWeight	?nWeight .
-											
-							# make sure that coalition contains This agent
-							FILTER EXISTS { ?feasibleCoalitionNode  mac:hasMembers	?agentId . }
-					
-							# get a member of a coalition
-							?feasibleCoalitionNode	rdf:type	welcome:CSGPCoalition ;
-													mac:hasMembers	?mAgentId .
-											
-							# make sure that the member is different than This agent
-							FILTER(?mAgentId != ?agentId)
-					
-							# get gender of member agent
-							?mAgent	ajan:agentId	 ?mAgentId ;
-									welcome:hasLCCPersonalInfo ?mLccPsnlInfo .
-							?mLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
-											welcome:hasId	?lccId2 ;
-											welcome:hasGender	 ?mGender ;
-											welcome:hasNationality	?mNation .
-							FILTER(?lccId = ?lccId2)
-							# get gender of This agent
-							?agent welcome:hasLCCPersonalInfo ?aLccPsnlInfo .
-							?aLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
-											welcome:hasId	?lccId3 ;
-											welcome:hasGender	 ?aGender ;
-											welcome:hasNationality	?aNation .
-							FILTER(?lccId = ?lccId3)		
-							# get gender preference of This agent
-							?agent	welcome:hasLCCPreferencesInfo	?aLccPrfInfo .
-							?aLccPrfInfo	rdf:type	welcome:LCCPreferencesInfo ;
-											welcome:hasGenderPreference	?aGenderPref ;
-											welcome:hasNationPreference	?aNationPref ;
-											welcome:hasGenderWeight	?gWeight ;
-											welcome:hasNationalityWeight	?nWeight .
-							
-							#?du		rdf:type	welcome-git:Registered ;
-							#        welcome:hasGenderPreference ?aGenderPref ;
-							#        welcome:hasNationPreference ?aNationPref ;
-							#        welcome:hasGenderWeight	?gWeight ;
-							#        welcome:hasNationalityWeight	?nWeight .
-							
-					
-							BIND(IF(LCASE(?aGenderPref) = "dont mind" || (?aGenderPref = ?mGender), xsd:float(?gWeight), -xsd:float(?gWeight)) AS ?genderUValue)
-					
-							BIND(IF(LCASE(?aNationPref) = "dont mind" || (LCASE(?aNationPref) = "same" && ?aNation = ?mNation) || (LCASE(?aNationPref) = "mixed" && ?aNation != ?mNation), xsd:float(?nWeight), -xsd:float(?nWeight)) AS ?nationUValue)
-																
-							BIND((?genderUValue + ?nationUValue) AS ?uValue)
-							
-			#				BIND(IF(LCASE(?aGenderPref) = "dont mind" ||
-			#				((LCASE(?aGenderPref) = "same") && ?aGender = ?mGender) ||
-			#				((LCASE(?aGenderPref) = "mixed") && ?aGender != ?mGender),1 ,-1) AS ?uv)
-			
-						} GROUP BY ?feasibleCoalitionNode ?agentId ?bnode ?lccId
-					}	
-					#BIND(SHA1(xsd:string(NOW())) AS ?uniqueId)
-					#BIND( IRI(CONCAT(STR(welcome:UtilityValue),STR(?lccId) , STR(?uniqueId))) AS ?uVbnode )
-					BIND(BNODE() AS ?uVbnode)
-                }
-					"""^^xsd:string ;
-		]) .
 
 :ComputeLccUtilities
 	a bt:Write ;
@@ -3852,46 +3635,49 @@
 	a bt:Root ;
 	rdfs:label "CHC Protocol Behavior Tree" ;
 	bt:hasChild [
-					a bt:Sequence ;
-					bt:hasChildren (
-							:HandleCHCProtocolEvent
-							:WriteAgentId2Execution
-							[
-								a bt:Priority ;	
-								bt:hasChildren (
-										[
-											a bt:Sequence ;
-											bt:hasChildren (
-													:ConditionAgentRunningCHCProcess
-													:MessageAlreadyRunningCHCProcess
-													)																														
-										]
-										[
-											a bt:Sequence ;
-											bt:hasChildren (
-													:ConditionAgentInvolvedInCHCProcess
-													[
-														a bt:Priority ;
-														bt:hasChildren (
-																[
-																	a bt:Invert ;
-																	bt:hasChild 
-																			:MessageWantToStartNewCHCProcess
-																]
-																[
-																	a bt:Invert ;
-																	bt:hasChild 
-																			:ConditionStillWantToStartCHC
-																]
-																
-																)																														
-													]
-													)																														
-										]
-										:EventProducerExecuteCHCProcessEvent
+		a bt:UntilFail ;
+		bt:hasChild [	
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandleCHCProtocolEvent
+						:WriteAgentId2Execution
+						[
+							a bt:Priority ;	
+							bt:hasChildren (
+									[
+										a bt:Sequence ;
+										bt:hasChildren (
+												:ConditionAgentRunningCHCProcess
+												:MessageAlreadyRunningCHCProcess
 												)																														
-							]				
+									]
+										#[
+										#	a bt:Sequence ;
+										#	bt:hasChildren (
+										#			:ConditionAgentInvolvedInCHCProcess
+										#			[
+										#				a bt:Priority ;
+										#				bt:hasChildren (
+										#						[
+										#							a bt:Invert ;
+										#							bt:hasChild 
+										#									:MessageWantToStartNewCHCProcess
+										#						]
+										#						[
+										#							a bt:Invert ;
+										#							bt:hasChild 
+										#									:ConditionStillWantToStartCHC
+										#						]
+										#						
+										#						)																														
+										#			]
+										#			)																														
+										#]
+									:EventProducerExecuteCHCProcessEvent
+											)																														
+						]				
 								)
+					]			
 				] .
 
 :ExecutingCHCProcessBT
@@ -3905,6 +3691,7 @@
 											a bt:Sequence ;
 											bt:hasChildren (
 													:HandleExecuteCHCProcessEvent
+													:UpdateAgentRunningChcFlagOn
 													:WriteAgentId2Execution
 													:Message2AppStartingCHC
 													:Message2WPMUpdateStatus2InCoordination
@@ -3943,6 +3730,12 @@
 																			:ConditionAnyoneNotReturnedPersonalInfo
 																]
 																:RemoveNotRespondingAgentsFromCHCProblemInstance
+																# If no one responds to Dedicated, then dedicated removes them all from 
+																# use case problem instance. Then since there is no participant agent 
+																# anymore, Dedicated fails to send the broadcasts. 
+																# However, this is not an error. Since an important step fails in 
+																# the protocol, Dedicated produces CHCFailure Event. 
+																# Then it informs the app that chc failed. So the process fails successfully.
 																		)																														
 													]
 													:WriteSimilaritiesRequestContent2Execution
@@ -3970,55 +3763,58 @@
 	a bt:Root ;
 	rdfs:label "SharingCHCPersonalInfoBT Behavior Tree" ;
 	bt:hasChild [
-					a bt:Sequence ;
-					bt:hasChildren (
-								:HandleShareCHCPersonalInfoEvent
-								:WriteCHCPersonalInfo2Exec
-								:Message2DedicatedChcPersonalInfo
-								:Message2WPMUpdateStatus2InCoordination
-								:AddAgentInvolvedInCHCFlag
-								# CHC Personal Info is written from A.K to E.K. Then I attach the Id of CHC Process to the CHC Personal Info and send this info to 
-								# Dedicated agent. Lastly, I write "?agent :isInvolvedInCHC ?chcId." to A.K.
-								# If it is necessary to write the CHC Personal Info for a particulat CHC Process (i.e. set of triples in which CHC Id is attached to Personal Info),
-								# then add an extra write node at the end or modify "WriteAgentInvolvedInCHC" node. 
-
-									)
+		a bt:UntilFail ;
+		bt:hasChild [
+				a bt:Sequence ;
+				bt:hasChildren (
+							:HandleShareCHCPersonalInfoEvent
+							:WriteCHCPersonalInfo2Exec
+							:Message2DedicatedChcPersonalInfo
+							:Message2WPMUpdateStatus2InCoordination
+							:AddAgentInvolvedInCHCFlag
+							# CHC Personal Info is written from A.K to E.K. Then I attach the Id of CHC Process to the CHC Personal Info and send this info to 
+							# Dedicated agent. Lastly, I write "?agent :isInvolvedInCHC ?chcId." to A.K.
+							# If it is necessary to write the CHC Personal Info for a particulat CHC Process (i.e. set of triples in which CHC Id is attached to Personal Info),
+							# then add an extra write node at the end or modify "WriteAgentInvolvedInCHC" node. 
+								)
+					]
 				] .
 
 				
-				
+			
 :ReceiveCHCPersonalInfoBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
 	rdfs:label "ReceiveCHCPersonalInfoBT Behavior Tree" ;
 	bt:hasChild [
-				a bt:UntilFail ;
-				bt:hasChild [
-							a bt:Sequence ;
-							bt:hasChildren (
-										:HandleReceiveCHCPersonalInfoEvent
-										:WritePersonalInfo2LAKR							
-											)
-							]
+		a bt:UntilFail ;
+		bt:hasChild [
+				a bt:Sequence ;
+				bt:hasChildren (
+							:HandleReceiveCHCPersonalInfoEvent
+							:WritePersonalInfo2LAKR							
+								)
+					]
 				] .
 
+				
 :SharingCHCSimilaritiesBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
 	rdfs:label "SharingCHCSimilaritiesBT Behavior Tree" ;
 	bt:hasChild [
-					a bt:UntilFail ;
-					bt:hasChild [
-							a bt:Sequence ;
-							bt:hasChildren (
+			a bt:UntilFail ;
+			bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
 								:HandleShareCHCSimilaritiesEvent
 								:WriteCHCPreferences2Execution
 #								:UpdateCHCPrefInstance2LAKR
 								:ComputeSimilarities4CHC
 								:MessageSimilarities2Dedicated
 								:WriteSimilarities2LAKR
-											)
-								]
+									)
+						]
 				] .
 
 :ReceivingCHCSimilaritiesBT
@@ -4026,14 +3822,14 @@
 	a bt:Root ;
 	rdfs:label "ReceivingCHCSimilaritiesBT Behavior Tree" ;
 	bt:hasChild [
-					a bt:UntilFail ;
-					bt:hasChild [
-									a bt:Sequence ;
-									bt:hasChildren (
-										:HandleReceiveCHCSimilaritiesEvent
-										:WriteReceivedSimilarities2LAKR		
-										)
-								]
+			a bt:UntilFail ;
+			bt:hasChild [
+					a bt:Sequence ;
+					bt:hasChildren (
+								:HandleReceiveCHCSimilaritiesEvent
+								:WriteReceivedSimilarities2LAKR		
+								)
+						]
 				] .
 
 :SolvingCHCBT
@@ -4089,6 +3885,7 @@
 									)
 								]
 								:RemoveAgentInCHCFlag
+								:UpdateAgentRunningChcFlagOff
 								[
 									a bt:Priority ;
 									bt:hasChildren (
@@ -4254,22 +4051,22 @@ CONSTRUCT {
 	
 		?a2 a ajan:Agent.
 		?a2 welcome:isParticipatingIn ?usecaseId.
-		?a1 welcome:hasAgePreference ?agePrefA1.
+		?a1 welcome:hasChcAgePreference ?agePrefA1.
 		OPTIONAL {
 			?agePrefA1 welcome:lowerBound ?lowerAgeA1;
 		        welcome:higherBound ?higherAgeA1.
 			}.
-		?a1 welcome:hasGenderPreference ?genPrefA1.
-		?a1 welcome:hasFamilyPreference ?famPrefA1.
-		?a1 welcome:hasNationPreference ?natPrefA1.
+		?a1 welcome:hasChcGenderPreference ?genPrefA1.
+		?a1 welcome:hasChcFamilyPreference ?famPrefA1.
+		?a1 welcome:hasChcNationPreference ?natPrefA1.
 		?a1 welcome:hasNationality ?nationA1.
-		?a1 welcome:hasReligionPreference ?relPrefA1.
+		?a1 welcome:hasChcReligionPreference ?relPrefA1.
 		?a1 welcome:hasReligion ?relA1.
-		?a1 welcome:hasEthnicPreference ?ethPrefA1.
+		?a1 welcome:hasChcEthnicPreference ?ethPrefA1.
 		?a1 welcome:hasEthnicity ?ethA1.
-		?a1 welcome:hasLocationPreference ?locPrefA1.
-		?a1 welcome:hasAccessibilityPreference ?accPrefA1.
-		?a1 welcome:hasRentPeriodPreference ?rentPrefA1.
+		?a1 welcome:hasChcLocationPreference ?locPrefA1.
+		?a1 welcome:hasChcAccessibilityPreference ?accPrefA1.
+		?a1 welcome:hasChcRentPeriodPreference ?rentPrefA1.
 		OPTIONAL {
 			?rentPrefA1 welcome:startDate ?startRentA1;
 		        welcome:endDate ?endRentA1.
@@ -4285,9 +4082,9 @@ CONSTRUCT {
 		?a2 welcome:hasNationality ?nationA2.
 		?a2 welcome:hasReligion ?relA2.
 		?a2 welcome:hasEthnicity ?ethA2.
-		?a2 welcome:hasLocationPreference ?locPrefA2.
-		?a2 welcome:hasAccessibilityPreference ?accPrefA2.
-		?a2 welcome:hasRentPeriodPreference ?rentPrefA2.
+		?a2 welcome:hasChcLocationPreference ?locPrefA2.
+		?a2 welcome:hasChcAccessibilityPreference ?accPrefA2.
+		?a2 welcome:hasChcRentPeriodPreference ?rentPrefA2.
 		OPTIONAL {
 			?rentPrefA2 welcome:startDate ?startRentA2;
 		        welcome:endDate ?endRentA2.
@@ -4406,27 +4203,27 @@ CONSTRUCT {
 	
 				?a2 a ajan:Agent.
 				?a2 welcome:isParticipatingIn ?usecaseId.
-				?a1 welcome:hasAgePreference ?agePrefA1.
+				?a1 welcome:hasChcAgePreference ?agePrefA1.
 				OPTIONAL {
 					?agePrefA1 welcome:lowerBound ?lowerAgeA1;
 					        welcome:higherBound ?higherAgeA1.
 					}.
-				?a1 welcome:hasGenderPreference ?genPrefA1.
-				?a1 welcome:hasFamilyPreference ?famPrefA1.
-				?a1 welcome:hasNationPreference ?natPrefA1.
+				?a1 welcome:hasChcGenderPreference ?genPrefA1.
+				?a1 welcome:hasChcFamilyPreference ?famPrefA1.
+				?a1 welcome:hasChcNationPreference ?natPrefA1.
 				?a1 welcome:hasNationality ?nationA1.
-				?a1 welcome:hasReligionPreference ?relPrefA1.
+				?a1 welcome:hasChcReligionPreference ?relPrefA1.
 				?a1 welcome:hasReligion ?relA1.
-				?a1 welcome:hasEthnicPreference ?ethPrefA1.
+				?a1 welcome:hasChcEthnicPreference ?ethPrefA1.
 				?a1 welcome:hasEthnicity ?ethA1.
-				?a1 welcome:hasLocationPreference ?locPrefA1.
-				?a1 welcome:hasAccessibilityPreference ?accPrefA1.
-				?a1 welcome:hasRentPeriodPreference ?rentPrefA1.
+				?a1 welcome:hasChcLocationPreference ?locPrefA1.
+				?a1 welcome:hasChcAccessibilityPreference ?accPrefA1.
+				?a1 welcome:hasChcRentPeriodPreference ?rentPrefA1.
 				OPTIONAL {
 					?rentPrefA1 welcome:startDate ?startRentA1;
 				        welcome:endDate ?endRentA1.
 					}.
-				?a1 welcome:hasShareWithPreference ?sharePrefA1.
+				?a1 welcome:hasChcShareWithPreference ?sharePrefA1.
 					OPTIONAL {
 					?sharePrefA1 welcome:min ?minShareA1;
 		        		welcome:max ?maxShareA1.
@@ -4437,14 +4234,14 @@ CONSTRUCT {
 				?a2 welcome:hasNationality ?nationA2.
 				?a2 welcome:hasReligion ?relA2.
 				?a2 welcome:hasEthnicity ?ethA2.
-				?a2 welcome:hasLocationPreference ?locPrefA2.
-				?a2 welcome:hasAccessibilityPreference ?accPrefA2.
-				?a2 welcome:hasRentPeriodPreference ?rentPrefA2.
+				?a2 welcome:hasChcLocationPreference ?locPrefA2.
+				?a2 welcome:hasChcAccessibilityPreference ?accPrefA2.
+				?a2 welcome:hasChcRentPeriodPreference ?rentPrefA2.
 				OPTIONAL {
 					?rentPrefA2 welcome:startDate ?startRentA2;
 				        welcome:endDate ?endRentA2.
 					}.
-				?a2 welcome:hasShareWithPreference ?sharePrefA2.
+				?a2 welcome:hasChcShareWithPreference ?sharePrefA2.
 				OPTIONAL {
 					?sharePrefA2 welcome:min ?minShareA2;
 				        welcome:max ?maxShareA2.
@@ -4533,7 +4330,7 @@ CONSTRUCT {
 #------------LCC Protocol Nodes -------------------------------
 
 #-----------------CHCProtocolBT Nodes--------------------------------------
-:HandleCHCProtocolEvent
+:HandleCHCProtocolEvent_old
 	a bt:HandleEvent ;
 	rdfs:label "EventHandler: CHC Protocol BT" ;
 	bt:event agents:CHCProtocolEvent ;
@@ -4550,6 +4347,25 @@ CONSTRUCT {
 						}"""^^xsd:string ;
 				] .
 
+
+:HandleCHCProtocolEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "CHC Protocol Event Handler" ;
+	rdfs:comment "Handle CHC Protocol Event which is triggered by the MyWelcome app" ;
+	bt:event agents:CHCProtocolEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE { 
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .	
+
 :ConditionAgentRunningCHCProcess
 	a bt:Condition ;
 	rdfs:label "Condition: Is Agent Running a CHC Process as Dedicated Agent?" ;
@@ -4562,9 +4378,13 @@ CONSTRUCT {
 					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
 					ASK
 					WHERE {
-						?agent welcome:isRunningCHC ?chcId .
-						?agent rdf:type ajan:Agent .		
-						FILTER( bound(?chcId) )
+						?agentUri	rdf:type	ajan:Agent ;
+									welcome:hasRunningChc	?runningChc .
+						FILTER(LCASE(?runningChc) = "true")
+									
+#						?agent welcome:isRunningCHC ?chcId .
+#						?agent rdf:type ajan:Agent .		
+#						FILTER( bound(?chcId) )
 						}"""^^xsd:string ;
 		]) .
 
@@ -4896,7 +4716,32 @@ CONSTRUCT {
 						}"""^^xsd:string ;
 				] .
 				
-													
+
+
+
+:UpdateAgentRunningChcFlagOn
+	a bt:Update ;
+	rdfs:label "Agent Running CHC Flag-On" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+
+
+					INSERT {	
+						?agent	welcome:hasRunningChc	"true" .
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent .
+					}
+					"""^^xsd:string ;
+		]) .	
+	
 :Message2AppStartingCHC
 	a bt:Message ;
 	rdfs:label "Message: Inform TCN that agent is starting CHC"^^xsd:string ;
@@ -5282,10 +5127,10 @@ CONSTRUCT {
 								welcome:hasNationality	?nationality;
 								welcome:hasReligion		?religion;
 								welcome:hasEthnicity 	?ethnicity;
-								welcome:hasLocationPreference	?locPref;
-								welcome:hasAccessibilityPreference	?accessPref;
-								welcome:hasRentPeriodPreference		?rentPref;
-								welcome:hasShareWithPreference		?sharePref.
+								welcome:hasChcLocationPreference	?locPref;
+								welcome:hasChcAccessibilityPreference	?accessPref;
+								welcome:hasChcRentPeriodPreference		?rentPref;
+								welcome:hasChcShareWithPreference		?sharePref.
 						
 						?rentPref	?rentPred	?rentObj.
 						?share		?sharePred	?shareObj.
@@ -5302,10 +5147,10 @@ CONSTRUCT {
 							welcome:hasNationality	?nationality;
 							welcome:hasReligion		?religion;
 							welcome:hasEthnicity 	?ethnicity;
-							welcome:hasLocationPreference	?locPref;
-							welcome:hasAccessibilityPreference	?accessPref;
-							welcome:hasRentPeriodPreference		?rentPref;
-							welcome:hasShareWithPreference		?sharePref.
+							welcome:hasChcLocationPreference	?locPref;
+							welcome:hasChcAccessibilityPreference	?accessPref;
+							welcome:hasChcRentPeriodPreference		?rentPref;
+							welcome:hasChcShareWithPreference		?sharePref.
 				
 						OPTIONAL{ 
 							?rentPref	?rentPred	?rentObj.
@@ -5349,10 +5194,10 @@ CONSTRUCT {
 								welcome:hasNationality	?nationality;
 								welcome:hasReligion		?religion;
 								welcome:hasEthnicity 	?ethnicity;
-								welcome:hasLocationPreference	?locPref;
-								welcome:hasAccessibilityPreference	?accessPref;
-								welcome:hasRentPeriodPreference		?rentPref;
-								welcome:hasShareWithPreference		?sharePref.
+								welcome:hasChcLocationPreference	?locPref;
+								welcome:hasChcAccessibilityPreference	?accessPref;
+								welcome:hasChcRentPeriodPreference		?rentPref;
+								welcome:hasChcShareWithPreference		?sharePref.
 						
 						?rentPref	?rentPred	?rentObj.
 						?share		?sharePred	?shareObj.
@@ -5372,10 +5217,10 @@ CONSTRUCT {
 							welcome:hasNationality	?nationality;
 							welcome:hasReligion		?religion;
 							welcome:hasEthnicity 	?ethnicity;
-							welcome:hasLocationPreference	?locPref;
-							welcome:hasAccessibilityPreference	?accessPref;
-							welcome:hasRentPeriodPreference		?rentPref;
-							welcome:hasShareWithPreference		?sharePref.
+							welcome:hasChcLocationPreference	?locPref;
+							welcome:hasChcAccessibilityPreference	?accessPref;
+							welcome:hasChcRentPeriodPreference		?rentPref;
+							welcome:hasChcShareWithPreference		?sharePref.
 				
 						OPTIONAL{ 
 							?rentPref	?rentPred	?rentObj.
@@ -5412,9 +5257,11 @@ CONSTRUCT {
 						WHERE {
 
 							?agent	rdf:type	ajan:Agent ;
+									ajan:agentId	?agentId ;
 									welcome:isRunningCHC	?chcId.
 							?du		rdf:type	welcome-git:Registered ;
-									welcome:hasAgentAddress	?agentAddress .
+									welcome:hasRootAddress	?rootAddress .
+							BIND(CONCAT(?rootAddress, ?agentId) AS ?agentAddress)
 						}
  """^^xsd:string ;
 	] .
@@ -5572,7 +5419,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Personal Info for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "5000"^^xsd:int .
+	bt:milliseconds "10000"^^xsd:int .
 	
 
 :ConditionAnyoneNotReturnedPersonalInfo
@@ -5690,22 +5537,24 @@ CONSTRUCT {
 										welcome:hasNationality	?nationality;
 										welcome:hasReligion		?religion;
 										welcome:hasEthnicity 	?ethnicity;
-										welcome:hasLocationPreference	?locPref;
-										welcome:hasAccessibilityPreference	?accessPref;
-										welcome:hasRentPeriodPreference		?rentPref;
-										welcome:hasShareWithPreference		?sharePref.
+										welcome:hasChcLocationPreference	?locPref;
+										welcome:hasChcAccessibilityPreference	?accessPref;
+										welcome:hasChcRentPeriodPreference		?rentPref;
+										welcome:hasChcShareWithPreference		?sharePref.
 							
 							?rentPref	?rentPred	?rentObj.
 							?sharePref	?sharePred		?shareObj.
 						}
 						WHERE {
-							?du		rdf:type	welcome-git:Registered ;
-									welcome:hasAgentAddress	?agentAddress .
-									
+
 							?dAgent	rdf:type	ajan:Agent ;
 									welcome:isRunningCHC ?chcId ;
 									ajan:agentId	?dAgentId.
-
+									
+							?du		rdf:type	welcome-git:Registered ;
+									welcome:hasRootAddress	?rootAddress .
+							BIND(CONCAT(?rootAddress, ?dAgentId) AS ?agentAddress)	
+							
 							?bnode	rdf:type	welcome:CHCUseCase;
 									welcome:hasId		?chcId;
 									welcome:hasParticipants		?pAgentId .	
@@ -5721,10 +5570,10 @@ CONSTRUCT {
 										welcome:hasNationality	?nationality;
 										welcome:hasReligion		?religion;
 										welcome:hasEthnicity 	?ethnicity;
-										welcome:hasLocationPreference	?locPref;
-										welcome:hasAccessibilityPreference	?accessPref;
-										welcome:hasRentPeriodPreference		?rentPref;
-										welcome:hasShareWithPreference		?sharePref.
+										welcome:hasChcLocationPreference	?locPref;
+										welcome:hasChcAccessibilityPreference	?accessPref;
+										welcome:hasChcRentPeriodPreference		?rentPref;
+										welcome:hasChcShareWithPreference		?sharePref.
 							OPTIONAL{
 								?rentPref	?rentPred	?rentObj.
 									}
@@ -5792,10 +5641,10 @@ CONSTRUCT {
 										welcome:hasNationality	?nationality;
 										welcome:hasReligion		?religion;
 										welcome:hasEthnicity 	?ethnicity;
-										welcome:hasLocationPreference	?locPref;
-										welcome:hasAccessibilityPreference	?accessPref;
-										welcome:hasRentPeriodPreference		?rentPref;
-										welcome:hasShareWithPreference		?sharePref.
+										welcome:hasChcLocationPreference	?locPref;
+										welcome:hasChcAccessibilityPreference	?accessPref;
+										welcome:hasChcRentPeriodPreference		?rentPref;
+										welcome:hasChcShareWithPreference		?sharePref.
 							
 							?rentPref	?rentPred	?rentObj.
 							?sharePref	?sharePred		?shareObj.	
@@ -5816,10 +5665,10 @@ CONSTRUCT {
 										welcome:hasNationality	?nationality;
 										welcome:hasReligion		?religion;
 										welcome:hasEthnicity 	?ethnicity;
-										welcome:hasLocationPreference	?locPref;
-										welcome:hasAccessibilityPreference	?accessPref;
-										welcome:hasRentPeriodPreference		?rentPref;
-										welcome:hasShareWithPreference		?sharePref.					
+										welcome:hasChcLocationPreference	?locPref;
+										welcome:hasChcAccessibilityPreference	?accessPref;
+										welcome:hasChcRentPeriodPreference		?rentPref;
+										welcome:hasChcShareWithPreference		?sharePref.					
 							OPTIONAL{
 								?rentPref	?rentPred	?rentObj.
 									}
@@ -5869,7 +5718,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Similarity values for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "5000"^^xsd:int .
+	bt:milliseconds "10000"^^xsd:int .
 
 
 
@@ -5979,7 +5828,7 @@ CONSTRUCT {
 
 #----------------Sharing Personal Info BT nodes ----------------------
 :HandleShareCHCPersonalInfoEvent
-	a bt:HandleEvent ;
+	a bt:HandleQueueEvent ;
 	rdfs:label "EventHandler: Share CHC Personal Info" ;
 	bt:event agents:ShareCHCPersonalInfoEvent ;
 	bt:validate [
@@ -6024,10 +5873,10 @@ CONSTRUCT {
 						welcome:hasNationality	?nationality;
 						welcome:hasReligion		?religion;
 						welcome:hasEthnicity 	?ethnicity;
-						welcome:hasLocationPreference	?locPref;
-						welcome:hasAccessibilityPreference	?accessPref;
-						welcome:hasRentPeriodPreference		?rentPref;
-						welcome:hasShareWithPreference		?sharePref.
+						welcome:hasChcLocationPreference	?locPref;
+						welcome:hasChcAccessibilityPreference	?accessPref;
+						welcome:hasChcRentPeriodPreference		?rentPref;
+						welcome:hasChcShareWithPreference		?sharePref.
 						
 				?rentPref	?rentPred	?rentObj.
 				?sharePref		?sharePred	?shareObj.
@@ -6044,10 +5893,10 @@ CONSTRUCT {
 					welcome:hasNationality	?nationality;
 					welcome:hasReligion		?religion;
 					welcome:hasEthnicity 	?ethnicity;
-					welcome:hasLocationPreference	?locPref;
-					welcome:hasAccessibilityPreference	?accessPref;
-					welcome:hasRentPeriodPreference		?rentPref;
-					welcome:hasShareWithPreference		?sharePref.
+					welcome:hasChcLocationPreference	?locPref;
+					welcome:hasChcAccessibilityPreference	?accessPref;
+					welcome:hasChcRentPeriodPreference		?rentPref;
+					welcome:hasChcShareWithPreference		?sharePref.
 				
 				OPTIONAL{ 
 					?rentPref	?rentPred	?rentObj.
@@ -6113,10 +5962,10 @@ CONSTRUCT {
 								welcome:hasNationality	?nationality;
 								welcome:hasReligion		?religion;
 								welcome:hasEthnicity 	?ethnicity;
-								welcome:hasLocationPreference	?locPref;
-								welcome:hasAccessibilityPreference	?accessPref;
-								welcome:hasRentPeriodPreference		?rentPref;
-								welcome:hasShareWithPreference		?sharePref.
+								welcome:hasChcLocationPreference	?locPref;
+								welcome:hasChcAccessibilityPreference	?accessPref;
+								welcome:hasChcRentPeriodPreference		?rentPref;
+								welcome:hasChcShareWithPreference		?sharePref.
 
 							?rentPref	?rentPred	?rentObj.
 							?sharePref	?sharePred		?shareObj.
@@ -6136,10 +5985,10 @@ CONSTRUCT {
 								welcome:hasNationality	?nationality;
 								welcome:hasReligion		?religion;
 								welcome:hasEthnicity 	?ethnicity;
-								welcome:hasLocationPreference	?locPref;
-								welcome:hasAccessibilityPreference	?accessPref;
-								welcome:hasRentPeriodPreference		?rentPref;
-								welcome:hasShareWithPreference		?sharePref.
+								welcome:hasChcLocationPreference	?locPref;
+								welcome:hasChcAccessibilityPreference	?accessPref;
+								welcome:hasChcRentPeriodPreference		?rentPref;
+								welcome:hasChcShareWithPreference		?sharePref.
 							
 							OPTIONAL{ 
 								?rentPref	?rentPred	?rentObj.
@@ -6268,10 +6117,10 @@ CONSTRUCT {
 								welcome:hasNationality	?nationality;
 								welcome:hasReligion		?religion;
 								welcome:hasEthnicity 	?ethnicity;
-								welcome:hasLocationPreference	?locPref;
-								welcome:hasAccessibilityPreference	?accessPref;
-								welcome:hasRentPeriodPreference		?rentPref;
-								welcome:hasShareWithPreference		?sharePref.
+								welcome:hasChcLocationPreference	?locPref;
+								welcome:hasChcAccessibilityPreference	?accessPref;
+								welcome:hasChcRentPeriodPreference		?rentPref;
+								welcome:hasChcShareWithPreference		?sharePref.
 								
 				?rentPref	?rentPred	?rentObj.
 				?sharePref	?sharePred		?shareObj.
@@ -6289,10 +6138,10 @@ CONSTRUCT {
 								welcome:hasNationality	?nationality;
 								welcome:hasReligion		?religion;
 								welcome:hasEthnicity 	?ethnicity;
-								welcome:hasLocationPreference	?locPref;
-								welcome:hasAccessibilityPreference	?accessPref;
-								welcome:hasRentPeriodPreference		?rentPref;
-								welcome:hasShareWithPreference		?sharePref.
+								welcome:hasChcLocationPreference	?locPref;
+								welcome:hasChcAccessibilityPreference	?accessPref;
+								welcome:hasChcRentPeriodPreference		?rentPref;
+								welcome:hasChcShareWithPreference		?sharePref.
 								
 				OPTIONAL{
 					?rentPref	?rentPred	?rentObj.
@@ -6347,12 +6196,12 @@ CONSTRUCT {
 								welcome:hasCHCPreferencesInfo	?bnode .
 								
 						?bnode	rdf:type	welcome:CHCPreferencesInfo ;
-								welcome:hasAgePreference ?agePref ;
-								welcome:hasGenderPreference ?genPref ;
-								welcome:hasFamilyPreference ?famPref ;
-								welcome:hasNationPreference ?natPref ;
-								welcome:hasReligionPreference ?relPref ;
-								welcome:hasEthnicPreference ?ethPref .
+								welcome:hasChcAgePreference ?agePref ;
+								welcome:hasChcGenderPreference ?genPref ;
+								welcome:hasChcFamilyPreference ?famPref ;
+								welcome:hasChcNationPreference ?natPref ;
+								welcome:hasChcReligionPreference ?relPref ;
+								welcome:hasChcEthnicPreference ?ethPref .
 								
 						?agePref	welcome:lowerBound	?lowerAge;
 									welcome:higherBound ?higherAge.
@@ -6362,12 +6211,12 @@ CONSTRUCT {
 							ajan:agentId	?subAgentId .
 							
 					?du		rdf:type	welcome-git:Registered ;
-							welcome:hasAgePreference ?agePref ;
-							welcome:hasGenderPreference ?genPref ;
-							welcome:hasFamilyPreference ?famPref ;
-							welcome:hasNationPreference ?natPref ;
-							welcome:hasReligionPreference ?relPref ;
-							welcome:hasEthnicPreference ?ethPref .
+							welcome:hasChcAgePreference ?agePref ;
+							welcome:hasChcGenderPreference ?genPref ;
+							welcome:hasChcFamilyPreference ?famPref ;
+							welcome:hasChcNationPreference ?natPref ;
+							welcome:hasChcReligionPreference ?relPref ;
+							welcome:hasChcEthnicPreference ?ethPref .
 							
 					OPTIONAL {
 						?agePref	welcome:lowerBound	?lowerAge;
@@ -6397,12 +6246,12 @@ CONSTRUCT {
 								welcome:hasCHCPreferencesInfo	?bnode .
 								
 						?bnode	rdf:type	welcome:CHCPreferencesInfo ;
-								welcome:hasAgePreference ?agePref ;
-								welcome:hasGenderPreference ?genPref ;
-								welcome:hasFamilyPreference ?famPref ;
-								welcome:hasNationPreference ?natPref ;
-								welcome:hasReligionPreference ?relPref ;
-								welcome:hasEthnicPreference ?ethPref .
+								welcome:hasChcAgePreference ?agePref ;
+								welcome:hasChcGenderPreference ?genPref ;
+								welcome:hasChcFamilyPreference ?famPref ;
+								welcome:hasChcNationPreference ?natPref ;
+								welcome:hasChcReligionPreference ?relPref ;
+								welcome:hasChcEthnicPreference ?ethPref .
 								
 						?agePref	welcome:lowerBound	?lowerAge;
 									welcome:higherBound ?higherAge.
@@ -6412,12 +6261,12 @@ CONSTRUCT {
 							ajan:agentId	?subAgentId .
 							
 					?du		rdf:type	welcome-git:Registered ;
-							welcome:hasAgePreference ?agePref ;
-							welcome:hasGenderPreference ?genPref ;
-							welcome:hasFamilyPreference ?famPref ;
-							welcome:hasNationPreference ?natPref ;
-							welcome:hasReligionPreference ?relPref ;
-							welcome:hasEthnicPreference ?ethPref .
+							welcome:hasChcAgePreference ?agePref ;
+							welcome:hasChcGenderPreference ?genPref ;
+							welcome:hasChcFamilyPreference ?famPref ;
+							welcome:hasChcNationPreference ?natPref ;
+							welcome:hasChcReligionPreference ?relPref ;
+							welcome:hasChcEthnicPreference ?ethPref .
 							
 					OPTIONAL {
 						?agePref	welcome:lowerBound	?lowerAge ;
@@ -6462,12 +6311,12 @@ CONSTRUCT {
 								welcome:hasCHCPreferencesInfo	?prefBNode .
 								
 						?prefBNode	rdf:type	welcome:CHCPreferencesInfo ;
-									welcome:hasAgePreference ?subAgePref ;
-									welcome:hasGenderPreference ?subGenPref ;
-									welcome:hasFamilyPreference ?subFamPref ;
-									welcome:hasNationPreference ?subNatPref ;
-									welcome:hasReligionPreference ?subRelPref ;
-									welcome:hasEthnicPreference ?subEthPref .
+									welcome:hasChcAgePreference ?subAgePref ;
+									welcome:hasChcGenderPreference ?subGenPref ;
+									welcome:hasChcFamilyPreference ?subFamPref ;
+									welcome:hasChcNationPreference ?subNatPref ;
+									welcome:hasChcReligionPreference ?subRelPref ;
+									welcome:hasChcEthnicPreference ?subEthPref .
 						OPTIONAL {		
 								?subAgePref	welcome:lowerBound	?subLowerAge;
 											welcome:higherBound ?subHigherAge.
@@ -6494,10 +6343,10 @@ CONSTRUCT {
 												welcome:hasNationality	?subNationality;
 												welcome:hasReligion		?subReligion;
 												welcome:hasEthnicity 	?subEthnicity;
-												welcome:hasLocationPreference	?subLocPref;
-												welcome:hasAccessibilityPreference	?subAccessPref;
-												welcome:hasRentPeriodPreference		?subRentPref;
-												welcome:hasShareWithPreference		?subSharePref.
+												welcome:hasChcLocationPreference	?subLocPref;
+												welcome:hasChcAccessibilityPreference	?subAccessPref;
+												welcome:hasChcRentPeriodPreference		?subRentPref;
+												welcome:hasChcShareWithPreference		?subSharePref.
 
 						OPTIONAL {
 							?subRentPref	welcome:startDate ?subStartRent ;
@@ -6517,10 +6366,10 @@ CONSTRUCT {
 												welcome:hasNationality	?objNationality;
 												welcome:hasReligion		?objReligion;
 												welcome:hasEthnicity 	?objEthnicity;
-												welcome:hasLocationPreference	?objLocPref;
-												welcome:hasAccessibilityPreference	?objAccessPref;
-												welcome:hasRentPeriodPreference		?objRentPref;
-												welcome:hasShareWithPreference		?objSharePref.
+												welcome:hasChcLocationPreference	?objLocPref;
+												welcome:hasChcAccessibilityPreference	?objAccessPref;
+												welcome:hasChcRentPeriodPreference		?objRentPref;
+												welcome:hasChcShareWithPreference		?objSharePref.
 						
 						OPTIONAL {
 							?objRentPref	welcome:startDate ?objStartRent ;
@@ -6551,21 +6400,21 @@ CONSTRUCT {
 						
 						# to compute similarity value of subject agent for object agent 
 						# age similarity
-						BIND(IF(?subAgePref = "Dont mind" || (xsd:integer(?objAge) >= xsd:integer(?subLowerAge) && xsd:integer(?objAge) <= xsd:integer(?subHigherAge)), ?matchScore, ?unmatchScore) AS ?ageSml).
+						BIND(IF(LCASE(?subAgePref) = "dont mind" || (xsd:integer(?objAge) >= xsd:integer(?subLowerAge) && xsd:integer(?objAge) <= xsd:integer(?subHigherAge)), ?matchScore, ?unmatchScore) AS ?ageSml).
 						# gender similarity
-						BIND(IF(?subGenPref = "Dont mind" || ?objGender = ?subGenPref, ?matchScore, ?unmatchScore) AS ?genSml).
+						BIND(IF(LCASE(?subGenPref) = "dont mind" || ?objGender = ?subGenPref, ?matchScore, ?unmatchScore) AS ?genSml).
 						# family similarity
-						BIND(IF(?subFamPref = "Dont mind" || ?objFamily = ?subFamPref, ?matchScore, ?unmatchScore) AS ?famSml).
+						BIND(IF(LCASE(?subFamPref) = "dont mind" || ?objFamily = ?subFamPref, ?matchScore, ?unmatchScore) AS ?famSml).
 						# nationality similarity
-						BIND(IF(?subNatPref = "Dont mind" || (?subNatPref = "Same" && ?subNationality = ?objNationality) || (?subNatPref = "Mixed" && ?subNationality != ?objNationality), ?matchScore, ?unmatchScore) AS ?natSml)
+						BIND(IF(LCASE(?subNatPref) = "dont mind" || (?subNatPref = "Same" && ?subNationality = ?objNationality) || (?subNatPref = "Mixed" && ?subNationality != ?objNationality), ?matchScore, ?unmatchScore) AS ?natSml)
 						#religion similarity 
-						BIND(IF(?subRelPref = "Dont mind" || (?subRelPref = "Same" && ?subReligion = ?objReligion) || (?subRelPref = "Mixed" && ?subReligion != ?objReligion), ?matchScore, ?unmatchScore) AS ?relSml)
+						BIND(IF(LCASE(?subRelPref) = "dont mind" || (?subRelPref = "Same" && ?subReligion = ?objReligion) || (?subRelPref = "Mixed" && ?subReligion != ?objReligion), ?matchScore, ?unmatchScore) AS ?relSml)
 						# ethnicity similarity
-						BIND(IF(?subEthPref = "Dont mind" || (?subEthPref = "Same" && ?subEthnicity = ?objEthnicity) || (?subEthPref = "Mixed" && ?subEthnicity != ?objEthnicity), ?matchScore, ?unmatchScore) AS ?ethSml)
+						BIND(IF(LCASE(?subEthPref) = "dont mind" || (?subEthPref = "Same" && ?subEthnicity = ?objEthnicity) || (?subEthPref = "Mixed" && ?subEthnicity != ?objEthnicity), ?matchScore, ?unmatchScore) AS ?ethSml)
 						# location similarity
-						BIND(IF(?subLocPref = "Dont mind" || ?objLocPref = "Dont mind" || ?subLocPref = ?objLocPref, ?matchScore, ?unmatchScore) AS ?locSml)
+						BIND(IF(LCASE(?subLocPref) = "dont mind" || ?objLocPref = "Dont mind" || ?subLocPref = ?objLocPref, ?matchScore, ?unmatchScore) AS ?locSml)
 						# accessibility similarity
-						BIND(IF(?subAccessPref = "Dont mind" || ?objAccessPref = "Dont mind" || ?subAccessPref = ?objAccessPref, ?matchScore, ?unmatchScore) AS ?accSml)
+						BIND(IF(LCASE(?subAccessPref) = "dont mind" || ?objAccessPref = "Dont mind" || ?subAccessPref = ?objAccessPref, ?matchScore, ?unmatchScore) AS ?accSml)
 						# rental period similarity
 						BIND(((year(xsd:dateTime(?subEndRent)) - year(now()))*365 + 30*(month(xsd:dateTime(?subEndRent))) + day(xsd:dateTime(?subEndRent))) AS ?subEndRentIntValue)
 						BIND(((year(xsd:dateTime(?objEndRent)) - year(now()))*365 + 30*(month(xsd:dateTime(?objEndRent))) + day(xsd:dateTime(?objEndRent))) AS ?objEndRentIntValue)
@@ -6866,9 +6715,8 @@ CONSTRUCT {
 								ajan:hasReciprocalScore	?bReciprocalScore .
 					}
 			WHERE { 
-					?du		rdf:type	welcome-git:Registered ;
-							welcome:hasAgentAddress	?agentAddress .
-									
+					#?du		rdf:type	welcome-git:Registered ;
+					#		welcome:hasAgentAddress	?agentAddress .
 
 					?agent	rdf:type	ajan:Agent ;
 							welcome:isRunningCHC ?chcId ;
@@ -6890,7 +6738,7 @@ CONSTRUCT {
 							welcome:hasShareWithWeight	?shareWeight.
 							
 					OPTIONAL {
-						?agentUri welcome:hasCHCSimilarityValue	?smlBnode .
+						?agentUri	welcome:hasCHCSimilarityValue	?smlBnode .
 						?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
 									ajan:hasSubject ?pAgentId ;
 									ajan:hasObject ?oAgentId ;
@@ -7089,12 +6937,14 @@ CONSTRUCT {
 									welcome:hasParticipants		?pAgentId .							
 						}
 						WHERE {
-							?du		rdf:type	welcome-git:Registered ;
-									welcome:hasAgentAddress	?agentAddress .
-									
+							
 							?dAgent	rdf:type	ajan:Agent ;
 									welcome:isRunningCHC ?chcId ;
 									ajan:agentId	?dAgentId.
+									
+							?du		rdf:type	welcome-git:Registered ;
+									welcome:hasRootAddress	?rootAddress .
+							BIND(CONCAT(?rootAddress, ?dAgentId) AS ?agentAddress)
 
 							?bnode	rdf:type	welcome:CHCUseCase;
 									welcome:hasId		?chcId;
@@ -7673,6 +7523,32 @@ CONSTRUCT {
 					"""^^xsd:string ;
 		]) .	
 		
+:UpdateAgentRunningChcFlagOff
+	a bt:Update ;
+	rdfs:label "Agent Running CHC Flag-Off" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					
+					
+					DELETE {	
+						?agent	welcome:hasRunningChc	"true" .
+					}
+					INSERT{
+						?agent	welcome:hasRunningChc	"false" .
+					}
+					WHERE {
+						?agent	rdf:type ajan:Agent ;
+								welcome:hasRunningChc	"true" .
+					}
+					"""^^xsd:string ;
+		]) .		
 :ConditionCHCSucceeded
 	a bt:Condition ;
 	rdfs:label "Condition: has CHC process finished with success?" ;

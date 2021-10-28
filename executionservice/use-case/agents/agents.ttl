@@ -341,7 +341,7 @@
 	rdfs:label "LCC Process Failed Event" .
 
 :CHCProtocolEvent
-	a ajan:ModelEvent ;
+	a ajan:ModelQueueEvent ;
 	rdfs:label "CHC Protocol Event" .
 
 :ExecuteCHCProcessEvent 
@@ -349,7 +349,7 @@
 	rdfs:label "Execute CHC Process Event" .
 
 :ShareCHCPersonalInfoEvent
-	a ajan:ModelEvent ;
+	a ajan:ModelQueueEvent ;
 	rdfs:label "Share CHC Personal Info Event" .
 
 :ReceiveCHCPersonalInfoEvent

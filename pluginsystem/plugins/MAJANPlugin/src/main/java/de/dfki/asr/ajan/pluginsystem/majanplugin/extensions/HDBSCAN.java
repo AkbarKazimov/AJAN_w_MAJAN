@@ -158,8 +158,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         // Extract Agent Names from Model
         valueSet=rdfInputModel.filter(null, MAJANVocabulary.ParticipantsPre, null).objects();
         if(valueSet.size()!=numOfAgents){
-            throw new HDBSCANInputException("Amount of participating agents is different "
-                    + "from the given \"numberOfAgents\" information.");
+            throw new HDBSCANInputException("Amount of participating agents ("+valueSet.size()+") is different "
+                    + "from the given \"numberOfAgents="+numOfAgents+"\" information.");
         }
         Iterator<Value> valueIterator = valueSet.iterator();
         while(valueIterator.hasNext()){
@@ -323,8 +323,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         // Extract Agent Names from Model
         valueSet=rdfInputModel.filter(null, MAJANVocabulary.ParticipantsPre, null).objects();
         if(valueSet.size()!=numOfAgents){
-            throw new HDBSCANInputException("Amount of participating agents is different "
-                    + "from the given \"numberOfAgents\" information.");
+            throw new HDBSCANInputException("Amount of participating agents ("+valueSet.size()+") is different "
+                    + "from the given \"numberOfAgents="+numOfAgents+"\" information.");
         }
         Iterator<Value> valueIterator = valueSet.iterator();
         while(valueIterator.hasNext()){
