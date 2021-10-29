@@ -188,7 +188,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                                 //        + agentNames.get(j));
                                 LOG.warn("No Distance Score is specified between <"+agentNames.get(i)+"> and <"
                                         + agentNames.get(j) + ". Assiging " + perfectMatchScore + " as their distance to be able "
-                                                + "to procedd.");
+                                                + "to proceed.");
                                 distanceScores[i][j] = perfectMatchScore;
                             }else{
                                 double distanceScore = Double.valueOf(valueSet.iterator().next().stringValue());

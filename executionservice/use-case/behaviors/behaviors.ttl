@@ -3844,6 +3844,7 @@
 								bt:hasChildren (
 										:HandleSolveCHCEvent
 										:WriteComputedReciprocalSimilarities
+										:WriteReciprocalScores2Lakr
 										:HdbscanAlgorithm
 										:WriteCHCResultRequestContent2Execution
 										:BroadcastHDBSCANResult
@@ -5419,7 +5420,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Personal Info for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "10000"^^xsd:int .
+	bt:milliseconds "20000"^^xsd:int .
 	
 
 :ConditionAnyoneNotReturnedPersonalInfo
@@ -5718,7 +5719,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Similarity values for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "10000"^^xsd:int .
+	bt:milliseconds "20000"^^xsd:int .
 
 
 
@@ -6291,18 +6292,17 @@ CONSTRUCT {
 				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-				CONSTRUCT  {
-					?subAgent	welcome:hasCHCSimilarityValue	?smlBnode .
-					
-					?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
-								ajan:hasSubject ?subAgentId ;
-								ajan:hasObject ?pAgentId ;
-								welcome:isComputedForProblemId  ?chcId ;
-								ajan:hasSimilarityScore ?maxTotalSml .			
-						}
-				WHERE { 
+						CONSTRUCT  {
+							?subAgent	welcome:hasCHCSimilarityValue	?smlBnode .					
+							?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+										ajan:hasSubject ?subAgentId ;
+										ajan:hasObject ?pAgentId ;
+										welcome:isComputedForProblemId  ?chcId ;
+										ajan:hasSimilarityScore ?maxTotalSml .			
+						}				
+                        WHERE { 
 						{
-						SELECT ?subAgent ?subAgentId ?pAgentId ?chcId (MAX(?totalSml) AS ?maxTotalSml)
+						SELECT ?subAgent ?subAgentId ?pAgentId ?chcId (MAX(?totalSml) AS ?maxTotalSml) 
 						WHERE { 
 						
 						# to retrieve Preferences of the subject agent from Execution. 
@@ -6400,21 +6400,21 @@ CONSTRUCT {
 						
 						# to compute similarity value of subject agent for object agent 
 						# age similarity
-						BIND(IF(LCASE(?subAgePref) = "dont mind" || (xsd:integer(?objAge) >= xsd:integer(?subLowerAge) && xsd:integer(?objAge) <= xsd:integer(?subHigherAge)), ?matchScore, ?unmatchScore) AS ?ageSml).
+						BIND(IF(?subAgePref = "Dont mind" || (xsd:integer(?objAge) >= xsd:integer(?subLowerAge) && xsd:integer(?objAge) <= xsd:integer(?subHigherAge)), ?matchScore, ?unmatchScore) AS ?ageSml).
 						# gender similarity
-						BIND(IF(LCASE(?subGenPref) = "dont mind" || ?objGender = ?subGenPref, ?matchScore, ?unmatchScore) AS ?genSml).
+						BIND(IF(?subGenPref = "Dont mind" || ?objGender = ?subGenPref, ?matchScore, ?unmatchScore) AS ?genSml).
 						# family similarity
-						BIND(IF(LCASE(?subFamPref) = "dont mind" || ?objFamily = ?subFamPref, ?matchScore, ?unmatchScore) AS ?famSml).
+						BIND(IF(?subFamPref = "Dont mind" || ?objFamily = ?subFamPref, ?matchScore, ?unmatchScore) AS ?famSml).
 						# nationality similarity
-						BIND(IF(LCASE(?subNatPref) = "dont mind" || (?subNatPref = "Same" && ?subNationality = ?objNationality) || (?subNatPref = "Mixed" && ?subNationality != ?objNationality), ?matchScore, ?unmatchScore) AS ?natSml)
+						BIND(IF(?subNatPref = "Dont mind" || (?subNatPref = "Same" && ?subNationality = ?objNationality) || (?subNatPref = "Mixed" && ?subNationality != ?objNationality), ?matchScore, ?unmatchScore) AS ?natSml)
 						#religion similarity 
-						BIND(IF(LCASE(?subRelPref) = "dont mind" || (?subRelPref = "Same" && ?subReligion = ?objReligion) || (?subRelPref = "Mixed" && ?subReligion != ?objReligion), ?matchScore, ?unmatchScore) AS ?relSml)
+						BIND(IF(?subRelPref = "Dont mind" || (?subRelPref = "Same" && ?subReligion = ?objReligion) || (?subRelPref = "Mixed" && ?subReligion != ?objReligion), ?matchScore, ?unmatchScore) AS ?relSml)
 						# ethnicity similarity
-						BIND(IF(LCASE(?subEthPref) = "dont mind" || (?subEthPref = "Same" && ?subEthnicity = ?objEthnicity) || (?subEthPref = "Mixed" && ?subEthnicity != ?objEthnicity), ?matchScore, ?unmatchScore) AS ?ethSml)
+						BIND(IF(?subEthPref = "Dont mind" || (?subEthPref = "Same" && ?subEthnicity = ?objEthnicity) || (?subEthPref = "Mixed" && ?subEthnicity != ?objEthnicity), ?matchScore, ?unmatchScore) AS ?ethSml)
 						# location similarity
-						BIND(IF(LCASE(?subLocPref) = "dont mind" || ?objLocPref = "Dont mind" || ?subLocPref = ?objLocPref, ?matchScore, ?unmatchScore) AS ?locSml)
+						BIND(IF(?subLocPref = "Dont mind" || ?objLocPref = "Dont mind" || ?subLocPref = ?objLocPref, ?matchScore, ?unmatchScore) AS ?locSml)
 						# accessibility similarity
-						BIND(IF(LCASE(?subAccessPref) = "dont mind" || ?objAccessPref = "Dont mind" || ?subAccessPref = ?objAccessPref, ?matchScore, ?unmatchScore) AS ?accSml)
+						BIND(IF(?subAccessPref = "Dont mind" || ?objAccessPref = "Dont mind" || ?subAccessPref = ?objAccessPref, ?matchScore, ?unmatchScore) AS ?accSml)
 						# rental period similarity
 						BIND(((year(xsd:dateTime(?subEndRent)) - year(now()))*365 + 30*(month(xsd:dateTime(?subEndRent))) + day(xsd:dateTime(?subEndRent))) AS ?subEndRentIntValue)
 						BIND(((year(xsd:dateTime(?objEndRent)) - year(now()))*365 + 30*(month(xsd:dateTime(?objEndRent))) + day(xsd:dateTime(?objEndRent))) AS ?objEndRentIntValue)
@@ -6441,11 +6441,11 @@ CONSTRUCT {
 						BIND(xsd:float(((?ageSml * ?ageWeight) + (?genSml * ?genWeight) + (?famSml * ?famWeight) + (?natSml * ?natWeight) + (?relSml * ?relWeight) + 
 						(?ethSml * ?ethWeight) + (?locSml * ?locWeight) + (?accSml * ?accWeight) + (?rentSml * ?rentWeight) + (?shareSml * ?shareWeight))/10.0) AS ?totalSml).						
 												
-						} GROUP BY ?smlBnode ?subAgentId ?pAgentId ?chcId ?subAgent
+						} GROUP BY ?subAgentId ?pAgentId ?chcId ?subAgent 
 						}
 						BIND(BNODE() AS ?smlBnode)					
 				
-			} """^^xsd:string ;
+			}  """^^xsd:string ;
 	] .
 
 
@@ -6677,7 +6677,7 @@ CONSTRUCT {
 
 :WriteComputedReciprocalSimilarities
 	a bt:Write ;
-	rdfs:label "Write: Reciprocal Similarity values to lakr" ;
+	rdfs:label "Write: Reciprocal Similarity values to Execution" ;
 	bt:query [
 		a bt:ConstructQuery ;
 		bt:originBase ajan:AgentKnowledge ;
@@ -6710,7 +6710,7 @@ CONSTRUCT {
 							
 					?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
 								ajan:hasSubject ?pAgentId ;
-								ajan:hasObject ?oAgentId ;
+								ajan:hasObject ?objectAgentId ;
 								welcome:isComputedForProblemId  ?chcId ;
 								ajan:hasReciprocalScore	?bReciprocalScore .
 					}
@@ -6725,7 +6725,7 @@ CONSTRUCT {
 					?bnode	rdf:type	welcome:CHCUseCase;
 							welcome:hasId		?chcId;
 							welcome:hasNumberOfAgents	?numOfAgents;
-							welcome:hasParticipants		?pAgentId ;
+							welcome:hasParticipants		?pAgentId, ?pAgentId2 ;
 							welcome:hasAgeWeight ?ageWeight;
 							welcome:hasGenderWeight ?genWeight;
 							welcome:hasFamilyWeight	?famWeight;
@@ -6736,7 +6736,7 @@ CONSTRUCT {
 							welcome:hasAccessibilityWeight	?accWeight;
 							welcome:hasRentPeriodWeight	?rentWeight;
 							welcome:hasShareWithWeight	?shareWeight.
-							
+					FILTER(?pAgentId!=?pAgentId2)
 					OPTIONAL {
 						?agentUri	welcome:hasCHCSimilarityValue	?smlBnode .
 						?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
@@ -6764,10 +6764,78 @@ CONSTRUCT {
 					#BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
 
 					BIND(BNODE() AS ?rrsBnode) .
+					BIND(IF(!BOUND(?oAgentId), ?pAgentId2, ?oAgentId) AS ?objectAgentId)
 								} """^^xsd:string ;
 	] .		
 
 
+:WriteReciprocalScores2Lakr
+	a bt:Write ;
+	rdfs:label "Write: Reciprocal Scores to lakr" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+
+			CONSTRUCT  {
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC ?chcId ;
+							ajan:agentId	?dAgentId.	
+							
+					?bnode	rdf:type	welcome:CHCUseCase;
+							welcome:hasId		?chcId;
+							welcome:hasNumberOfAgents	?numOfAgents;
+							welcome:hasParticipants		?pAgentId ;
+							welcome:hasAgeWeight ?ageWeight;
+							welcome:hasGenderWeight ?genWeight;
+							welcome:hasFamilyWeight	?famWeight;
+							welcome:hasNationalityWeight	?natWeight;
+							welcome:hasReligionWeight	?relWeight;
+							welcome:hasEthnicityWeight	?ethWeight;
+							welcome:hasLocationWeight	?locWeight;
+							welcome:hasAccessibilityWeight	?accWeight;
+							welcome:hasRentPeriodWeight	?rentWeight;
+							welcome:hasShareWithWeight	?shareWeight.
+							
+					?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
+								ajan:hasSubject ?pAgentId ;
+								ajan:hasObject ?objectAgentId ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasReciprocalScore	?bReciprocalScore .
+					}
+			WHERE { 
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC ?chcId ;
+							ajan:agentId	?dAgentId.	
+							
+					?bnode	rdf:type	welcome:CHCUseCase;
+							welcome:hasId		?chcId;
+							welcome:hasNumberOfAgents	?numOfAgents;
+							welcome:hasParticipants		?pAgentId ;
+							welcome:hasAgeWeight ?ageWeight;
+							welcome:hasGenderWeight ?genWeight;
+							welcome:hasFamilyWeight	?famWeight;
+							welcome:hasNationalityWeight	?natWeight;
+							welcome:hasReligionWeight	?relWeight;
+							welcome:hasEthnicityWeight	?ethWeight;
+							welcome:hasLocationWeight	?locWeight;
+							welcome:hasAccessibilityWeight	?accWeight;
+							welcome:hasRentPeriodWeight	?rentWeight;
+							welcome:hasShareWithWeight	?shareWeight.
+							
+							
+					?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
+								ajan:hasSubject ?pAgentId ;
+								ajan:hasObject ?objectAgentId ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasReciprocalScore	?bReciprocalScore .
+								} """^^xsd:string ;
+	] .		
 
 
 :HdbscanAlgorithm_NEW
@@ -6834,6 +6902,59 @@ CONSTRUCT {
 
 
 
+:ComputeLccDistancesInLakr
+	a bt:Update ;
+	rdfs:label "Update: Compute LCC Distances in LAKR" ;
+	bt:query [
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
+						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+						CONSTRUCT {
+								?dsnBnode	rdf:type	welcome:CHCDistanceScore ;
+											ajan:hasSubject ?pAgentId ;
+											ajan:hasObject ?oAgentId ;
+											welcome:isComputedForProblemId  ?chcId ;
+											ajan:hasDistanceScore	?distanceScore .	
+						}
+						WHERE {								
+								?agent	rdf:type	ajan:Agent ;
+										welcome:isRunningCHC ?chcId ;
+										ajan:agentId	?dAgentId.	
+							
+								?bnode	rdf:type	welcome:CHCUseCase;
+										welcome:hasId		?chcId;
+										welcome:hasNumberOfAgents	?numOfAgents;
+										welcome:hasParticipants		?pAgentId ;
+										welcome:hasAgeWeight ?ageWeight;
+										welcome:hasGenderWeight ?genWeight;
+										welcome:hasFamilyWeight	?famWeight;
+										welcome:hasNationalityWeight	?natWeight;
+										welcome:hasReligionWeight	?relWeight;
+										welcome:hasEthnicityWeight	?ethWeight;
+										welcome:hasLocationWeight	?locWeight;
+										welcome:hasAccessibilityWeight	?accWeight;
+										welcome:hasRentPeriodWeight	?rentWeight;
+										welcome:hasShareWithWeight	?shareWeight.
+							
+										BIND(1 AS ?matchScore)
+										BIND(0 AS ?unmatchScore)
+										BIND(10 AS ?numberOfPreferences)
+										BIND((?matchScore * (?ageWeight + ?genWeight + ?famWeight + ?natWeight + ?relWeight + ?ethWeight + ?locWeight + ?accWeight + ?rentWeight + ?shareWeight))/?numberOfPreferences AS ?perfectMatchScore)
+
+								?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
+											ajan:hasSubject ?pAgentId ;
+											ajan:hasObject ?oAgentId ;
+											welcome:isComputedForProblemId  ?chcId ;
+											ajan:hasReciprocalScore	?bReciprocalScore .
+								
+								BIND((?perfectMatchScore - ?bReciprocalScore) AS ?distanceScore)
+								BIND(BNODE() AS ?dsnBnode)
+				} """^^xsd:string ;
+	] .
 
 :HdbscanAlgorithm
 	a bt:HDBSCAN ;
@@ -6869,11 +6990,8 @@ CONSTRUCT {
 											ajan:hasObject ?oAgentId ;
 											welcome:isComputedForProblemId  ?chcId ;
 											ajan:hasDistanceScore	?distanceScore .	
-		# ?s ?p ?o .											
 						}
 						WHERE {
-		#						?s ?p ?o .
-								
 								?agent	rdf:type	ajan:Agent ;
 										welcome:isRunningCHC ?chcId ;
 										ajan:agentId	?dAgentId.	
