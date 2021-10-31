@@ -3691,7 +3691,7 @@
 											a bt:Sequence ;
 											bt:hasChildren (
 													:HandleExecuteCHCProcessEvent
-													:UpdateAgentRunningChcFlagOn
+													:CHCStartFlagOn
 													:WriteAgentId2Execution
 													:Message2AppStartingCHC
 													:Message2WPMUpdateStatus2InCoordination
@@ -3744,13 +3744,13 @@
 													:ComputeSimilarities4CHC
 													:WriteSimilarities2LAKR
 													:Wait4SimilarityValues
-													[
-														a bt:Priority ;
-														bt:hasChildren (
+													#[
+													#	a bt:Priority ;
+													#	bt:hasChildren (
 																:ConditionEveryoneReturnedSimilarities
-																:WriteZeroSimilarity4NotRespondingAgents
-																		)																														
-													]
+																#:WriteZeroSimilarity4NotRespondingAgents
+													#					)																														
+													#]
 													:EventProducerSolverCHCEvent
 															)																														
 										]
@@ -3808,6 +3808,7 @@
 					a bt:Sequence ;
 					bt:hasChildren (
 								:HandleShareCHCSimilaritiesEvent
+								:WriteAll2Lakr
 								:WriteCHCPreferences2Execution
 #								:UpdateCHCPrefInstance2LAKR
 								:ComputeSimilarities4CHC
@@ -3845,7 +3846,9 @@
 										:HandleSolveCHCEvent
 										:WriteComputedReciprocalSimilarities
 										:WriteReciprocalScores2Lakr
-										:HdbscanAlgorithm
+										#:ComputeLccDistancesInLakr
+										#:HdbscanAlgorithm
+										:ClusteringSolver_HDBSCAN
 										:WriteCHCResultRequestContent2Execution
 										:BroadcastHDBSCANResult
 										:EventProducerFinalizeCHCProcessEvent
@@ -3885,7 +3888,7 @@
 										]
 									)
 								]
-								:RemoveAgentInCHCFlag
+								:RemoveAgentInCHCAndComputeRuntime
 								:UpdateAgentRunningChcFlagOff
 								[
 									a bt:Priority ;
@@ -4720,7 +4723,7 @@ CONSTRUCT {
 
 
 
-:UpdateAgentRunningChcFlagOn
+:CHCStartFlagOn
 	a bt:Update ;
 	rdfs:label "Agent Running CHC Flag-On" ;
 	bt:query ([
@@ -4736,9 +4739,11 @@ CONSTRUCT {
 
 					INSERT {	
 						?agent	welcome:hasRunningChc	"true" .
+						
 					}
 					WHERE {
 						?agent	rdf:type ajan:Agent .
+						
 					}
 					"""^^xsd:string ;
 		]) .	
@@ -4976,6 +4981,7 @@ CONSTRUCT {
 						?agent	welcome:isRunningCHC ?chcId .
 						
 						?bnode	rdf:type	welcome:MACUseCase, welcome:CHCUseCase;
+									welcome:hasStartTime	?now ;
 									welcome:hasStatus	"running"^^xsd:string;
 									welcome:hasId		?chcId;
 									welcome:hasSolver	"HDBSCAN"^^xsd:string;
@@ -5011,6 +5017,8 @@ CONSTRUCT {
 									welcome:hasAccessibilityWeight	"3"^^xsd:int;
 									welcome:hasRentPeriodWeight		"1"^^xsd:int;
 									welcome:hasShareWithWeight		"4"^^xsd:int.
+									
+						BIND(NOW() AS ?now)
 						}
  """^^xsd:string ;
 	] .
@@ -5420,7 +5428,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Personal Info for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "20000"^^xsd:int .
+	bt:milliseconds "60000"^^xsd:int .
 	
 
 :ConditionAnyoneNotReturnedPersonalInfo
@@ -5719,7 +5727,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Similarity values for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "20000"^^xsd:int .
+	bt:milliseconds "80000"^^xsd:int .
 
 
 
@@ -6178,6 +6186,28 @@ CONSTRUCT {
 				] .
 
 
+
+:WriteAll2Lakr
+	a bt:Write ;
+	rdfs:label "Write: all to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+				
+				CONSTRUCT  {
+						?s ?p ?o .
+				}
+				WHERE {
+						?s ?p ?o .	
+				} """^^xsd:string ;
+	] .
+
 :WriteCHCPreferences2Execution
 	a bt:Write ;
 	rdfs:label "Write: CHC Individual Preferences to Execution" ;
@@ -6302,7 +6332,10 @@ CONSTRUCT {
 						}				
                         WHERE { 
 						{
-						SELECT ?subAgent ?subAgentId ?pAgentId ?chcId (MAX(?totalSml) AS ?maxTotalSml) 
+						SELECT ?subAgent ?subAgentId ?pAgentId ?chcId (MAX(?totalSml) AS ?maxTotalSml)
+						WHERE {
+						{
+						SELECT ?subAgent ?subAgentId ?pAgentId ?chcId  ?totalSml
 						WHERE { 
 						
 						# to retrieve Preferences of the subject agent from Execution. 
@@ -6402,9 +6435,9 @@ CONSTRUCT {
 						# age similarity
 						BIND(IF(?subAgePref = "Dont mind" || (xsd:integer(?objAge) >= xsd:integer(?subLowerAge) && xsd:integer(?objAge) <= xsd:integer(?subHigherAge)), ?matchScore, ?unmatchScore) AS ?ageSml).
 						# gender similarity
-						BIND(IF(?subGenPref = "Dont mind" || ?objGender = ?subGenPref, ?matchScore, ?unmatchScore) AS ?genSml).
+						BIND(IF(?subGenPref = "Dont mind" || LCASE(STR(?objGender)) = LCASE(STR(?subGenPref)), ?matchScore, ?unmatchScore) AS ?genSml).
 						# family similarity
-						BIND(IF(?subFamPref = "Dont mind" || ?objFamily = ?subFamPref, ?matchScore, ?unmatchScore) AS ?famSml).
+						BIND(IF(?subFamPref = "Dont mind" || LCASE(STR(?objFamily)) = LCASE(STR(?subFamPref)), ?matchScore, ?unmatchScore) AS ?famSml).
 						# nationality similarity
 						BIND(IF(?subNatPref = "Dont mind" || (?subNatPref = "Same" && ?subNationality = ?objNationality) || (?subNatPref = "Mixed" && ?subNationality != ?objNationality), ?matchScore, ?unmatchScore) AS ?natSml)
 						#religion similarity 
@@ -6414,7 +6447,7 @@ CONSTRUCT {
 						# location similarity
 						BIND(IF(?subLocPref = "Dont mind" || ?objLocPref = "Dont mind" || ?subLocPref = ?objLocPref, ?matchScore, ?unmatchScore) AS ?locSml)
 						# accessibility similarity
-						BIND(IF(?subAccessPref = "Dont mind" || ?objAccessPref = "Dont mind" || ?subAccessPref = ?objAccessPref, ?matchScore, ?unmatchScore) AS ?accSml)
+						BIND(IF(?subAccessPref = "Dont mind" || ?objAccessPref = "Dont mind" || LCASE(STR(?subAccessPref)) = LCASE(STR(?objAccessPref)), ?matchScore, ?unmatchScore) AS ?accSml)
 						# rental period similarity
 						BIND(((year(xsd:dateTime(?subEndRent)) - year(now()))*365 + 30*(month(xsd:dateTime(?subEndRent))) + day(xsd:dateTime(?subEndRent))) AS ?subEndRentIntValue)
 						BIND(((year(xsd:dateTime(?objEndRent)) - year(now()))*365 + 30*(month(xsd:dateTime(?objEndRent))) + day(xsd:dateTime(?objEndRent))) AS ?objEndRentIntValue)
@@ -6441,11 +6474,13 @@ CONSTRUCT {
 						BIND(xsd:float(((?ageSml * ?ageWeight) + (?genSml * ?genWeight) + (?famSml * ?famWeight) + (?natSml * ?natWeight) + (?relSml * ?relWeight) + 
 						(?ethSml * ?ethWeight) + (?locSml * ?locWeight) + (?accSml * ?accWeight) + (?rentSml * ?rentWeight) + (?shareSml * ?shareWeight))/10.0) AS ?totalSml).						
 												
-						} GROUP BY ?subAgentId ?pAgentId ?chcId ?subAgent 
+						} GROUP BY ?subAgentId ?pAgentId ?chcId ?subAgent ?totalSml
 						}
-						BIND(BNODE() AS ?smlBnode)					
-				
-			}  """^^xsd:string ;
+						} GROUP BY  ?subAgent ?subAgentId ?pAgentId ?chcId
+						}
+						BIND(BNODE() AS ?smlBnode)	
+						} 
+			"""^^xsd:string ;
 	] .
 
 
@@ -6645,8 +6680,8 @@ CONSTRUCT {
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
 
 						CONSTRUCT {
-#							?s ?p ?o .
-						ajan:Nothing	ajan:has	"Nothing" .
+							?s ?p ?o .
+#						ajan:Nothing	ajan:has	"Nothing" .
 						}
 						WHERE { 
 							?s ?p ?o .	
@@ -6838,7 +6873,7 @@ CONSTRUCT {
 	] .		
 
 
-:HdbscanAlgorithm_NEW
+:ClusteringSolver_HDBSCAN
 	a bt:HDBSCAN ;
 	rdfs:label "Run HDBSCAN Algorithm to Solve CHC" ;
 	bt:query [
@@ -6850,20 +6885,25 @@ CONSTRUCT {
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#> 
 						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-						CONSTRUCT {
-								?bnode	rdf:type	welcome:MACUseCase;
+						
+                        CONSTRUCT {
+								?bnode	rdf:type	welcome:CHCUseCase;
 										welcome:hasId		?chcId;
 										welcome:hasNumberOfAgents	?numOfAgents;
 										welcome:hasParticipants		?pAgentId ;
-										welcome:hasWorstDistanceScore ?perfectMatchScore .
+										welcome:hasPerfectMatchScore ?perfectMatchScore .
 					
-								?dsnBnode	rdf:type	welcome:HDBSCANDistanceScore ;
+								?dsnBnode	rdf:type	welcome:CHCDistanceScore ;
 											ajan:hasSubject ?pAgentId ;
 											ajan:hasObject ?oAgentId ;
-											welcome:hasMACUseCaseId  ?chcId ;
+											welcome:isComputedForProblemId  ?chcId ;
 											ajan:hasDistanceScore	?distanceScore .	
 						}
-						WHERE {								
+						#SELECT ?bnode ?chcId ?numOfAgents ?perfectMatchScore ?dsnBnode ?pAgentId ?oAgentId ?distanceScore
+						WHERE {
+                           {
+                            SELECT DISTINCT ?bnode ?chcId ?numOfAgents ?perfectMatchScore ?pAgentId ?oAgentId ?distanceScore
+                            {
 								?agent	rdf:type	ajan:Agent ;
 										welcome:isRunningCHC ?chcId ;
 										ajan:agentId	?dAgentId.	
@@ -6895,6 +6935,8 @@ CONSTRUCT {
 											ajan:hasReciprocalScore	?bReciprocalScore .
 								
 								BIND((?perfectMatchScore - ?bReciprocalScore) AS ?distanceScore)
+                            }
+                                }
 								BIND(BNODE() AS ?dsnBnode)
 				}
 					"""^^xsd:string ;
@@ -7591,7 +7633,7 @@ CONSTRUCT {
 	] .
 
 
-:RemoveAgentInCHCFlag
+:RemoveAgentInCHCAndComputeRuntime
 	a bt:Update ;
 	rdfs:label "Update: remove chc id if agent either running or involved in it" ;
 	bt:query ([
@@ -7605,6 +7647,9 @@ CONSTRUCT {
 					DELETE {
 							?agentUri	welcome:isInvolvedInCHC	?chcId ;
 										welcome:isRunningCHC	?chcId .	
+					}
+					INSERT{
+							?chcBnode	welcome:hasRuntime	?chcRuntimeInSeconds.
 					}
 					WHERE {
 					
@@ -7636,7 +7681,13 @@ CONSTRUCT {
 							#FILTER(?involvedChcId = ?chcId)
 						}
 						
-
+						
+						BIND(NOW() AS ?endTime)
+						?chcBnode	welcome:hasStartTime	?startTime .
+						
+						BIND( (DAY(?startTime)*86400 + HOURS(?startTime)*3600 + MINUTES(?startTime)*60 + SECONDS(?startTime)) AS ?startTimeInSeconds)
+						BIND( (DAY(?endTime)*86400 + HOURS(?endTime)*3600 + MINUTES(?endTime)*60 + SECONDS(?endTime)) AS ?endTimeInSeconds)
+						BIND( ?endTimeInSeconds - ?startTimeInSeconds AS ?chcRuntimeInSeconds)
 						}
 					"""^^xsd:string ;
 		]) .	
@@ -7981,7 +8032,7 @@ CONSTRUCT {
 										mac:hasMembers	?clusterMember ;
 										clan:isClusterOf	?clusteringBnode .
 								#BIND("succeeded"^^xsd:string AS ?defaultChcStatus)
-							}
+							} }
 							"""^^xsd:string
 			]
 		] ;    

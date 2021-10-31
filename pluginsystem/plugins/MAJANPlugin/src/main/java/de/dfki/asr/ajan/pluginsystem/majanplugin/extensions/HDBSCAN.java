@@ -123,7 +123,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         
         
         
-       // Utils.printRDF4JModel(rdfInputModel, LOG);
+        //Utils.printRDF4JModel(rdfInputModel, LOG);
 
         // Extract MacProblemId from model
         Set<Value> valueSet = rdfInputModel.filter(null, MAJANVocabulary.UseCaseIdPre, null).objects();
@@ -133,7 +133,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             throw new HDBSCANInputException("CHC Problem Id is not specified (i.e. no value exists for the following predicate: "+
                     MAJANVocabulary.UseCaseIdPre+")");
         } // end
-            System.out.println("------------MACProblemId: "+chcProblemId);
+          //  System.out.println("------------MACProblemId: "+chcProblemId);
 
         // Extract NumOfAgents from Model
         valueSet = rdfInputModel.filter(null, MAJANVocabulary.NumberOfAgentsPre, null).objects();
@@ -143,7 +143,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             throw new HDBSCANInputException("Number of agents is not specified (i.e. no value exists for predicate "+
                     MAJANVocabulary.NumberOfAgentsPre+")");
         } // end
-            System.out.println("------------NumOfAgents: "+numOfAgents);
+           // System.out.println("------------NumOfAgents: "+numOfAgents);
 
         // Extract Perfect Match Score from Model
         valueSet = rdfInputModel.filter(null, MAJANVocabulary.PerfectMatchScorePre, null).objects();
@@ -153,7 +153,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             throw new HDBSCANInputException("Perfect match score is not specified (i.e. no value exists for predicate "+
                     MAJANVocabulary.PerfectMatchScorePre+")");
         } // end
-        System.out.println("------------perfectMatchScore: "+perfectMatchScore);
+        //System.out.println("------------perfectMatchScore: "+perfectMatchScore);
 
         // Extract Agent Names from Model
         valueSet=rdfInputModel.filter(null, MAJANVocabulary.ParticipantsPre, null).objects();
@@ -166,13 +166,11 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             agentNames.add(valueIterator.next());
         } // end
         
-        for (Value agentName : agentNames) {
-            System.out.println("------------agentName: "+agentName);
-        }
+       // for (Value agentName : agentNames) {
+            //System.out.println("------------agentName: "+agentName);
+       // }
         // Extract Distance Scores from Model
         distanceScores = new Double[numOfAgents][numOfAgents];
-
-        
         for (int i = 0; i < numOfAgents; i++) {
             Set<Resource> subjectsOfSubjectAgent = rdfInputModel.filter(null, MAJANVocabulary.SubjectOfSimilarityPre,
                     agentNames.get(i)).subjects();
@@ -183,6 +181,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                     for (Resource subjectOfSubjectAgent : subjectsOfSubjectAgent) {
                         if(rdfInputModel.contains(subjectOfSubjectAgent, MAJANVocabulary.ObjectOfSimilarityPre, agentNames.get(j))){
                             valueSet = rdfInputModel.filter(subjectOfSubjectAgent, MAJANVocabulary.DistanceScorePre, null).objects();
+                            
+                            //valueSet = rdfInputModel.filter(subjectOfSubjectAgent, MAJANVocabulary.DistanceScorePre, null).objects();
                             if(valueSet.isEmpty()){
                               //  throw new HDBSCANInputException("No Similarity Score is specified between <"+agentNames.get(i)+"> and <" 
                                 //        + agentNames.get(j));
@@ -195,6 +195,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                                 distanceScores[i][j] = distanceScore;
                                 distanceScores[j][i] = distanceScore;            
                             }
+                            //System.out.println(agentNames.get(i)+" vs "+agentNames.get(j)+" distance: "+distanceScores[i][j]);
                         }
                     }
                 }
@@ -204,7 +205,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         // Execute HDBSCAN Algorithm to compute Cluster Labels
         HDBSCANStarRunner hdbscanStarRunner = new HDBSCANStarRunner();
         clusterLabels = hdbscanStarRunner.execute(distanceScores, constraints, 1, 2);
-        printClusters(clusterLabels);
+        printClusters(clusterLabels, agentNames);
         
         // Create Response Model
         ModelBuilder builder=new ModelBuilder();
@@ -221,6 +222,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         
         for(int i = 0; i < clusterLabels.length; i++){
             BNode clusterBnode = null;
+            // 0 as cluster label means Singleton cluster
             if(clusterLabels[i] == 0){
                 clusterBnode = MAJANVocabulary.FACTORY.createBNode();
             }else{
@@ -258,7 +260,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         
 
         Model responseModel = builder.build();
-        Utils.printRDF4JModel(responseModel, LOG);
+        //Utils.printRDF4JModel(responseModel, LOG);
 
         if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
@@ -377,7 +379,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         // Execute HDBSCAN Algorithm to compute Cluster Labels
         HDBSCANStarRunner hdbscanStarRunner = new HDBSCANStarRunner();
         clusterLabels = hdbscanStarRunner.execute(distanceScores, constraints, 1, 2);
-        printClusters(clusterLabels);
+        printClusters(clusterLabels, agentNames);
         
         // Create Response Model
         ModelBuilder builder=new ModelBuilder();
@@ -446,7 +448,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         return respFlag;
     }
     
-    private void printClusters(int[] clustering) {
+    private void printClusters(int[] clustering, List<Value> agentNames) {
         // Integer: cluster label
         // Arraylist<integer>: list of agents with the label
         Map<Integer, ArrayList<Integer> > clusteringMap = new HashMap<>();
@@ -472,7 +474,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                 clusterId++;
             }
             for (int j : clusteringMap.get(i)) {
-                System.out.print("tcn"+(j+1)+", ");
+                //System.out.print("tcn"+(j+1)+", ");
+                System.out.print(agentNames.get(j) + ", ");
             }
             System.out.println("] --> " + clusteringMap.get(i).size());
         }
