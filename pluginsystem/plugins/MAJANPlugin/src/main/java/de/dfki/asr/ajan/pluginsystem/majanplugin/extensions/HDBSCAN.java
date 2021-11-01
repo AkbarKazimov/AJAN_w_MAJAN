@@ -22,6 +22,7 @@ import de.dfki.asr.ajan.pluginsystem.majanplugin.utils.Utils;
 import de.dfki.asr.ajan.pluginsystem.majanplugin.vocabularies.MAJANVocabulary;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -123,7 +124,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         
         
         
-        //Utils.printRDF4JModel(rdfInputModel, LOG);
+       // Utils.printRDF4JModel(rdfInputModel, LOG);
 
         // Extract MacProblemId from model
         Set<Value> valueSet = rdfInputModel.filter(null, MAJANVocabulary.UseCaseIdPre, null).objects();
@@ -171,6 +172,11 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
        // }
         // Extract Distance Scores from Model
         distanceScores = new Double[numOfAgents][numOfAgents];
+        // worst distance (i.e. perfect match score) is set to all pairs initially in case some distance scores are missing in the rdf 
+        // input. 
+        for (Double[] distanceScore : distanceScores) {
+            Arrays.fill(distanceScore, perfectMatchScore);
+        }
         for (int i = 0; i < numOfAgents; i++) {
             Set<Resource> subjectsOfSubjectAgent = rdfInputModel.filter(null, MAJANVocabulary.SubjectOfSimilarityPre,
                     agentNames.get(i)).subjects();

@@ -3844,7 +3844,9 @@
 								a bt:Sequence ;
 								bt:hasChildren (
 										:HandleSolveCHCEvent
-										:WriteComputedReciprocalSimilarities
+										#:ComputeCHCReciprocalScores
+										:ComputeCHCReciprocalSimilarities
+										#:WriteComputedReciprocalSimilarities
 										:WriteReciprocalScores2Lakr
 										#:ComputeLccDistancesInLakr
 										#:HdbscanAlgorithm
@@ -5428,7 +5430,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Personal Info for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "60000"^^xsd:int .
+	bt:milliseconds "90000"^^xsd:int .
 	
 
 :ConditionAnyoneNotReturnedPersonalInfo
@@ -5727,7 +5729,7 @@ CONSTRUCT {
 	a bt:Wait ;
 	rdfs:label "Wait: wait for agents to return their Similarity values for CHC" ;
 	rdfs:comment "" ;
-	bt:milliseconds "80000"^^xsd:int .
+	bt:milliseconds "120000"^^xsd:int .
 
 
 
@@ -6710,6 +6712,158 @@ CONSTRUCT {
 		]) .	
 		
 
+:ComputeCHCReciprocalScores
+	a bt:HarmonicMean ;
+	rdfs:label "HarmonicMean: Compute CHC Reciprocal Scores" ;
+	bt:query [
+				a bt:ConstructQuery ;
+				bt:originBase ajan:ExecutionKnowledge ;
+				bt:targetBase ajan:ExecutionKnowledge ;
+				bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/mac_ontology#>
+					
+					Construct {
+						?feasibleCoalitionNode	rdf:type	ajan:MathSubject ;
+												ajan:hasValue	?unrootedSd ;
+												ajan:hasResultPredicate	welcome:hasStandardDeviation .
+						
+						# This node creates triples in the following format: 
+						# ?feasibleCoalitionNode welcome:hasStandardDeviation	?finalValue .
+						
+						?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
+								ajan:hasSubject ?pAgentId ;
+								ajan:hasObject ?objectAgentId ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasReciprocalScore	?bReciprocalScore .
+					}
+					Where{
+						?agent	rdf:type	ajan:Agent ;
+								welcome:isRunningCHC ?chcId ;
+								ajan:agentId	?dAgentId.	
+
+					?bnode	rdf:type	welcome:CHCUseCase;
+							welcome:hasId		?chcId;
+							welcome:hasNumberOfAgents	?numOfAgents;
+							welcome:hasParticipants		?pAgentId, ?pAgentId2 .
+			
+					FILTER(?pAgentId!=?pAgentId2)
+					OPTIONAL {
+						?agentUri	welcome:hasCHCSimilarityValue	?smlBnode .
+						?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+									ajan:hasSubject ?pAgentId ;
+									ajan:hasObject ?oAgentId ;
+									welcome:isComputedForProblemId  ?chcId ;
+									ajan:hasSimilarityScore ?smlValue .
+					}
+					
+					OPTIONAL {
+						?agentUri2 welcome:hasCHCSimilarityValue	?smlBnode2 .
+						?smlBnode2	rdf:type	welcome:CHCSimilarityValue ;
+									ajan:hasSubject ?oAgentId ;
+									ajan:hasObject ?pAgentId ;
+									welcome:isComputedForProblemId  ?chcId ;
+									ajan:hasSimilarityScore ?smlValue2 .
+					}
+					
+					#BIND(0 AS ?reciprocalScore) .
+					BIND(IF(!BOUND(?smlValue), 0, ?smlValue) AS ?bSmlValue) .
+					BIND(IF(!BOUND(?smlValue2), 0, ?smlValue2) AS ?bSmlValue2) .
+					
+					#BIND(IF(?bSmlValue > 0 && ?bSmlValue2 > 0, 2/((1/?bSmlValue)+(1/?bSmlValue2)), ?reciprocalScore) AS ?bReciprocalScore) .
+					
+					#BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
+
+					#BIND(BNODE() AS ?rrsBnode) .
+					BIND(IF(!BOUND(?oAgentId), ?pAgentId2, ?oAgentId) AS ?objectAgentId)
+					}
+					"""^^xsd:string ;
+			] .
+			
+:ComputeCHCReciprocalSimilarities
+	a bt:Write ;
+	rdfs:label "Write: Compute CHC Reciprocal Similarities" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+			PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+			PREFIX welcome: <http://localhost:8090/rdf4j/repositories/welcome_ontology#>
+			PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+			PREFIX welcome-git: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+
+			CONSTRUCT  {
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC ?chcId ;
+							ajan:agentId	?dAgentId.	
+							
+					?bnode	rdf:type	welcome:CHCUseCase;
+							welcome:hasId		?chcId;
+							welcome:hasNumberOfAgents	?numOfAgents;
+							welcome:hasParticipants		?pAgentId ;
+							welcome:hasAgeWeight ?ageWeight;
+							welcome:hasGenderWeight ?genWeight;
+							welcome:hasFamilyWeight	?famWeight;
+							welcome:hasNationalityWeight	?natWeight;
+							welcome:hasReligionWeight	?relWeight;
+							welcome:hasEthnicityWeight	?ethWeight;
+							welcome:hasLocationWeight	?locWeight;
+							welcome:hasAccessibilityWeight	?accWeight;
+							welcome:hasRentPeriodWeight	?rentWeight;
+							welcome:hasShareWithWeight	?shareWeight.
+							
+					?rrsBnode	rdf:type	welcome:CHCReciprocalScore ;
+								ajan:hasSubject ?pAgentId ;
+								ajan:hasObject ?pAgentId2 ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasReciprocalScore	?bReciprocalScore .
+					}
+			WHERE { 
+					?agent	rdf:type	ajan:Agent ;
+							welcome:isRunningCHC ?chcId ;
+							ajan:agentId	?dAgentId.	
+
+					?bnode	rdf:type	welcome:CHCUseCase;
+							welcome:hasId		?chcId;
+							welcome:hasNumberOfAgents	?numOfAgents;
+							welcome:hasParticipants		?pAgentId, ?pAgentId2 ;
+							welcome:hasAgeWeight ?ageWeight;
+							welcome:hasGenderWeight ?genWeight;
+							welcome:hasFamilyWeight	?famWeight;
+							welcome:hasNationalityWeight	?natWeight;
+							welcome:hasReligionWeight	?relWeight;
+							welcome:hasEthnicityWeight	?ethWeight;
+							welcome:hasLocationWeight	?locWeight;
+							welcome:hasAccessibilityWeight	?accWeight;
+							welcome:hasRentPeriodWeight	?rentWeight;
+							welcome:hasShareWithWeight	?shareWeight.
+							
+					FILTER(?pAgentId!=?pAgentId2)
+					
+					?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
+								ajan:hasSubject ?pAgentId ;
+								ajan:hasObject ?pAgentId2 ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasSimilarityScore ?smlValue .
+					
+					?smlBnode2	rdf:type	welcome:CHCSimilarityValue ;
+								ajan:hasSubject ?pAgentId2 ;
+								ajan:hasObject ?pAgentId ;
+								welcome:isComputedForProblemId  ?chcId ;
+								ajan:hasSimilarityScore ?smlValue2 .
+					FILTER(?smlBnode != ?smlBnode2)
+
+					BIND(0 AS ?reciprocalScore) .                    
+                    BIND(IF(?smlValue > 0 && ?smlValue2 > 0, 2/((1/?smlValue)+(1/?smlValue2)), ?reciprocalScore) AS ?bReciprocalScore) .
+					BIND(BNODE() AS ?rrsBnode) .
+								
+				} """^^xsd:string ;
+	] .		
 :WriteComputedReciprocalSimilarities
 	a bt:Write ;
 	rdfs:label "Write: Reciprocal Similarity values to Execution" ;
@@ -6750,9 +6904,6 @@ CONSTRUCT {
 								ajan:hasReciprocalScore	?bReciprocalScore .
 					}
 			WHERE { 
-					#?du		rdf:type	welcome-git:Registered ;
-					#		welcome:hasAgentAddress	?agentAddress .
-
 					?agent	rdf:type	ajan:Agent ;
 							welcome:isRunningCHC ?chcId ;
 							ajan:agentId	?dAgentId.	
@@ -6771,7 +6922,9 @@ CONSTRUCT {
 							welcome:hasAccessibilityWeight	?accWeight;
 							welcome:hasRentPeriodWeight	?rentWeight;
 							welcome:hasShareWithWeight	?shareWeight.
+							
 					FILTER(?pAgentId!=?pAgentId2)
+					
 					OPTIONAL {
 						?agentUri	welcome:hasCHCSimilarityValue	?smlBnode .
 						?smlBnode	rdf:type	welcome:CHCSimilarityValue ;
@@ -6796,8 +6949,6 @@ CONSTRUCT {
 					
 					BIND(IF(?bSmlValue > 0 && ?bSmlValue2 > 0, 2/((1/?bSmlValue)+(1/?bSmlValue2)), ?reciprocalScore) AS ?bReciprocalScore) .
 					
-					#BIND(IF(?genPrefA1="Dont mind" || ?genA2=?genPrefA1, ?matchScore, ?unmatchScore) AS ?genSml).
-
 					BIND(BNODE() AS ?rrsBnode) .
 					BIND(IF(!BOUND(?oAgentId), ?pAgentId2, ?oAgentId) AS ?objectAgentId)
 								} """^^xsd:string ;
