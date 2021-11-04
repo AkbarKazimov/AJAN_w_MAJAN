@@ -37,9 +37,9 @@ public class MAJANVocabulary {
         
 
         // CSGP Vocabulary
-        public final static IRI BOSSType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#BOSS");
-        public final static IRI CsgpSolverType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#CSGPSolver");
-        public final static IRI CoalitionGeneratorType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#CoalitionGenerator");
+        public final static IRI BOSSType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#BOSS");
+        public final static IRI CsgpSolverType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGPSolver");
+        public final static IRI CoalitionGeneratorType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CoalitionGenerator");
         public final static IRI MinCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMinCoalitionSize");
         public final static IRI MaxCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMaxCoalitionSize");        
         public final static IRI FeasibleCoalitionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasFeasibleCoalitions");        
@@ -57,7 +57,8 @@ public class MAJANVocabulary {
 
         
         // HDBSCAN Vocabulary
-        public final static IRI HdbscanType = FACTORY.createIRI("http://welcome/ajan/agentcoordination#HDBSCAN");
+        public final static IRI ClusteringSolverType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#ClusteringSolver");
+        public final static IRI HdbscanType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#HDBSCAN");
         public final static IRI PerfectMatchScorePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasPerfectMatchScore");        
         public final static IRI SubjectOfSimilarityPre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasSubject");
         public final static IRI ObjectOfSimilarityPre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasObject");

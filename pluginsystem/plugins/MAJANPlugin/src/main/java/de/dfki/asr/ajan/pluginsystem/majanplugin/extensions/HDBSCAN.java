@@ -65,7 +65,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
    
     @RDF("bt:query")
     @Getter @Setter
-    private BehaviorConstructQuery hdbscanInputQuery;
+    private BehaviorConstructQuery constructQuery;
     
     @Override
     public Resource getType() {
@@ -90,7 +90,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
     @Override
     public LeafStatus executeLeaf() {
         try {
-            if (executeHdbscan()) {
+            if (solve()) {
                 String report = toString() + " SUCCEEDED";
 		LOG.info(report);
 		return new LeafStatus(Status.SUCCEEDED, report);
@@ -105,7 +105,14 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             return new LeafStatus(Status.FAILED, report);
         }
     }
-    private boolean executeHdbscan() throws URISyntaxException, HDBSCANInputException {
+
+    public int[] runSolver(Double[][] distanceScores, ArrayList<Constraint> constraints){
+        HDBSCANStarRunner hdbscanStarRunner = new HDBSCANStarRunner();
+        int[] clusterLabels = hdbscanStarRunner.execute(distanceScores, constraints, 1, 2);
+        return clusterLabels;
+    }
+
+    private boolean solve() throws URISyntaxException, HDBSCANInputException {
         boolean respFlag = false;
         Double[][] distanceScores = null; 
         //Double[][] asymSimilarityScores = null;
@@ -116,8 +123,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         String chcProblemId = null;
         List<Value> agentNames = new ArrayList<>();
 
-        Repository repo = BTUtil.getInitializedRepository(getObject(), hdbscanInputQuery.getOriginBase());
-        Model rdfInputModel = hdbscanInputQuery.getResult(repo);
+        Repository repo = BTUtil.getInitializedRepository(getObject(), constructQuery.getOriginBase());
+        Model rdfInputModel = constructQuery.getResult(repo);
         //System.out.println("---1--"+hdbscanInputQuery.getOriginBase());
        // System.out.println("---2--"+repo);
        // System.out.println("---3--"+repo.isInitialized());
@@ -131,7 +138,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         if(!valueSet.isEmpty()){
             chcProblemId=valueSet.iterator().next().stringValue();
         }else{
-            throw new HDBSCANInputException("CHC Problem Id is not specified (i.e. no value exists for the following predicate: "+
+            throw new HDBSCANInputException("MAC Problem Id is not specified (i.e. no value exists for the following predicate: "+
                     MAJANVocabulary.UseCaseIdPre+")");
         } // end
           //  System.out.println("------------MACProblemId: "+chcProblemId);
@@ -208,9 +215,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             }
         }
         
-        // Execute HDBSCAN Algorithm to compute Cluster Labels
-        HDBSCANStarRunner hdbscanStarRunner = new HDBSCANStarRunner();
-        clusterLabels = hdbscanStarRunner.execute(distanceScores, constraints, 1, 2);
+        clusterLabels = runSolver(distanceScores, constraints);        
         printClusters(clusterLabels, agentNames);
         
         // Create Response Model
@@ -268,13 +273,13 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         Model responseModel = builder.build();
         //Utils.printRDF4JModel(responseModel, LOG);
 
-        if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
+        if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
-        }else if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){
+        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){
             this.getObject().getAgentBeliefs().update(responseModel);
-        }else if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_AGENTS_KNOWLEDGE.toString())){
+        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_AGENTS_KNOWLEDGE.toString())){
             this.getObject().getLocalAgentsBeliefs().update(responseModel);
-        }else if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_SERVICES_KNOWLEDGE.toString())){
+        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_SERVICES_KNOWLEDGE.toString())){
             this.getObject().getLocalServicesBeliefs().update(responseModel);
         }
 
@@ -293,8 +298,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         String chcProblemId = null;// done
         List<Value> agentNames = new ArrayList<>();// done
 
-        Repository repo = BTUtil.getInitializedRepository(this.getObject(), hdbscanInputQuery.getOriginBase());
-        Model rdfInputModel = hdbscanInputQuery.getResult(repo);
+        Repository repo = BTUtil.getInitializedRepository(this.getObject(), constructQuery.getOriginBase());
+        Model rdfInputModel = constructQuery.getResult(repo);
         
         //Utils.printRDF4JModel(rdfInputModel, LOG);
 
@@ -440,13 +445,13 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         Model responseModel = builder.build();
         //Utils.printRDF4JModel(responseModel, LOG);
 
-        if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
+        if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
             this.getObject().getExecutionBeliefs().update(responseModel);
-        }else if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){
+        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){
             this.getObject().getAgentBeliefs().update(responseModel);
-        }else if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_AGENTS_KNOWLEDGE.toString())){
+        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_AGENTS_KNOWLEDGE.toString())){
             this.getObject().getLocalAgentsBeliefs().update(responseModel);
-        }else if(hdbscanInputQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_SERVICES_KNOWLEDGE.toString())){
+        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_SERVICES_KNOWLEDGE.toString())){
             this.getObject().getLocalServicesBeliefs().update(responseModel);
         }
 

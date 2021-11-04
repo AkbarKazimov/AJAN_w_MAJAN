@@ -63,14 +63,14 @@ import ro.fortsoft.pf4j.Extension;
  */
 @Extension
 @RDFBean("bt:BOSS")
-public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode{
+public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
     
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(BOSS.class);
     
     @Getter
     @Setter
     @RDFSubject
-    private String url;
+    public String url;
     
     @RDF("rdfs:label")
     @Getter @Setter
@@ -118,8 +118,17 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
             return new LeafStatus(Status.FAILED, report);
         }
     }
+    @Override
+    public Map<int[][], Double[]> runSolver(int numOfAgents, Map<int[], Double> coalitionsData){
+        LOG.info("BOSS started!");
+        csgpSolver.BOSS boss = new csgpSolver.BOSS();
+        Map<int[][], Double[]> solutions = boss.execute(numOfAgents, coalitionsData);
+        LOG.info("BOSS finished!");
+        return solutions;
+    }
     
-    private boolean solve() throws URISyntaxException, CSGPSolverInputException {
+    @Override
+    public boolean solve() throws URISyntaxException, CSGPSolverInputException {
         // double nonexistentCoalitionValue = ?
         int numOfAgents;
         List<Value> agentNames = new ArrayList<>();
@@ -214,15 +223,7 @@ public class BOSS extends AbstractTDBLeafTask implements NodeExtension, TreeNode
 
         } // end
 
-        Map<int[][], Double[]> solutions=null;
-        //Map<int[][], Double> solutions=null;
-       // if(solverName.toLowerCase().equals("boss")){
-            LOG.info("BOSS started!");
-            csgpSolver.BOSS boss = new csgpSolver.BOSS();
-            solutions = boss.execute(numOfAgents, coalitionsData);
-//            BOSS boss=new BOSS();
-            //solutions =  boss.run(numOfAgents, coalitionsData);
-            LOG.info("BOSS finished!");
+        Map<int[][], Double[]> solutions = runSolver(numOfAgents, coalitionsData);
         
        /* LOG.info("Solution size: " + solutions.size());
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
