@@ -82,7 +82,7 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
     
     @Override
     public Resource getType() {
-        return MAJANVocabulary.BOSSType;
+        return MAJANVocabulary.BOSS_TYPE;
     }
            
     @Override
@@ -144,39 +144,39 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         // Extract the Problem Instance. There should be only 1 problem instance because 
         // the algorithm cannot run multiple configurations at the same time. 
         Set<Resource> subjects = modelResult.filter(null, org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, 
-                MAJANVocabulary.MacProblemInstanceObj).subjects();
+                MAJANVocabulary.MAC_PROBLEM_INSTANCE).subjects();
         Resource problemInstance_subject=null;
         if(!subjects.isEmpty()){
             problemInstance_subject=subjects.iterator().next();
         }else{
             throw new CSGPSolverInputException("No problem instance is specified (i.e. no subject exists for type "+
-                    MAJANVocabulary.MacProblemInstanceObj+")");
+                    MAJANVocabulary.MAC_PROBLEM_INSTANCE+")");
         } // end
        // LOG.info("lcc_subject:"+problemInstance_subject);
         
         // Extract id of Mac Problem Instance from Model
-        Set<Value> valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.UseCaseIdPre, null).objects();
+        Set<Value> valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.HAS_ID, null).objects();
         String macProblemId=null;
         if(!valueSet.isEmpty()){
             macProblemId=valueSet.iterator().next().stringValue();
         }else{
             throw new CSGPSolverInputException("Mac Problem Id is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.UseCaseIdPre+")");
+                    MAJANVocabulary.HAS_ID+")");
         } // end
        // LOG.info("id:"+macProblemId);
         
         // Extract NumOfAgents from Model
-        valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.NumberOfAgentsPre, null).objects();
+        valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.HAS_NUMBER_OF_AGENTS, null).objects();
         if(!valueSet.isEmpty()){
             numOfAgents=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
             throw new CSGPSolverInputException("Number of agents is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.NumberOfAgentsPre+")");
+                    MAJANVocabulary.HAS_NUMBER_OF_AGENTS+")");
         } // end
        // LOG.info("numOfAgents:"+numOfAgents);
         
         // Extract Agent Names from Model
-        valueSet=modelResult.filter(problemInstance_subject, MAJANVocabulary.ParticipantsPre, null).objects();
+        valueSet=modelResult.filter(problemInstance_subject, MAJANVocabulary.HAS_PARTICIPANTS, null).objects();
         if(valueSet.size()!=numOfAgents){
             throw new CSGPSolverInputException("Amount of participating agents is different "
                     + "from the given \"numberOfAgents\" information.");
@@ -192,7 +192,7 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
       //  LOG.info("pref:" + modelResult.filter(problemInstance_subject, MAJANVocabulary.FeasibleCoalitionsPre, null).size());
         // Extract Coalition Values from Model
         Set<Resource> coalitionsAsResource = Models.objectResources(modelResult.filter(problemInstance_subject, 
-                MAJANVocabulary.FeasibleCoalitionsPre, null));
+                MAJANVocabulary.HAS_FEASIBLE_COALITIONS, null));
       //  LOG.info("coalitions size:"+coalitionsAsResource.size());
         Resource[] coalitionRsrs = new Resource[(int)Math.pow(2,numOfAgents)];
         for(Resource coalitionRsr:coalitionsAsResource){
@@ -233,19 +233,19 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         
         // System.out.println("Feasible Coalitions Amount is "+feasibleCoalitions.size());
         ModelBuilder builder=new ModelBuilder();
-        builder.setNamespace("welcome", MAJANVocabulary.WelcomeNamespace.toString())
-                .setNamespace("csgp", MAJANVocabulary.CsgpNamespace.toString());
+        builder.setNamespace("welcome", MAJANVocabulary.WELCOME_NAMESPACE.toString())
+                .setNamespace("mac", MAJANVocabulary.MAC_NAMESPACE.toString());
         
         // Adding Coalition Structures to the Problem Instance Subject as Solution
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
            // System.out.println("Rank: " + solution.getValue()[1] + " CS: " + general.General.convertArrayToString(solution.getKey()) + 
            //         " Value: " + solution.getValue()[0]);
             int rank = solution.getValue()[1].intValue();
-            String solutionStr = "csgp:" + macProblemId + "_CS" + rank;  
+            String solutionStr = "mac:" + macProblemId + "_CS" + rank;  
             builder.subject(problemInstance_subject)
                     .add(MAJANVocabulary.HAS_SOLUTION, solutionStr)
                     .subject(solutionStr)
-                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.COALITION_STRUCTURE)
+                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CSGP_COALITION_STRUCTURE)
                     .add(MAJANVocabulary.HAS_VALUE, solution.getValue()[0])
                     .add(MAJANVocabulary.HAS_RANK, solution.getValue()[1])
                     .add(MAJANVocabulary.HAS_SOLUTION_OF, problemInstance_subject);

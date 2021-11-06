@@ -73,8 +73,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
     
     @Override
     public Resource getType() {
-        LOG.debug("Girdiiiiiii");
-        return MAJANVocabulary.CoalitionGeneratorType;
+        return MAJANVocabulary.COALITION_GENERATOR_TYPE;
     }
            
     @Override
@@ -95,7 +94,7 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
     @Override
     public LeafStatus executeLeaf() {
         try {
-            if (areCoalitionsGenerated()) {
+            if (generateCoalitions()) {
                 String report = toString() + " SUCCEEDED";
 		LOG.info(report);
 		return new LeafStatus(Status.SUCCEEDED, report);
@@ -111,16 +110,15 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         }
     }
     
-    private boolean areCoalitionsGenerated() throws URISyntaxException, ConstraintsException, CoalitionGenerationInputException {
+    private boolean generateCoalitions() throws URISyntaxException, ConstraintsException, CoalitionGenerationInputException {
         boolean responseFlag = false;
         int numOfAgents=0, minCoalitionSize=0, maxCoalitionSize=0;
         String lccId = "";
-        List<int[]> mlList=new ArrayList<>(), clList=new ArrayList<>();
-        List<String> agentNames=new ArrayList<>();
-        
+        List<int[]> mlList = null, clList = null;
+        List<Value> agentNames=new ArrayList<>();
         
         Repository repo = BTUtil.getInitializedRepository(this.getObject(), coalitionGeneratorInputQuery.getOriginBase());
-        Model modelResult = coalitionGeneratorInputQuery.getResult(repo);
+        Model rdfInputModel = coalitionGeneratorInputQuery.getResult(repo);
         
        // Utils.printRDF4JModel(modelResult, LOG);
       /*  Iterator<Statement> itmodelResult = modelResult.iterator();
@@ -130,94 +128,69 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
 
         // Extract the LCC Problem Instance subject bnode. There should be only 1 problem instance because 
         // the algorithm cannot run multiple configurations at the same time. 
-        Set<Resource> subjects = modelResult.filter(null, org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, 
-                MAJANVocabulary.LccUseCaseObj).subjects();
-        Resource lccUseCaseSubject=null;
+        Set<Resource> subjects = rdfInputModel.filter(null, org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, 
+                MAJANVocabulary.MAC_PROBLEM_INSTANCE).subjects();
+        Resource macUseCaseSubject=null;
         if(!subjects.isEmpty()){
-            lccUseCaseSubject=subjects.iterator().next();
+            macUseCaseSubject=subjects.iterator().next();
         }else{
             throw new CoalitionGenerationInputException("No problem instance is specified (i.e. no subject exists for type "+
-                    MAJANVocabulary.LccUseCaseObj+")");
+                    MAJANVocabulary.MAC_PROBLEM_INSTANCE+")");
         } // end
 
 
         // Extract id of Mac Problem Instance from Model
-        Set<Value> valueSet = modelResult.filter(null, MAJANVocabulary.UseCaseIdPre, null).objects();
+        Set<Value> valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_ID, null).objects();
         if(!valueSet.isEmpty()){
             lccId = valueSet.iterator().next().stringValue();
         }else{
             throw new CoalitionGenerationInputException("Mac Use Case Id is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.UseCaseIdPre+")");
+                    MAJANVocabulary.HAS_ID+")");
         } // end
-        
-        
-      
 
         // Extract NumOfAgents from Model
-        valueSet = modelResult.filter(null, MAJANVocabulary.NumberOfAgentsPre, null).objects();
+        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_NUMBER_OF_AGENTS, null).objects();
         if(!valueSet.isEmpty()){
             numOfAgents=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
             throw new CoalitionGenerationInputException("Number of agents is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.NumberOfAgentsPre+")");
+                    MAJANVocabulary.HAS_NUMBER_OF_AGENTS+")");
         } // end
 
         // Extract Agent Names from Model
-        valueSet=modelResult.filter(null, MAJANVocabulary.ParticipantsPre, null).objects();
+        valueSet=rdfInputModel.filter(null, MAJANVocabulary.HAS_PARTICIPANTS, null).objects();
         if(valueSet.size()!=numOfAgents){
             throw new CoalitionGenerationInputException("Amount of participating agents is different "
                     + "than the given \"numberOfAgents\" value.");
         }
         Iterator<Value> valueIterator = valueSet.iterator();
         while(valueIterator.hasNext()){
-            agentNames.add(valueIterator.next().stringValue());
+            agentNames.add(valueIterator.next());
         } // end
         
         // Extract Minimum and Maximum Coalition Size from Model
-        valueSet = modelResult.filter(null, MAJANVocabulary.MinCoalitionSizePre, null).objects();
+        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_MIN_COALITION_SIZE, null).objects();
         if(!valueSet.isEmpty()){
             minCoalitionSize=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
             throw new CoalitionGenerationInputException("Minimum Coalition Size is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.MinCoalitionSizePre+")");
+                    MAJANVocabulary.HAS_MIN_COALITION_SIZE+")");
         }
-        valueSet = modelResult.filter(null, MAJANVocabulary.MaxCoalitionSizePre, null).objects();
+        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_MAX_COALITION_SIZE, null).objects();
         if(!valueSet.isEmpty()){
             maxCoalitionSize=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
             throw new CoalitionGenerationInputException("Maximum Coalition Size is not given (i.e. no value exists for predicate "+
-                    MAJANVocabulary.MaxCoalitionSizePre+")");
+                    MAJANVocabulary.HAS_MAX_COALITION_SIZE+")");
         } // end
 
-        
-        // Extract Must Link Connections from Model
-        Set<Resource> bNodesAsSubject = Models.objectResources(modelResult.filter(null, MAJANVocabulary.MustLinkConnectionsPre, null));
-
-        for(Resource rsr:bNodesAsSubject){
-            Set<Value> mlPairs=modelResult.filter(rsr, MAJANVocabulary.MustConnectPre, null).objects();
+        // Extract Must Link Connections
+        mlList = Utils.getConstraints(rdfInputModel, agentNames, Utils.CONSTRAINT_TYPE.MUST_LINK); 
             
-            if(mlPairs.size()!=2){
-                throw new ConstraintsException("More or Less than 2 (" + mlPairs.size()+") number of agents are "
-                        + "specified as MustBeLinked in the following subject:"+rsr.toString());
-            }
-            Iterator<Value> itML = mlPairs.iterator();
-            mlList.add(new int[]{agentNames.indexOf(itML.next().stringValue())+1, agentNames.indexOf(itML.next().stringValue())+1});
-        } // end
+        // Extract Cannot Link Connections
+        clList = Utils.getConstraints(rdfInputModel, agentNames, Utils.CONSTRAINT_TYPE.CANNOT_LINK);
+                
         
-        
-        // Extract Cannot Link Connections from Model
-        bNodesAsSubject = Models.objectResources(modelResult.filter(null, MAJANVocabulary.CannotLinkConnectionsPre, null));
-
-        for(Resource rsr:bNodesAsSubject){
-            Set<Value> clPairs=modelResult.filter(rsr, MAJANVocabulary.CannotConnectPre, null).objects();
-            
-            if(clPairs.size()!=2){
-                throw new ConstraintsException("More or Less than 2 (" + clPairs.size()+") number of agents are "
-                        + "specified as CannotBeLinked in the following subject:"+rsr.toString());
-            }
-            Iterator<Value> itCL = clPairs.iterator();
-            clList.add(new int[]{agentNames.indexOf(itCL.next().stringValue())+1, agentNames.indexOf(itCL.next().stringValue())+1});
-        } // end
         
         // Print the result
        /* System.out.println("Results:\nnum:"+numOfAgents);
@@ -245,16 +218,16 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
        
        // System.out.println("Feasible Coalitions Amount is "+feasibleCoalitions.size());
         ModelBuilder builder=new ModelBuilder();
-        builder.setNamespace("welcome", MAJANVocabulary.WelcomeNamespace.toString());
+        builder.setNamespace("welcome", MAJANVocabulary.WELCOME_NAMESPACE.toString());
         
         // Adding Coalitions to the Problem Instance Subject
         for(int i=0;i<feasibleCoalitions.size();i++){
             //BNode coalitionBnode = MAJANVocabulary.FACTORY.createBNode();
-            Resource coalitionRsr = MAJANVocabulary.FACTORY.createIRI(MAJANVocabulary.WelcomeNamespace.toString() +lccId +"coalition"+i); 
-            builder.subject(lccUseCaseSubject)
-                    .add(MAJANVocabulary.FeasibleCoalitionsPre, coalitionRsr)
+            Resource coalitionRsr = MAJANVocabulary.FACTORY.createIRI(MAJANVocabulary.WELCOME_NAMESPACE.toString() +lccId +"coalition"+i); 
+            builder.subject(macUseCaseSubject)
+                    .add(MAJANVocabulary.HAS_FEASIBLE_COALITIONS, coalitionRsr)
                     .subject(coalitionRsr)
-                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CsgpCoalitionObj);
+                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CSGP_COALITION);
                     //.add(MAJANVocabulary.CsgpValuePre, ThreadLocalRandom.current().nextDouble(-5,5));
         
             

@@ -83,7 +83,7 @@ public class SquareRoot extends AbstractTDBLeafTask implements NodeExtension, Tr
     
     @Override
     public Resource getType() {
-        return MAJANVocabulary.SquareRootType;
+        return MAJANVocabulary.SQUARE_ROOT_TYPE;
     }
            
     @Override
@@ -143,22 +143,22 @@ public class SquareRoot extends AbstractTDBLeafTask implements NodeExtension, Tr
 
         for (Resource inputSubject : inputSubjects) {
             // Extract the Value whose the square root to be computed
-            Set<Value> valueSet = modelResult.filter(inputSubject, MAJANVocabulary.math_HAS_VALUE, null).objects();
+            Set<Value> valueSet = modelResult.filter(inputSubject, MAJANVocabulary.MATH_HAS_VALUE, null).objects();
             if(!valueSet.isEmpty()){
                 value=Double.valueOf(valueSet.iterator().next().stringValue());
             }else{
                 LOG.warn("No value is given (i.e. no value exists for predicate "+
-                        MAJANVocabulary.math_HAS_VALUE+"). Trying to proceed anyway");
+                        MAJANVocabulary.MATH_HAS_VALUE+"). Trying to proceed anyway");
                // throw new AjanMathInputException("No value is given (i.e. no value exists for predicate "+
                //         MAJANVocabulary.math_HAS_VALUE+")");
             } // end
             
             // Extract the Predicate to be given to the Result
-            valueSet = modelResult.filter(inputSubject, MAJANVocabulary.math_HAS_RESULT_PREDICATE, null).objects();
+            valueSet = modelResult.filter(inputSubject, MAJANVocabulary.MATH_HAS_RESULT_PREDICATE, null).objects();
             if(!valueSet.isEmpty() || !(valueSet.iterator().next() instanceof IRI)){
                 resultPredicate = (IRI) valueSet.iterator().next();
             }else{
-                LOG.warn("No Result Predicate is given (i.e. no value exists for predicate " +MAJANVocabulary.math_HAS_RESULT_PREDICATE+")."
+                LOG.warn("No Result Predicate is given (i.e. no value exists for predicate " +MAJANVocabulary.MATH_HAS_RESULT_PREDICATE+")."
                         + " Trying to proceed anyway." );
                 //throw new AjanMathInputException("No Result Predicate is given (i.e. no value exists for predicate "+
             //       MAJANVocabulary.math_HAS_RESULT_PREDICATE+")");
@@ -166,7 +166,7 @@ public class SquareRoot extends AbstractTDBLeafTask implements NodeExtension, Tr
             } // end
             
             if(resultPredicate == null){
-                resultPredicate = MAJANVocabulary.FACTORY.createIRI(MAJANVocabulary.AjanNamespace.toString(), "hasSquareRootValue");
+                resultPredicate = MAJANVocabulary.FACTORY.createIRI(MAJANVocabulary.AJAN_NAMESPACE.toString(), "hasSquareRootValue");
             }
             double squareRoot = Math.sqrt(value);
             builder.subject(inputSubject)

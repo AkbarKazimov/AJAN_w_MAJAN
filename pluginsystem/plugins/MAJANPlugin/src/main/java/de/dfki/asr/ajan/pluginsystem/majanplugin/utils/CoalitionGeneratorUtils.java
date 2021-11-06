@@ -20,7 +20,7 @@ public class CoalitionGeneratorUtils {
             int linked = 0;
             for(int i =0; i<ml.length;i++) {
                 for(int j=0;j<coalitionInByte.length;j++) {
-                    if(coalitionInByte[j]==ml[i]) {
+                    if(coalitionInByte[j]==(ml[i]+1)) {
                         linked+=1;
                         break;
                     }
@@ -38,7 +38,7 @@ public class CoalitionGeneratorUtils {
             int linked = 0;
             for (int i = 0; i < cl.length; i++) {
                 for (int j = 0; j < coalitionInByte.length; j++) {
-                    if(cl[i]==coalitionInByte[j]) {
+                    if((cl[i]+1)==coalitionInByte[j]) {
                         linked+=1;
                     }
                 }

@@ -17,72 +17,65 @@ import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 public class MAJANVocabulary {
         public final static ValueFactory FACTORY = SimpleValueFactory.getInstance();
         
-        // MAC Vocabulary
-        public final static IRI MacProblemInstanceObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#MACProblemInstance");
-        public final static IRI MacProblemInstanceIdPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMacProblemId");
-        public final static IRI NumberOfAgentsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasNumberOfAgents");
-        public final static IRI MustLinkConnectionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMustLinkConnections");
-        public final static IRI MustConnectPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMustConnect");        
-        public final static IRI CannotLinkConnectionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasCannotLinkConnections");
-        public final static IRI CannotConnectPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasCannotConnect");        
-        public final static IRI ParticipantsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasParticipants");        
-        public final static IRI WelcomeNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#");
-        public final static IRI CsgpNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#");
-        public final static IRI AjanNamespace = FACTORY.createIRI("http://www.ajan.de/ajan-ns#");
-        public final static IRI ClanNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#");
-        public final static IRI MacNamespace = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#");
-        public final static IRI HAS_MEMBERS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#hasMembers");        
-        public final static IRI SolutionOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#isSolutionOf");
-        public final static IRI MemberOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/mac_ontology#isMemberOf");
-        
 
-        // CSGP Vocabulary
-        public final static IRI BOSSType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#BOSS");
-        public final static IRI CsgpSolverType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGPSolver");
-        public final static IRI CoalitionGeneratorType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CoalitionGenerator");
-        public final static IRI MinCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMinCoalitionSize");
-        public final static IRI MaxCoalitionSizePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasMaxCoalitionSize");        
-        public final static IRI FeasibleCoalitionsPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasFeasibleCoalitions");        
-        public final static IRI CsgpCoalitionObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CSGPCoalition");        
-        public final static IRI CsgpSolverPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#solver");        
-        public final static IRI CsgpSolutionPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#csgpSolution");        
-        public final static IRI COALITION_STRUCTURE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CoalitionStructure");        
-        public final static IRI CsgpValuePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#value");        
-        public final static IRI CsgpCsRankPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#csRank");
-        public final static IRI CsgpSolutionOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/csgp_ontology#solutionOf");        
-        public final static IRI HAS_VALUE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasValue");        
-        public final static IRI HAS_SOLUTION = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasSolution");        
-        public final static IRI HAS_RANK = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasRank");        
-        public final static IRI HAS_SOLUTION_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasSolutionOf");        
+        public final static IRI MAC_PROBLEM_INSTANCE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#MACProblemInstance");
+        public final static IRI HAS_MAC_PROBLEM_ID = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMacProblemId");
+        public final static IRI HAS_NUMBER_OF_AGENTS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasNumberOfAgents");
+        public final static IRI HAS_MUST_LINK_CONNECTIONS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMustLinkConnections");
+        public final static IRI HAS_MUST_CONNECT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMustConnect"); 
+        public final static IRI HAS_CANNOT_LINK_CONNECTIONS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasCannotLinkConnections");
+        public final static IRI HAS_CANNOT_CONNECT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasCannotConnect");        
+        public final static IRI HAS_PARTICIPANTS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasParticipants");        
+        public final static IRI WELCOME_NAMESPACE = FACTORY.createIRI("https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#");
+        public final static IRI AJAN_NAMESPACE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#");
+        public final static IRI MAC_NAMESPACE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#");
+        public final static IRI HAS_MEMBERS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMembers");        
+        public final static IRI IS_SOLUTION_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isSolutionOf");
+        public final static IRI IS_MEMBER_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isMemberOf");
+        public final static IRI BOSS_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGP_SOLVER-BOSS");
+        public final static IRI CSGP_SOLVER_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGP_SOLVER");
+        public final static IRI COALITION_GENERATOR_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGP-CoalitionGenerator");
+        public final static IRI HAS_MIN_COALITION_SIZE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMinCoalitionSize");
+        public final static IRI HAS_MAX_COALITION_SIZE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMaxCoalitionSize");        
+        public final static IRI HAS_FEASIBLE_COALITIONS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasFeasibleCoalitions"); 
+        public final static IRI CSGP_COALITION = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#CSGP-Coalition");  
+        public final static IRI CSGP_COALITION_STRUCTURE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#CSGP-CoalitionStructure");    
+        
+        public final static IRI HAS_VALUE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasValue");        
+        public final static IRI HAS_SOLUTION = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSolution"); 
+        public final static IRI HAS_RANK = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasRank");  
+        public final static IRI HAS_SOLUTION_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSolutionOf");        
 
         
         // HDBSCAN Vocabulary
-        public final static IRI ClusteringSolverType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#ClusteringSolver");
-        public final static IRI HdbscanType = FACTORY.createIRI("http://www.ajan.de/ajan-ns#HDBSCAN");
-        public final static IRI PerfectMatchScorePre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasPerfectMatchScore");        
-        public final static IRI SubjectOfSimilarityPre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasSubject");
-        public final static IRI ObjectOfSimilarityPre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasObject");
-        public final static IRI SimilarityScorePre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasSimilarityScore");
-        public final static IRI ClusteringObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#Clustering");
-        public final static IRI ClusterObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#Cluster");
-        public final static IRI ClusterOfPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/cluster_analysis_ontology#isClusterOf");
+        public final static IRI HDBSCAN_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#Clustering_Solver-HDBSCAN");
+        public final static IRI HAS_PERFECT_MATCH_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasPerfectMatchScore"); 
+        
+        public final static IRI HAS_SUBJECT_AGENT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSubjectAgent");
+        public final static IRI HAS_OBJECT_AGENT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasObjectAgent");
+        
+        public final static IRI HAS_SIMILARITY_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSimilarityScore");
+        
+        public final static IRI CLUSTERING = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#Clustering");
+        public final static IRI CLUSTER = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#Cluster");
+        public final static IRI IS_CLUSTER_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isClusterOf");
+        public final static IRI HAS_MIN_POINTS_PARAM = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMinPoints");
+        public final static IRI HAS_MIN_CLUSTER_SIZE_PARAM = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMinClusterSize");
+        
 
-       
         // Broadcast
         public final static IRI BROADCAST = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Broadcast");
-
-        public final static IRI ChcUseCaseObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CHCUseCase");
-        public final static IRI UseCaseIdPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#hasId");
-        public final static IRI ComputedForPre = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#isComputedForProblemId");
-        public final static IRI ChcDistanceScoreObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#CHCDistanceScore");
-        public final static IRI DistanceScorePre = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasDistanceScore");
-        public final static IRI LccUseCaseObj = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/welcome_ontology#LCCUseCase");
         
-        public final static IRI SquareRootType = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#SquareRoot");
+        public final static IRI HAS_ID = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasId");
+        public final static IRI IS_COMPUTED_FOR_PROBLEM_ID = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isComputedForProblemId");
+        public final static IRI DISTANCE_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#DistanceScore");
+        public final static IRI HAS_DISTANCE_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasDistanceScore");
         
-        public final static IRI MATH_SUBJECT = FACTORY.createIRI("http://www.ajan.de/ajan-ns#MathSubject");
-        public final static IRI math_HAS_VALUE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasValue");
-        public final static IRI math_HAS_RESULT_PREDICATE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#hasResultPredicate");
+        // Math vocabulary
+        public final static IRI SQUARE_ROOT_TYPE = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#SquareRoot");
+        public final static IRI MATH_SUBJECT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_math_ontology#AJAN_MathSubject");
+        public final static IRI MATH_HAS_VALUE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_math_ontology#hasValue");
+        public final static IRI MATH_HAS_RESULT_PREDICATE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_math_ontology#hasResultPredicate");
         
 
 }
