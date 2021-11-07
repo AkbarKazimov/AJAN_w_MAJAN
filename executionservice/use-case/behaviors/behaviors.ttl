@@ -3244,20 +3244,37 @@
 						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
 						
 						CONSTRUCT {
+							#?lccSubject	rdf:type	welcome:LCCUseCase ;
+							#			mac:hasId	?lccId ;
+							#			mac:hasSolution	?lccSolution ;
+							#			welcome:hasDedicatedAgent	?dAgentId ;
+							#			welcome:hasStatus	?lccStatus .
+							
+							#?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
+							#				mac:hasValue	?csValue ;
+							#				mac:hasRank		?csRank ;
+							#				mac:hasSolutionOf	?lccSubject ;
+							#				mac:hasMembers	?coalition .
+											
+							#?coalition	rdf:type	mac:CSGP-Coalition ;
+							#				mac:hasMembers	?memberAgent .
+												
+												
 							?lccSubject	rdf:type	welcome:LCCUseCase ;
-										mac:hasId	?lccId ;
-										mac:hasSolution	?lccSolution ;
+										welcome:hasId	?lccId ;
+										welcome:hasSolution	?lccSolution ;
 										welcome:hasDedicatedAgent	?dAgentId ;
 										welcome:hasStatus	?lccStatus .
 							
-							?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
-											mac:hasValue	?csValue ;
-											mac:hasRank		?csRank ;
-											mac:hasSolutionOf	?lccSubject ;
-											mac:hasMembers	?coalition .
+							?lccSolution	rdf:type	welcome:Grouping ;
+											welcome:hasValue	?csValue ;
+											welcome:hasRank		?csRank ;
+											welcome:hasSolutionOf	?lccSubject ;
+											welcome:hasMembers	?coalition .
 											
-							?coalition	rdf:type	mac:CSGP-Coalition ;
-											mac:hasMembers	?memberAgent .
+							?coalition	rdf:type	welcome:Group ;
+										welcome:hasMembers	?memberAgent .				
+											
 						}
 						WHERE {
 							# Select LCC Use Case Problem Info

@@ -38,6 +38,8 @@ public class CoalitionGeneratorUtils {
             int linked = 0;
             for (int i = 0; i < cl.length; i++) {
                 for (int j = 0; j < coalitionInByte.length; j++) {
+                    System.out.println("CLIB:"+j+" - " + coalitionInByte[j]);
+                    System.out.println("CL:" + i + " - " + cl[i]);
                     if((cl[i]+1)==coalitionInByte[j]) {
                         linked+=1;
                     }

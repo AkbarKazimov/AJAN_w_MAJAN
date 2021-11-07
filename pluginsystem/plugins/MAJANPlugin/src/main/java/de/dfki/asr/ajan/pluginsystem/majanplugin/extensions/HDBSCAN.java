@@ -202,16 +202,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         // Extract Cannot Link Connections
         clList = Utils.getConstraints(rdfInputModel, agentNames, Utils.CONSTRAINT_TYPE.CANNOT_LINK);
         // end
-        System.out.println("Must links:");
-        for (int[] ml : mlList) {
-            System.out.println("pair1:"+ml[0] + ", pair2:"+ml[1]);
-        }
-        System.out.println("Cannot links:");
-        for (int[] cl : clList) {
-            System.out.println("pair1:"+cl[0] + ", pair2:"+cl[1]);
-            System.out.println("agent1:"+agentNames.get(cl[0]) + ", agent2:"+agentNames.get(cl[1]));
-            
-        }        
+       
         
         // Extract Distance Scores from Model
         distanceScores = new Double[numOfAgents][numOfAgents];
