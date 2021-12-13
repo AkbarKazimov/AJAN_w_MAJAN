@@ -38,6 +38,7 @@ public class Repositories {
 	private TripleDataBase services;
 	private TripleDataBase domain;
 
+        
 	@Value("${loadTTLFiles:true}")
 	private boolean loadFiles;
 	@Bean

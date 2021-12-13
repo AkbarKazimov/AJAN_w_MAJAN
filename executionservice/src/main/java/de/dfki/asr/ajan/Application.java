@@ -27,7 +27,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SuppressWarnings("PMD.UseUtilityClass")
 public class Application {
     protected static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Application.class);
+
     public static void main(final String... args) {
         SpringApplication.run(Application.class, args);
+        System.out.println("add-->"+System.getProperty("wpmUrl"));
     }
+
 }

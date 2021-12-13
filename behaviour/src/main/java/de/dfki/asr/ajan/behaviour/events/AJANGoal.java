@@ -27,6 +27,7 @@ import lombok.Setter;
 import org.cyberborean.rdfbeans.annotations.RDF;
 import org.cyberborean.rdfbeans.annotations.RDFBean;
 import org.cyberborean.rdfbeans.annotations.RDFSubject;
+import org.eclipse.rdf4j.model.Model;
 
 @RDFBean("ajan:Goal")
 public class AJANGoal extends ModelCallback {
@@ -38,25 +39,26 @@ public class AJANGoal extends ModelCallback {
 	@RDF("rdfs:label")
 	@Getter @Setter
 	private String name;
-
-	@RDF("ajan:variables")
+        
+	@RDF("ajan:precondition")
 	@Getter @Setter
-	private List<Variable> variables;
-
-	@RDF("ajan:condition")
+	private String precondition;
+        
+	@RDF("ajan:postcondition")
 	@Getter @Setter
-	private String condition;
+	private String postcondition;
+
 
 	@Override
 	public void setEventInformation(final Producer producer, final Object information) {
-		if (information instanceof GoalInformation) {
-			GoalInformation gInfo = (GoalInformation)information;
-//			this.information = AgentUtil.setNamedGraph(gInfo.getModel().iterator(), url);
-			ModelEventInformation info = new ModelEventInformation();
-			info.setEvent(url);
-			info.setModel(gInfo.getModel());
-			this.information = info;
+                        this.information = getEventInfo(information);
 			notifyListeners(producer);
-		}
+	}
+        
+        private ModelEventInformation getEventInfo(final Object information) {
+		ModelEventInformation info = new ModelEventInformation();
+		info.setEvent(url);
+		info.setModel(((Model)information));
+		return info;
 	}
 }

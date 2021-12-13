@@ -41,10 +41,60 @@
 
 # ----------- Templates -----------
 
+:GoalNodeTestAgent
+	a ajan:AgentTemplate ;
+	rdfs:label	"GoalNodeAgent to test new goal node" ;
+	ajan:event	:InitBtEvent ;
+	ajan:event	:TestGoal ;
+	ajan:endpoint	:InitBtEndpoint ;
+	ajan:behavior	:InitBt ;
+	ajan:behavior	:TestGoalBt .
+
+:InitBtEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Init BT Event" .
+
+:TestGoal
+	a ajan:Goal ;
+	rdfs:label "TestGoal goal event" ;
+	ajan:precondition """
+		ASK
+		WHERE {
+			?s ?p ?o .
+		}"""^^xsd:string ;
+		
+	ajan:postcondition """
+		ASK
+		WHERE {
+			?s ?p ?o .
+		}"""^^xsd:string .
+
+:InitBtEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Init BT endpoint" ;
+	ajan:capability "initBt" ;
+	ajan:event :InitBtEvent .
+
+:InitBt
+	a ajan:Behavior ;
+	rdfs:label "Init Behavior tree" ;
+	ajan:trigger :InitBtEvent ;
+	ajan:bt behaviors:InitBt .
+	
+:TestGoalBt
+	a ajan:Behavior ;
+	rdfs:label "Test Goal Behavior tree" ;
+	ajan:trigger :TestGoal ;
+	ajan:bt behaviors:TestGoalBt .
+
+
 :MAJANAgent
 	a ajan:AgentTemplate ;
 	rdfs:label "MAJAN Agent to Test MAJAN Features" ;
 #---------LCC Related----------------------
+	ajan:event	:StartLccAssessmentEvent ;
+	ajan:event	:LccAssessmentCompleteEvent ;
+	ajan:event	:SubmitFinalLccResultEvent ;
 	ajan:event	:StartLccProcessEvent ;
 	ajan:event	:LccDedicatedAgentBehaviorEvent ;
 	ajan:event	:ReceiveLccPersonalInfoEvent ;
@@ -54,11 +104,17 @@
 	ajan:event	:SolveLccEvent ;
 	ajan:event	:FinalizeLccProcessEvent ;
 	ajan:event	:LccFailureEvent ;
+	ajan:endpoint	:StartLccAssessmentEndpoint ;
+	ajan:endpoint	:LccAssessmentCompleteEndpoint ;
+	ajan:endpoint	:SubmitFinalLccResultEndpoint ;
 	ajan:endpoint	:StartLccProcessEndpoint ;
 	ajan:endpoint	:ReceiveLccPersonalInfoEndpoint ;
 	ajan:endpoint	:ComputeLccUtilityValuesEndpoint ;
 	ajan:endpoint	:ReceiveLccUtilityValuesEndpoint ;
 	ajan:endpoint	:FinalizeLccProcessEndpoint ;
+	ajan:behavior	:StartLccAssessmentBehavior ;
+	ajan:behavior	:LccAssessmentCompleteBehavior ;
+	ajan:behavior	:SubmitFinalLccResultBehavior ;
 	ajan:behavior	:StartLccProcessBehavior ;
 	ajan:behavior	:LccDedicatedAgentBehavior ;
 	ajan:behavior	:ReceiveLccPersonalInfoBehavior ;
@@ -109,6 +165,23 @@
 #------------MAJAN Stuff-------------------
 
 #----Behaviors-------
+:StartLccAssessmentBehavior
+	a ajan:Behavior ;
+	rdfs:label "Start LCC Assessment Behavior" ;
+	ajan:trigger :StartLccAssessmentEvent ;
+	ajan:bt behaviors:StartLccAssessmentBt .
+
+:LccAssessmentCompleteBehavior
+	a ajan:Behavior ;
+	rdfs:label "LCC Assessment Complete Behavior" ;
+	ajan:trigger :LccAssessmentCompleteEvent ;
+	ajan:bt behaviors:LccAssessmentCompleteBt .
+
+:SubmitFinalLccResultBehavior
+	a ajan:Behavior ;
+	rdfs:label "Submit Final Lcc Result Behavior" ;
+	ajan:trigger :SubmitFinalLccResultEvent ;
+	ajan:bt behaviors:SubmitFinalLccResultBt .
 
 :StartLccProcessBehavior
 	a ajan:Behavior ;
@@ -227,6 +300,23 @@
 #----Behaviors-------
 
 #----Endpoints-------
+:StartLccAssessmentEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Start LCC Assessment phase Endpoint" ;
+	ajan:capability "startAssessment" ;
+	ajan:event :StartLccAssessmentEvent .
+
+:LccAssessmentCompleteEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "LCC Assessment phase completed Endpoint" ;
+	ajan:capability "assessmentComplete" ;
+	ajan:event :LccAssessmentCompleteEvent .
+
+:SubmitFinalLccResultEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Submit LCC Final Result Endpoint" ;
+	ajan:capability "submitFinalLccResult" ;
+	ajan:event :SubmitFinalLccResultEvent .
 
 :StartLccProcessEndpoint
 	a ajan:Endpoint ;
@@ -303,7 +393,18 @@
 #----Endpoints-------
 
 #----Events-------
+:StartLccAssessmentEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Start LCC Assessment Phase Event" .
+		
+:LccAssessmentCompleteEvent
+	a ajan:ModelEvent ;
+	rdfs:label "LCC Assessment Phase Completed Event" .
 
+:SubmitFinalLccResultEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Submission of LCC Final Result Event" .
+	
 :StartLccProcessEvent
 	a ajan:ModelQueueEvent ;
 	rdfs:label "Start LCC Process Event" .

@@ -20,6 +20,7 @@
 package de.dfki.asr.rdfbeans;
 
 import de.dfki.asr.ajan.behaviour.events.AJANGoal;
+import de.dfki.asr.ajan.behaviour.events.AJANGoal;
 import de.dfki.asr.ajan.behaviour.nodes.common.Bound;
 import de.dfki.asr.ajan.behaviour.nodes.action.definition.*;
 import de.dfki.asr.ajan.behaviour.events.JsonEvent;
@@ -31,6 +32,7 @@ import de.dfki.asr.ajan.behaviour.nodes.branch.*;
 import de.dfki.asr.ajan.behaviour.nodes.common.Bindings;
 import de.dfki.asr.ajan.behaviour.nodes.common.Variable;
 import de.dfki.asr.ajan.behaviour.nodes.event.EventProducer;
+import de.dfki.asr.ajan.behaviour.nodes.event.GoalProducer;
 import de.dfki.asr.ajan.behaviour.nodes.event.GoalProducer;
 import de.dfki.asr.ajan.behaviour.nodes.event.HandleModelEvent;
 import de.dfki.asr.ajan.behaviour.nodes.event.HandleModelQueueEvent;

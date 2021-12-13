@@ -21,10 +21,13 @@ package de.dfki.asr.ajan.behaviour.nodes.event;
 
 import de.dfki.asr.ajan.behaviour.events.*;
 import de.dfki.asr.ajan.behaviour.exception.AJANBindingsException;
+import de.dfki.asr.ajan.behaviour.exception.ConditionEvaluationException;
 import de.dfki.asr.ajan.behaviour.exception.EventEvaluationException;
 import de.dfki.asr.ajan.behaviour.nodes.BTRoot;
 import de.dfki.asr.ajan.behaviour.nodes.common.*;
 import de.dfki.asr.ajan.behaviour.nodes.common.EvaluationResult.Result;
+import de.dfki.asr.ajan.behaviour.nodes.query.BehaviorConstructQuery;
+import de.dfki.asr.ajan.common.SPARQLUtil;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -40,6 +43,7 @@ import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
 import org.eclipse.rdf4j.query.BooleanQuery;
+import org.eclipse.rdf4j.query.QueryEvaluationException;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.slf4j.Logger;
@@ -59,9 +63,9 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 	@Getter @Setter
 	private URI goalURI;
 
-	@RDF("ajan:bindings")
+	@RDF("bt:content")
 	@Getter @Setter
-	private Bindings bindings;
+	private BehaviorConstructQuery query;
 
 	private AJANGoal goal;
 	private Status goalStatus = Status.FRESH;
@@ -81,7 +85,7 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 			exStatus = Status.RUNNING;
 			try {
 				produceGoal();
-			} catch (EventEvaluationException | AJANBindingsException | URISyntaxException ex) {
+			} catch (EventEvaluationException | AJANBindingsException | URISyntaxException | ConditionEvaluationException ex) {
 				LOG.info(toString(), ex);
 				return new LeafStatus(Status.FAILED, toString() + " FAILED");
 			}
@@ -109,7 +113,7 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 		}
 	}
 
-	private void produceGoal() throws EventEvaluationException, AJANBindingsException, URISyntaxException {
+	private void produceGoal() throws EventEvaluationException, AJANBindingsException, URISyntaxException, ConditionEvaluationException {
 		Map<URI,Event> events = this.getObject().getEvents();
 		if (events.containsKey(goalURI)) {
 			if (events.get(goalURI) instanceof AJANGoal) {
@@ -123,27 +127,42 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 		}
 	}
 
-	private void createGoalEvent(final AJANGoal goal) throws AJANBindingsException, URISyntaxException {
-		List<Bound> bdgs = bindings.getBindings(this.getObject());
-		if (checkGoalValues(goal, bdgs)) {
-			goal.setEventInformation(this, new GoalInformation(bdgs));
+	private void createGoalEvent(final AJANGoal goal) throws AJANBindingsException, URISyntaxException, ConditionEvaluationException {
+                Model model = getModel();
+                if(checkPrecondition(model)){
+                        goal.setEventInformation(this, model);
 		} else {
-			throw new AJANBindingsException("bound values do not fit to goal definition!");
+			throw new AJANBindingsException("Input model failed to conform to Goal precondition");
 		}
 	}
-
-	private boolean checkGoalValues(final AJANGoal goal, final List<Bound> bdgs) {
-		return goal.getVariables().stream().map((var) -> {
-			boolean found = false;
-			for (Bound bnd: bdgs) {
-				if (var.getVarName().equals(bnd.getVarName())
-								&& var.getDataType().equals(bnd.getDataType())) {
-					found = true;
-				}
-			}
-			return found;
-		}).noneMatch((found) -> (!found));
+        
+	private Model getModel() throws ConditionEvaluationException {
+		try {
+			Repository repo = BTUtil.getInitializedRepository(getObject(), query.getOriginBase());
+                        Model model = query.getResult(repo);
+                        return model;
+		} catch (URISyntaxException | QueryEvaluationException ex) {
+			throw new ConditionEvaluationException(ex);
+		}
 	}
+        
+        private boolean checkPrecondition(final Model model) throws ConditionEvaluationException {
+            String precondition = goal.getPrecondition();
+            if (!SPARQLUtil.askModel(model, precondition)) {
+			LOG.error("Input model failed to conform to Goal precondition.");
+			return false;
+		}
+            return true;
+        }
+        
+	public boolean checkPostCondition() throws AJANBindingsException, URISyntaxException {
+		String condition = goal.getPostcondition();
+		Repository repo = this.getObject().getAgentBeliefs().getInitializedRepository();
+		try (RepositoryConnection conn = repo.getConnection()) {
+			BooleanQuery query = conn.prepareBooleanQuery(condition);
+			return query.evaluate();
+                }
+        }
 
 	@Override
 	public void reportGoalStatus(final Status result) {
@@ -152,7 +171,7 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 			return;
 		}
 		try {
-			if (checkCondition()) {
+			if (checkPostCondition()) {
 				goalStatus = Status.SUCCEEDED;
 			} else {
 				goalStatus = Status.FAILED;
@@ -163,32 +182,6 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 			LOG.error("Error while creating an Event: " + ex);
 			goalStatus = Status.FAILED;
 		}
-	}
-
-	public boolean checkCondition() throws AJANBindingsException, URISyntaxException {
-		String condition = goal.getCondition();
-		Repository repo = this.getObject().getAgentBeliefs().getInitializedRepository();
-		try (RepositoryConnection conn = repo.getConnection()) {
-			BooleanQuery query = conn.prepareBooleanQuery(condition);
-			assignVariables(query);
-			return query.evaluate();
-		} catch (AJANBindingsException | URISyntaxException ex) {
-			return false;
-		}
-	}
-
-	private void assignVariables(final BooleanQuery query) throws AJANBindingsException, URISyntaxException {
-		for (Bound bound: bindings.getBindings(this.getObject())) {
-			query.setBinding(bound.getVarName(), getValue(bound));
-		}
-	}
-
-	private Value getValue(final Bound bound) {
-		String valueType = bound.getDataType().toString();
-		if (valueType.equals(RDFS.RESOURCE.toString())) {
-			return vf.createIRI(bound.getStringValue());
-		}
-		return vf.createLiteral(bound.getStringValue(), vf.createIRI(valueType));
 	}
 
 	@Override

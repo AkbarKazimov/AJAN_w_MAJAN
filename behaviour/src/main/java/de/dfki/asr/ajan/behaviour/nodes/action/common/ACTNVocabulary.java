@@ -28,7 +28,8 @@ public class ACTNVocabulary {
 	private static final ValueFactory FACTORY = SimpleValueFactory.getInstance();
 
 	// ACTN-Core Resources
-	public final static IRI RESOURCE = FACTORY.createIRI("http://www.ajan.de/actn#Resource");
+	public final static IRI DEFAULT = FACTORY.createIRI("http://www.ajan.de/actn#");
+        public final static IRI RESOURCE = FACTORY.createIRI("http://www.ajan.de/actn#Resource");
 	public final static IRI ACTION = FACTORY.createIRI("http://www.ajan.de/actn#Action");
 	public final static IRI FAULT = FACTORY.createIRI("http://www.ajan.de/actn#FAULT");
 	public final static IRI PLUGIN_ACTION = FACTORY.createIRI("http://www.ajan.de/actn#PluginAction");
