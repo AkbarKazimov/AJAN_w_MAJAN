@@ -19,6 +19,9 @@
 
 package de.dfki.asr.ajan;
 
+import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -30,7 +33,32 @@ public class Application {
 
     public static void main(final String... args) {
         SpringApplication.run(Application.class, args);
-        System.out.println("add-->"+System.getProperty("wpmUrl"));
+        
+        sendNotification();        
     }
-
+    
+    private static void sendNotification(){
+        String url = System.getProperty("notificationUrl");
+        String[] headerKeys = System.getProperty("notificationHeaderKeys").split(",");
+        String[] headerValues = System.getProperty("notificationHeaderValues").split(",");
+        System.out.println("url:"+url);
+            
+        int n = headerKeys.length > headerValues.length ? headerValues.length : headerKeys.length ;
+        HashMap<String, String> headers = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            headers.put(headerKeys[i], headerValues[i]);
+            System.out.println("key:"+headerKeys[i]);
+            System.out.println("value:"+headerValues[i]);
+        }
+        
+        HttpMessage hm = new HttpMessage();
+        String resp;
+        try {
+            resp = hm.sendGet(url, headers);
+            System.out.println(resp);
+            hm.close();
+        } catch (Exception ex) {
+            Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 }

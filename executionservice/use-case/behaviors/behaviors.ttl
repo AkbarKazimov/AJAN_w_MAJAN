@@ -141,7 +141,7 @@
 
 		
 		
-:ProduceLccDedicatedAgentBehaviorEvent
+:ProduceLccDedicatedAgentBehaviorEvent2
 	a bt:EventProducer ;
 	rdfs:label "EventProducer: LCC Dedicated Agent Behavior Event" ;
 	bt:event [
@@ -167,7 +167,7 @@
 						}"""^^xsd:string ;
 				] .
 
-:ProduceLccDedicatedAgentBehaviorEvent
+:ProduceLccDedicatedAgentBehaviorEvent3
 	a bt:EventProducer ;
 	rdfs:label "EventProducer: LCC Dedicated Agent Behavior Event" ;
 	ajan:event agents:LccDedicatedAgentBehaviorEvent ;
@@ -356,9 +356,16 @@
 									[
 										a bt:Sequence ;
 										bt:hasChildren (
-												:ComputeLccCannotLinkConnections
+												#:ComputeLccCannotLinkConnections
 												:GenerateFeasibleCoalitions4Lcc
-												:ComputeLccCoalitionInfo
+												:ComputeLccCoalitionInfo_addingAttendanceInfo
+												[
+													a bt:Priority ;
+													bt:hasChildren (
+														:RemoveAttendanceViolatedCoalitions
+														:SimpleSuccess
+													)
+												]
 												:UpdateLccCoalitionInfoWrt
 											#	[
 											#		a bt:Priority ;
@@ -999,7 +1006,10 @@
 								welcome:hasLessonId	?lessonId ;
 								welcome:hasDedicatedAgent	?dAgentId ;
 								mac:hasId	?lccId ;
-								welcome:hasSdWeight	?sdW .
+								welcome:hasSdWeight	?cplWeight ;
+								welcome:hasMinSize		 ?minSize ; 
+								welcome:hasMaxSize		 ?maxSize ; 
+								welcome:hasAbsenceAllowance	 ?allowedAbsence .
 					}
 					WHERE { 
 						#?s ?p ?o .	
@@ -1007,11 +1017,12 @@
 								welcome:hasParticipants	?pAgentId ;
 								welcome:hasLessonId	?lessonId ;
 								welcome:hasDedicatedAgent	?dAgentId ;
-								welcome:hasId	?lccId .
-						
-						OPTIONAL {
-						?bnode	welcome:hasSdWeight	?sdW .
-						}
+								welcome:hasId	?lccId ;
+								welcome:hasCPLWeight	?cplWeight ;
+								welcome:hasMinSize		 ?minSize ; 
+								welcome:hasMaxSize		 ?maxSize ; 
+								welcome:hasAbsenceAllowance	 ?allowedAbsence .
+
 					}"""^^xsd:string ;
 				] .
 
@@ -1355,6 +1366,7 @@
 					INSERT{
 							?lccSubject	rdf:type	welcome:LCCUseCase, mac:MACProblemInstance ;
 										?p ?o ;
+										welcome:hasSdWeight		?cplWeight ;
 										mac:hasNumberOfAgents	?numOfAgents ;
 										mac:hasMinCoalitionSize	?minSize ;
 										mac:hasMaxCoalitionSize	?maxSize .
@@ -1363,6 +1375,8 @@
 						{
 							?bnode	rdf:type	welcome:LCCUseCase ;
 									?p ?o ;
+									welcome:hasSdWeight	?cplWeight ;
+									#welcome:hasCPLWeight	?cplWeight ;
 									welcome:hasMinSize	?minSize ;
 									welcome:hasMaxSize	?maxSize ;
 									mac:hasId	?lccId . 
@@ -1747,8 +1761,8 @@
 								mac:hasId	?lccId ;
 								mac:hasParticipants	?pAgentId ;
 								mac:hasNumberOfAgents	?numOfAgents ;
-								mac:hasMinCoalitionSize	"2" ;
-								mac:hasMaxCoalitionSize	"5" ;
+								mac:hasMinCoalitionSize	?minSize ;
+								mac:hasMaxCoalitionSize	?maxSize ;
 								mac:hasCannotLinkConnections	?cannotLinkBnode ;
 								mac:hasMustLinkConnections	?mustLinkBnode .
 								
@@ -1760,8 +1774,8 @@
 								mac:hasId	?lccId ;
 								mac:hasParticipants	?pAgentId ;
 								mac:hasNumberOfAgents	?numOfAgents ;
-								mac:hasMinCoalitionSize	"2" ;
-								mac:hasMaxCoalitionSize	"5" .
+								mac:hasMinCoalitionSize	?minSize ;
+								mac:hasMaxCoalitionSize	?maxSize .
 								
 						OPTIONAL {
 							?bnode mac:hasCannotLinkConnections	?cannotLinkBnode .
@@ -2158,43 +2172,71 @@
 					CONSTRUCT {
 							?feasibleCoalitionNode	welcome:hasCommonGender	?cG ;
 													welcome:hasCommonNation	?cN ;
-													welcome:hasNotAttendedCount	?nta .
+													welcome:hasTotalAttendanceAmount	?attnd .
 					}
 					WHERE {
+					{
+						SELECT ?feasibleCoalitionNode (COUNT(DISTINCT ?gender) AS ?gS) (COUNT(DISTINCT ?nation) AS ?nS) 
+						(COUNT(DISTINCT ?attended) AS ?attnd) 
 						{
-							SELECT ?feasibleCoalitionNode (COUNT(DISTINCT ?gender) AS ?gS) (COUNT(DISTINCT ?nation) AS ?nS) 
-							(COUNT(DISTINCT ?notAttended) AS ?nta) 
-							{
-								?bnode		rdf:type	 welcome:LCCUseCase ;
+							?bnode		rdf:type	 welcome:LCCUseCase ;
+										mac:hasId	?lccId ;
+										welcome:hasLessonId	?lessonId ;
+										mac:hasFeasibleCoalitions	 ?feasibleCoalitionNode .
+							?feasibleCoalitionNode	rdf:type	 mac:CSGP-Coalition ;
+													mac:hasMembers	?mAgentId.
+							?mAgent	ajan:agentId	?mAgentId ;
+									welcome:hasLCCPersonalInfo ?mLccPsnlInfo .	
+							?mLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
 											mac:hasId	?lccId ;
-											welcome:hasLessonId	?lessonId ;
-											mac:hasFeasibleCoalitions	 ?feasibleCoalitionNode .
-											
-								?feasibleCoalitionNode	rdf:type	 mac:CSGP-Coalition ;
-														mac:hasMembers	?mAgentId.
-														
-								?mAgent	ajan:agentId	?mAgentId ;
-										welcome:hasLCCPersonalInfo ?mLccPsnlInfo .	
-										
-								?mLccPsnlInfo	rdf:type	welcome:LCCPersonalInfo ;
-												mac:hasId	?lccId ;
-												welcome:hasGender	?gender ;
-												welcome:hasNationality	?nation .
-												
-								OPTIONAL {
-										FILTER(xsd:integer(?lessonId) != 1)
-										BIND((xsd:integer(?lessonId) - 1) AS ?previousLessonId)
-										FILTER NOT EXISTS {
-													?mLccPsnlInfo	welcome:hasAttendedLessonIDs	?previousLessonId .
-											}
-										BIND("true" AS ?notAttended)
+											welcome:hasGender	?gender ;
+											welcome:hasNationality	?nation .
+							BIND((xsd:integer(?lessonId) - 1) AS ?previousLessonId)
+							OPTIONAL {
+								FILTER EXISTS {
+									?mLccPsnlInfo	welcome:hasAttendedLessonIDs	?previousLessonId .
 								}
-							} GROUP BY ?feasibleCoalitionNode
-						}
-						BIND(IF(?gS > 1, "Mixed", "Same") AS ?cG)
-						BIND(IF(?nS > 1, "Mixed", "Same") AS ?cN)
+								BIND(?mAgentId AS ?attended)
+							}
+						} GROUP BY ?feasibleCoalitionNode
 					}
-					"""^^xsd:string ;
+					BIND(IF(?gS > 1, "Mixed", "Same") AS ?cG)
+					BIND(IF(?nS > 1, "Mixed", "Same") AS ?cN)
+				}
+				"""^^xsd:string ;
+		]) .
+
+
+:RemoveAttendanceViolatedCoalitions
+	a bt:Update ;
+	rdfs:label "Remove Coalitions in which Attendance is Violated" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					DELETE {
+						?bnode	mac:hasFeasibleCoalitions	?feasibleCoalitionNode .
+						?feasibleCoalitionNode	rdf:type	mac:CSGP-Coalition ;
+												?p ?o.					
+					}
+					WHERE{
+						?bnode	rdf:type	 welcome:LCCUseCase ;
+								welcome:hasLessonId	?lessonId ;
+								welcome:hasAbsenceAllowance		?allowedAttendanceLimit ;
+								mac:hasFeasibleCoalitions	 ?feasibleCoalitionNode .
+								
+						?feasibleCoalitionNode	rdf:type	 mac:CSGP-Coalition ;
+												mac:hasSize		?groupSize ;
+												welcome:hasTotalAttendanceAmount	?attendedAmount ;
+												?p ?o.
+						FILTER((xsd:integer(?lessonId) != 1) && ((xsd:integer(?attendedAmount) + xsd:integer(?allowedAttendanceLimit)) < xsd:integer(?groupSize)))
+						}															
+				"""^^xsd:string ;
 		]) .
 
 :UpdateLccCoalitionInfoWrt
@@ -3146,7 +3188,7 @@
 								welcome:hasStatus	?lccStatus ;
 								mac:hasId	?lccId .
 										
-					FILTER(LCASE(?lccStatus) = "completed" || LCASE(?lccStatus) = "failed")
+					FILTER(LCASE(?lccStatus) = "completed" || LCASE(?lccStatus) = "failed" || LCASE(?lccStatus) = "no solution found")
 					OPTIONAL {
 						?lccUseCase	welcome:hasStartTime	?startTime ;
 									welcome:hasEndTime	?endTime .
@@ -3606,7 +3648,7 @@
 									mac:hasParticipants	?pAgentId ;
 									mac:hasId	?lccId ;
 									mac:hasFeasibleCoalitions	?feasibleCoalitionNode .
-						?lccSubject	welcome:hasNonExistentCoalitionValue	"-1000000" .
+						?lccSubject	mac:hasNonExistentCoalitionValue	"-1000000" .
 									
 									
 						?feasibleCoalitionNode	rdf:type	mac:CSGP-Coalition ;
@@ -3720,7 +3762,7 @@
 							}
 #							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank) && BOUND(?coalition) && 
 #										BOUND(?memberAgent), "Completed", "Failed") AS ?lccStatus) 
-							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank), "Completed", "Failed") AS ?lccStatus) 
+							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank), "Completed", "No Solution Found") AS ?lccStatus) 
 
 							}
 							"""^^xsd:string
@@ -3803,7 +3845,7 @@
 							?lccSubject	rdf:type	welcome:LCCUseCase ;
 										mac:hasId	?lccId ;
 										welcome:hasDedicatedAgent	?dAgentId ;
-										m:hasStatus	?lccStatus .
+										mac:hasStatus	?lccStatus .
 						}
 						WHERE {
 							# Select LCC Use Case Problem Info
@@ -3943,11 +3985,11 @@
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "application/ld+json"^^xsd:string 
+					http-core:fieldValue "text/turtle"^^xsd:string 
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
-					http-core:fieldValue "application/ld+json"
+					http-core:fieldValue "text/turtle"
 				]
 		) ;	
 		http-core:body [
@@ -4014,7 +4056,7 @@
 											mac:hasMembers	?memberAgent .				
 							}
 							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank) && BOUND(?coalition) && 
-										BOUND(?memberAgent), "Completed", "Failed") AS ?lccStatus) 
+										BOUND(?memberAgent), "Completed", "No Solution Found") AS ?lccStatus) 
 
 							}						
 				"""^^xsd:string
@@ -4063,11 +4105,11 @@
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "application/ld+json"^^xsd:string 
+					http-core:fieldValue "text/turtle"^^xsd:string 
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
-					http-core:fieldValue "application/ld+json"
+					http-core:fieldValue "text/turtle"
 				]
 		) ;	
 		http-core:body [
@@ -4175,7 +4217,7 @@
 							}
 #							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank) && BOUND(?coalition) && 
 #										BOUND(?memberAgent), "Completed", "Failed") AS ?lccStatus) 
-							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank), "Completed", "Failed") AS ?lccStatus) 
+							BIND( IF( BOUND(?lccSolution) && BOUND(?csValue) && BOUND(?csRank), "Completed", "No Solution Found") AS ?lccStatus) 
 							
 							}	"""^^xsd:string ;
 				] .
@@ -13656,6 +13698,10 @@ CONSTRUCT {
 :SucessFinishScenario
 	a bt:Success ;
 	rdfs:label "Scenario Finished"^^xsd:string .
+	
+:SimpleSuccess
+	a bt:Success ;
+	rdfs:label "Just Success Node"^^xsd:string .
 																															
 :DeleteHeaderAppNotificationMessage
 	a bt:Update ;

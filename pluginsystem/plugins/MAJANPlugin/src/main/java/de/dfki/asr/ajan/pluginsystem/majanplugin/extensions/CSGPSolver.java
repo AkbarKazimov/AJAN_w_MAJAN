@@ -61,6 +61,6 @@ import ro.fortsoft.pf4j.Extension;
  * @author Akbar
  */
 public abstract class CSGPSolver extends AbstractTDBLeafTask implements NodeExtension, TreeNode{
-    public abstract Map<int[][], Double[]> runSolver(int numOfAgents, Map<int[], Double> coalitionsData);
+    public abstract Map<int[][], Double[]> runSolver(int numOfAgents, Map<int[], Double> coalitionsData, double infeasibleCoalitionValue);
     public abstract boolean solve() throws URISyntaxException, CSGPSolverInputException;
 }

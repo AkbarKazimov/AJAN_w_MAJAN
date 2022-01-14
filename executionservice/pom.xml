@@ -55,6 +55,8 @@ MA 02110-1301  USA
     </dependencyManagement>
 
     <dependencies>
+
+        
         <dependency>
             <groupId>de.dfki.asr.ajan</groupId>
             <artifactId>common</artifactId>

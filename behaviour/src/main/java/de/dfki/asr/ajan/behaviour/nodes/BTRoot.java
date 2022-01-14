@@ -148,7 +148,7 @@ public class BTRoot extends BehaviorTree<AgentTaskInformation> implements TreeNo
 
 	@Override
 	public void setEventInformation(final Object info) {
-           // System.out.println("BTRoot: setEventInformation: info - " + info);
+            //System.out.println("BTRoot: setEventInformation: info - " + info);
 
 		this.getObject().setEventInformation(info);
 		this.run();

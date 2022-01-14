@@ -65,21 +65,24 @@ public class HandleModelQueueEvent extends HandleModelEvent {
 	@Getter @Setter
 	private BehaviorConstructQuery query;
 
-        
+         // I have been using these so far
+        /*
 	@Override
 	public Resource getType() {
 		return BTVocabulary.HANDLE_QUEUE_EVENT;
 	}
 
+       
 	@Override
 	protected boolean checkEventGoalMatching(AgentTaskInformation ati) {
             
-		Object info = ati.getEventInformation();
-             //   System.out.println("HandleModelQueueEvent: checkEventGoalMatching - info - "+info);
+		//Object info = ati.getEventInformation();
+                Object info = this.getObject().getEventInformation();
+                System.out.println("HandleModelQueueEvent: checkEventGoalMatching - info - "+info);
                 
 		if (info instanceof Queue) {
 			Queue modelQueue = (Queue) ati.getEventInformation();
-                      //  System.out.println("HandleModelQueueEvent: checkEventGoalMatching - modelQueue - "+modelQueue);
+                        System.out.println("HandleModelQueueEvent: checkEventGoalMatching - modelQueue - "+modelQueue);
 
                         if (modelQueue.peek() != null && modelQueue.peek() instanceof ModelEventInformation) {
 				return checkQueueItem(((ModelEventInformation)modelQueue.peek()).getEvent());
@@ -94,17 +97,17 @@ public class HandleModelQueueEvent extends HandleModelEvent {
 		boolean eventMatching = getEvent() != null && getEvent().toString().equals(eventUrl);
 		boolean allEvents = getEvent() != null && getEvent().toString().equals(AJANVocabulary.ALL.toString());
                 boolean result = getEvent() == null || eventMatching || allEvents;
-               // System.out.println("HandleModelQueueEvent: checkQueueItem: result "+result);
+                System.out.println("HandleModelQueueEvent: checkQueueItem: result "+result);
 
                 return result;
 	}
         
 	@Override
 	protected Model getEventModel(AgentTaskInformation ati) {
-          //  System.out.println("HandleModelQueueEvent: getEventModel ");
+            System.out.println("HandleModelQueueEvent: getEventModel ");
 
             constructQuery = query;
-       //     System.out.println("HandleModelQueueEvent: constructQuery "+constructQuery);
+            System.out.println("HandleModelQueueEvent: constructQuery "+constructQuery);
 //            System.out.println("HandleModelQueueEvent: this "+ati);
 //            System.out.println("HandleModelQueueEvent: getObject "+this.getObject().toString());
         //    System.out.println("HandleModelQueueEvent: getEventInformation "+ati.getEventInformation());
@@ -113,15 +116,15 @@ public class HandleModelQueueEvent extends HandleModelEvent {
             Object info = ati.getEventInformation();
             Model model = new LinkedHashModel();
             if (info instanceof Queue) {
-            //    System.out.println("HandleModelQueueEvent: info "+info);
+                System.out.println("HandleModelQueueEvent: info "+info);
 
                 Queue modelQueue = (Queue) ati.getEventInformation();
-            //    System.out.println("HandleModelQueueEvent: modelQueue.peek() "+modelQueue.peek());
+                System.out.println("HandleModelQueueEvent: modelQueue.peek() "+modelQueue.peek());
 
                 if (modelQueue.peek() != null && modelQueue.peek() instanceof ModelEventInformation) {
 
                     model = ((ModelEventInformation)modelQueue.poll()).getModel();
-                 //   System.out.println("HandleModelQueueEvent: model"+model);
+                    System.out.println("HandleModelQueueEvent: model"+model);
 
                     if (constructQuery == null || constructQuery.getSparql().isEmpty()) {
                         return model;
@@ -131,8 +134,82 @@ public class HandleModelQueueEvent extends HandleModelEvent {
                 }
             }
             return model;
-        }
+        }*/
+        // the ones in github-ajan-service
+        @Override
+	protected boolean checkEventGoalMatching() {
+		Object info = this.getObject().getEventInformation();
+               // System.out.println("HandleModelQueueEvent: checkEventGoalMatching - info - "+info);
 
+		if (info instanceof Queue) {
+			Queue modelQueue = (Queue) this.getObject().getEventInformation();
+                       // System.out.println("HandleModelQueueEvent: checkEventGoalMatching - modelQueue - "+modelQueue);
+                        
+                        for(Object element: modelQueue){
+                            if(element != null && element instanceof ModelEventInformation){
+                                return checkQueueItem(((ModelEventInformation)element).getEvent());
+                            }
+                        }
+                        
+			/*if (modelQueue.peek() != null && modelQueue.peek() instanceof ModelEventInformation) {
+				return checkQueueItem(((ModelEventInformation)modelQueue.peek()).getEvent());
+			}*/
+		}
+		return false;
+	}
+
+	private boolean checkQueueItem(final String eventUrl) {
+		boolean eventMatching = getEvent() != null && getEvent().toString().equals(eventUrl);
+		boolean allEvents = getEvent() != null && getEvent().toString().equals(AJANVocabulary.ALL.toString());
+                boolean result = getEvent() == null || eventMatching || allEvents;
+                //System.out.println("HandleModelQueueEvent: checkQueueItem: result "+result);
+
+                return result;
+//		return getEvent() == null || eventMatching || allEvents;
+	}
+
+	@Override
+	protected Model getEventModel() {
+            //System.out.println("HandleModelQueueEvent: getEventModel ");
+            constructQuery = query;
+           // System.out.println("HandleModelQueueEvent: constructQuery "+constructQuery);
+
+		Object info = this.getObject().getEventInformation();
+		Model model = new LinkedHashModel();
+		if (info instanceof Queue) {
+                   // System.out.println("HandleModelQueueEvent: info "+info);
+
+			Queue modelQueue = (Queue) this.getObject().getEventInformation();
+                      //  System.out.println("HandleModelQueueEvent: modelQueue.peek() "+modelQueue.peek());
+
+                        for(Object element : modelQueue){
+                          //  System.out.println("getEventModel-element:" + element);
+                            if(element != null && element instanceof ModelEventInformation){
+                                model = ((ModelEventInformation)element).getModel();
+                               // System.out.println("HandleModelQueueEvent: model"+model);
+                                modelQueue.remove(element);
+				if (constructQuery == null || constructQuery.getSparql().isEmpty()) {
+					return model;
+				} else {
+					return constructQuery.getResult(model);
+				}
+                            }
+                        }
+                        
+                        
+			/*if (modelQueue.peek() != null && modelQueue.peek() instanceof ModelEventInformation) {
+				model = ((ModelEventInformation)modelQueue.poll()).getModel();
+                                System.out.println("HandleModelQueueEvent: model"+model);
+
+				if (constructQuery == null || constructQuery.getSparql().isEmpty()) {
+					return model;
+				} else {
+					return constructQuery.getResult(model);
+				}
+			}*/
+		}
+		return model;
+	}
 	@Override
 	public String toString() {
 		return "HandleQueueEvent (" + getLabel() + ")";

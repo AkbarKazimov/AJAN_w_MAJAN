@@ -67,9 +67,9 @@ public class HandleModelEvent extends AbstractTDBLeafTask {
 	@Getter @Setter
 	private URI event;
 
-	@RDF("ajan:goal")
+	/*@RDF("ajan:goal")
 	@Getter @Setter
-	private URI goal;
+	private URI goal;*/
 
 	@RDF("bt:validate")
 	@Getter @Setter
@@ -107,8 +107,8 @@ public class HandleModelEvent extends AbstractTDBLeafTask {
 			return new LeafStatus(Status.FAILED, toString() + " FAILED");
 		}
 	}
-
-	protected boolean handleEvent() throws ConditionEvaluationException {
+        // I have been using these so far
+	/*protected boolean handleEvent() throws ConditionEvaluationException {
             AgentTaskInformation ati=this.getObject();
 		if (checkEventGoalMatching(ati)) {
 			try {
@@ -155,8 +155,53 @@ public class HandleModelEvent extends AbstractTDBLeafTask {
 			}
 		}
 		return model;
+	}*/
+
+        // the ones in github-ajan-service
+        protected boolean handleEvent() throws ConditionEvaluationException {
+		if (checkEventGoalMatching()) {
+			try {
+				Model model = getEventModel();
+				if (!model.isEmpty()) {
+					if (constructQuery.getTargetBase().equals(new URI(AJANVocabulary.EXECUTION_KNOWLEDGE.toString()))) {
+						this.getObject().getExecutionBeliefs().update(model);
+					} else if (constructQuery.getTargetBase().equals(new URI(AJANVocabulary.AGENT_KNOWLEDGE.toString()))) {
+						this.getObject().getAgentBeliefs().update(model);
+					}
+					return true;
+				}
+			} catch (QueryEvaluationException | URISyntaxException ex) {
+				throw new ConditionEvaluationException(ex);
+			}
+		}
+		return false;
 	}
 
+	protected boolean checkEventGoalMatching() {
+		if (this.getObject().getEventInformation() instanceof ModelEventInformation) {
+			ModelEventInformation info = (ModelEventInformation)this.getObject().getEventInformation();
+			boolean eventMatching = event != null && event.toString().equals(((ModelEventInformation) info).getEvent());
+			boolean allEvents = event != null && event.toString().equals(AJANVocabulary.ALL.toString());
+			return event == null || eventMatching || allEvents;
+		}
+		return false;
+	}
+
+	protected Model getEventModel() {
+		Object info = this.getObject().getEventInformation();
+		Model model = new LinkedHashModel();
+		if (info instanceof ModelEventInformation) {
+			ModelEventInformation eventInfo = (ModelEventInformation) info;
+			model = eventInfo.getModel();
+			if (constructQuery == null || constructQuery.getSparql().isEmpty()) {
+				return model;
+			} else {
+				return constructQuery.getResult(model);
+			}
+		}
+		return model;
+	}
+        
 	@Override
 	public void end() {
 		LOG.info("Status (" + getStatus() + ")");

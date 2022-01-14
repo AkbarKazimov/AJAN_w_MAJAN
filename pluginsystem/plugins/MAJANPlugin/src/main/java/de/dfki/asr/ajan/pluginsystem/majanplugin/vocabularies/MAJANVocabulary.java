@@ -21,6 +21,7 @@ public class MAJANVocabulary {
         public final static IRI MAC_PROBLEM_INSTANCE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#MACProblemInstance");
         public final static IRI HAS_MAC_PROBLEM_ID = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMacProblemId");
         public final static IRI HAS_NUMBER_OF_AGENTS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasNumberOfAgents");
+        public final static IRI HAS_NON_EXISTENT_COALITION_VALUE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasNonExistentCoalitionValue");
         public final static IRI HAS_MUST_LINK_CONNECTIONS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMustLinkConnections");
         public final static IRI HAS_MUST_CONNECT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMustConnect"); 
         public final static IRI HAS_CANNOT_LINK_CONNECTIONS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasCannotLinkConnections");
@@ -30,6 +31,7 @@ public class MAJANVocabulary {
         public final static IRI AJAN_NAMESPACE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#");
         public final static IRI MAC_NAMESPACE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#");
         public final static IRI HAS_MEMBERS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMembers");        
+        public final static IRI HAS_SIZE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSize");
         public final static IRI IS_SOLUTION_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isSolutionOf");
         public final static IRI IS_MEMBER_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isMemberOf");
         public final static IRI BOSS_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGP_SOLVER-BOSS");

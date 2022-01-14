@@ -107,6 +107,7 @@ public class HttpConnection implements IConnection {
 				.setDefaultRequestConfig(requestConfig)
 				.setRetryHandler(new DefaultHttpRequestRetryHandler(2, false)).build();
 			CloseableHttpResponse response = httpClient.execute(request)) {
+                    
 			StatusLine statusLine = response.getStatusLine();
 			if (statusLine.getStatusCode() >= 300) {
 				throw new HttpResponseException(statusLine.getStatusCode(), statusLine.getReasonPhrase());

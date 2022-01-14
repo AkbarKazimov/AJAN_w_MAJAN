@@ -119,10 +119,10 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         }
     }
     @Override
-    public Map<int[][], Double[]> runSolver(int numOfAgents, Map<int[], Double> coalitionsData){
+    public Map<int[][], Double[]> runSolver(int numOfAgents, Map<int[], Double> coalitionsData, double infeasibleCoalitionValue){
         LOG.info("BOSS started!");
         csgpSolver.BOSS boss = new csgpSolver.BOSS();
-        Map<int[][], Double[]> solutions = boss.execute(numOfAgents, coalitionsData);
+        Map<int[][], Double[]> solutions = boss.execute(numOfAgents, coalitionsData, infeasibleCoalitionValue);
         LOG.info("BOSS finished!");
         return solutions;
     }
@@ -134,7 +134,7 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         List<Value> agentNames = new ArrayList<>();
         // coalition in byte as Key and coalition value as Value of the map
         Map<int[], Double> coalitionsData = new HashMap<>();
-
+        double infeasibleCoalitionValue = -1000000;
         boolean respFlag = false;
         Repository repo = BTUtil.getInitializedRepository(this.getObject(), csgpInputQuery.getOriginBase());
         Model modelResult = csgpInputQuery.getResult(repo);
@@ -162,6 +162,15 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         }else{
             throw new CSGPSolverInputException("Mac Problem Id is not given (i.e. no value exists for predicate "+
                     MAJANVocabulary.HAS_ID+")");
+        } // end
+
+        // Extract value for infeasible coalitions from Model
+        valueSet = modelResult.filter(problemInstance_subject, MAJANVocabulary.HAS_NON_EXISTENT_COALITION_VALUE, null).objects();
+        if(!valueSet.isEmpty()){
+            infeasibleCoalitionValue=Double.valueOf(valueSet.iterator().next().stringValue());
+        }else{
+            throw new CSGPSolverInputException("Default value for infeasible coalitions is not given (i.e. no value exists for predicate "+
+                    MAJANVocabulary.HAS_NON_EXISTENT_COALITION_VALUE+")");
         } // end
        // LOG.info("id:"+macProblemId);
         
@@ -223,7 +232,7 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
 
         } // end
 
-        Map<int[][], Double[]> solutions = runSolver(numOfAgents, coalitionsData);
+        Map<int[][], Double[]> solutions = runSolver(numOfAgents, coalitionsData, infeasibleCoalitionValue);
         
        /* LOG.info("Solution size: " + solutions.size());
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
@@ -235,9 +244,13 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         ModelBuilder builder=new ModelBuilder();
         builder.setNamespace("welcome", MAJANVocabulary.WELCOME_NAMESPACE.toString())
                 .setNamespace("mac", MAJANVocabulary.MAC_NAMESPACE.toString());
+
         
         // Adding Coalition Structures to the Problem Instance Subject as Solution
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
+            /*if(solution.getValue()[0]<=infeasibleCoalitionValue){
+                continue;
+            }*/
            // System.out.println("Rank: " + solution.getValue()[1] + " CS: " + general.General.convertArrayToString(solution.getKey()) + 
            //         " Value: " + solution.getValue()[0]);
             int rank = solution.getValue()[1].intValue();
