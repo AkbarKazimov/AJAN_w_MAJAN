@@ -88,4 +88,5 @@ public class BehaviorUpdateQuery implements BehaviorQuery {
 			}
 		}
 	}
+
 }

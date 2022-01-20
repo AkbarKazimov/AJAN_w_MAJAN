@@ -70,7 +70,37 @@ public final class SPARQLUtil {
 	private SPARQLUtil() {
 
 	}
+        
+        public static Model addNamespacesFromSparql(final Model model, String sparqlQuery){
+            int index = 0;
+            if(sparqlQuery.contains("CONSTRUCT")){
+                index = sparqlQuery.indexOf("CONSTRUCT");
+            }else if(sparqlQuery.contains("ASK")){
+                index = sparqlQuery.indexOf("ASK");
+            }else if(sparqlQuery.contains("SELECT")){
+                index = sparqlQuery.indexOf("SELECT");
+            }else if(sparqlQuery.contains("INSERT")){
+                index = sparqlQuery.indexOf("INSERT");
+            }
+            if(sparqlQuery.contains("DELETE")){
+                index = sparqlQuery.indexOf("DELETE");
+            }
+            
+            sparqlQuery = sparqlQuery.substring(0, index);
 
+            while(sparqlQuery.contains("PREFIX")){
+                int prfIndex = sparqlQuery.indexOf("PREFIX") ;
+                int symbolIndex = sparqlQuery.indexOf(">");
+                String sub = sparqlQuery.substring(prfIndex+6, symbolIndex);
+                String[] spt = sub.split("<");
+                String prefix = spt[0].trim().replace(":", "");
+                String url = spt[1].trim();
+                sparqlQuery = sparqlQuery.substring(0, prfIndex) + sparqlQuery.substring(symbolIndex+1, sparqlQuery.length()).trim();
+                model.setNamespace(prefix, url);
+            }
+            return model;
+        }
+        
 	public static boolean askModel(final Model model, final String query) {
 		SailRepository repo = createRepository(model);
 		boolean result;

@@ -48,6 +48,8 @@ import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.RDFWriterRegistry;
 import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
+import org.eclipse.rdf4j.rio.helpers.JSONLDMode;
+import org.eclipse.rdf4j.rio.helpers.JSONLDSettings;
 
 public class ModelProducer {
 
@@ -56,16 +58,22 @@ public class ModelProducer {
 
 	public void writeModel(final Model t, final MediaType mt, final OutputStream output) {
 		Optional<RDFFormat> format = getFormatForMediaType(mt);
+                //System.out.println("form---at-->" + format.toString());
+                //System.out.println("form---at-->" + format.get().toString());
 		if (!format.isPresent()) {
 			String msg = "Can not produce RDF as mimetype + " + mt.toString();
 			Response response = Response.status(Status.BAD_REQUEST).type(MediaType.TEXT_PLAIN).entity(msg).build();
 			throw new WebApplicationException(response);
 		}
 		RDFWriter writer = Rio.createWriter(format.get(), output);
+                //writer.getWriterConfig().set(JSONLDSettings.JSONLD_MODE, JSONLDMode.COMPACT);
+                //writer.getWriterConfig().set(JSONLDSettings.OPTIMIZE, true);
                 writer.getWriterConfig().set(BasicWriterSettings.PRETTY_PRINT, true);
+                
 		try {
 			writer.startRDF();
 			for (Statement stm : t) {
+                                //writer.handleNamespace("welcome", "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#");
                                 writer.handleNamespace("ajan", "http://www.ajan.de/ajan-ns#");
                                 writer.handleNamespace("bt", "http://www.ajan.de/behavior/bt-ns#");
                                 writer.handleNamespace("xsd", "http://www.w3.org/2001/XMLSchema#");

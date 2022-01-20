@@ -119,10 +119,10 @@ MA 02110-1301  USA
                     </archive>
                 </configuration>
             </plugin>
-            <plugin>
+           <!-- <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-pmd-plugin</artifactId>
-            </plugin>
+            </plugin>-->
         </plugins>
     </build>
     <properties>

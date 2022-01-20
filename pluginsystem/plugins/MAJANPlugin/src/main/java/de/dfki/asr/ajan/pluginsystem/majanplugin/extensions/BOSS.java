@@ -248,9 +248,9 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         
         // Adding Coalition Structures to the Problem Instance Subject as Solution
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
-            /*if(solution.getValue()[0]<=infeasibleCoalitionValue){
+            if(solution.getValue()[0]<=(infeasibleCoalitionValue*3)/4){
                 continue;
-            }*/
+            }
            // System.out.println("Rank: " + solution.getValue()[1] + " CS: " + general.General.convertArrayToString(solution.getKey()) + 
            //         " Value: " + solution.getValue()[0]);
             int rank = solution.getValue()[1].intValue();

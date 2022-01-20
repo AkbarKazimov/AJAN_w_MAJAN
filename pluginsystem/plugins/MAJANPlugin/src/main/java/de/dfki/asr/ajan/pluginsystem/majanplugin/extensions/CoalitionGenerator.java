@@ -160,8 +160,8 @@ public class CoalitionGenerator extends AbstractTDBLeafTask implements NodeExten
         // Extract Agent Names from Model
         valueSet=rdfInputModel.filter(null, MAJANVocabulary.HAS_PARTICIPANTS, null).objects();
         if(valueSet.size()!=numOfAgents){
-            throw new CoalitionGenerationInputException("Amount of participating agents is different "
-                    + "than the given \"numberOfAgents\" value.");
+            throw new CoalitionGenerationInputException("Amount of participating agents ("+valueSet.size()+") is different "
+                    + "than the given \"numberOfAgents\" ("+numOfAgents+") value.");
         }
         Iterator<Value> valueIterator = valueSet.iterator();
         while(valueIterator.hasNext()){

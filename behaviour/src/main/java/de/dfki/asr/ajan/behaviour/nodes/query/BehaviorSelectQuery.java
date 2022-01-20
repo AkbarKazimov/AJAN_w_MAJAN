@@ -22,6 +22,7 @@ package de.dfki.asr.ajan.behaviour.nodes.query;
 import de.dfki.asr.ajan.behaviour.nodes.common.BTUtil;
 import static de.dfki.asr.ajan.behaviour.nodes.common.BTUtil.setQueryBindingModel;
 import de.dfki.asr.ajan.behaviour.nodes.common.BTVocabulary;
+import de.dfki.asr.ajan.common.SPARQLUtil;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;

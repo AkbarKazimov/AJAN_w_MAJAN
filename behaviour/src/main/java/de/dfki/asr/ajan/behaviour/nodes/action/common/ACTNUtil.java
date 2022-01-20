@@ -33,6 +33,7 @@ import static de.dfki.asr.ajan.common.AgentUtil.formatForMimeType;
 import de.dfki.asr.ajan.common.SPARQLUtil;
 import static de.dfki.asr.ajan.common.SPARQLUtil.getTupleExpr;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Namespace;
 import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.query.QueryEvaluationException;
@@ -47,7 +49,12 @@ import org.eclipse.rdf4j.query.algebra.TupleExpr;
 import org.eclipse.rdf4j.query.parser.ParsedTupleQuery;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
+import org.eclipse.rdf4j.rio.RDFFormat;
+import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.Rio;
+import org.eclipse.rdf4j.rio.helpers.BasicWriterSettings;
+import org.eclipse.rdf4j.rio.helpers.JSONLDMode;
+import org.eclipse.rdf4j.rio.helpers.JSONLDSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,8 +165,28 @@ public final class ACTNUtil {
 
 	public static String getModelPayload(final Model model, final String mimeType) throws UnsupportedEncodingException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		Rio.write(model, out, formatForMimeType(mimeType));
-		return out.toString(StandardCharsets.UTF_8.displayName());
+               // System.out.println("--3333--" + model.getNamespaces().size());
+               /* for(Namespace namespace:model.getNamespaces()){
+                    System.out.println("--nmsp--"+namespace.toString());
+                }  */    
+                
+                RDFFormat rdfFormat = formatForMimeType(mimeType);
+                if(rdfFormat.equals(RDFFormat.JSONLD)){
+                   // System.out.println("--2222--");
+                    RDFWriter writer = Rio.createWriter(rdfFormat, out);
+                    writer.getWriterConfig().set(JSONLDSettings.JSONLD_MODE, JSONLDMode.COMPACT);
+                    writer.getWriterConfig().set(JSONLDSettings.OPTIMIZE, true);
+                    writer.getWriterConfig().set(BasicWriterSettings.PRETTY_PRINT, true);
+                    //model.setNamespace("welcome", "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#");
+//writer.startRDF();
+                    //writer.handleNamespace("welcome", "https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#");
+                    //writer.endRDF();
+                    
+                    Rio.write(model, writer);
+                }else{
+                    Rio.write(model, out, rdfFormat);
+                }
+                return out.toString(StandardCharsets.UTF_8.displayName());
 	}
 
 	public static String getTemplatePayload(final Model model, final SelectQueryTemplate tmpl) {

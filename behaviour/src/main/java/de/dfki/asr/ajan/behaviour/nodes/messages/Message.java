@@ -84,11 +84,13 @@ public class Message extends AbstractTDBLeafTask {
 	@Override
 	public LeafStatus executeLeaf() {
 		try {
+                                        System.out.println("--5555--");
 			setRequestUri();
                         binding.setRequestURI(new URI(requestURI));
                         request = new HttpConnection(binding);
                         String payload = null;
                         if (binding.getPayload() != null) {
+                                                System.out.println("--6666--");
                             payload = getInput(binding);
                         }
                         request.setPayload(payload);
@@ -157,6 +159,7 @@ public class Message extends AbstractTDBLeafTask {
 	}
 
 	protected String getInput(final HttpBinding binding) throws URISyntaxException, UnsupportedEncodingException {
+                               // System.out.println("--4444--");
 		SelectQueryTemplate tmpl = binding.getPayload().getTemplate();
 		if (tmpl != null) {
 			Repository repo = BTUtil.getInitializedRepository(getObject(), tmpl.getBtQuery().getOriginBase());
@@ -168,6 +171,7 @@ public class Message extends AbstractTDBLeafTask {
 		Repository repo = BTUtil.getInitializedRepository(getObject(), query.getOriginBase());
 		List<HttpHeader> headers = binding.getHeaders();
 		String mimeType = ACTNUtil.getMimeTypeFromHeaders(headers);
+                                  //  System.out.println("--7777--"+mimeType);
 		return ACTNUtil.getModelPayload(query.getResult(repo), mimeType);
 	}
 

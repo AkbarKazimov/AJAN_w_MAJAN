@@ -74,6 +74,15 @@ public class HttpConnection implements IConnection {
 
 	@Override
 	public void setPayload(final String payload) {
+            System.out.println("---1111----"+payload);
+            /*System.out.println("---1111----"+payload);
+            for(HttpHeader hdr: this.binding.getHeaders()){
+             System.out.println("-22"+hdr.getHeaderName().toString());
+             System.out.println("-33"+hdr.getHeaderValue());
+             if(hdr.getHeaderName().toString().contains("content-type") && hdr.getHeaderValue().equals("application/ld+json")){
+                 payload = payload.
+             }
+            }*/
 		request.setEntity(payload);
 	}
 

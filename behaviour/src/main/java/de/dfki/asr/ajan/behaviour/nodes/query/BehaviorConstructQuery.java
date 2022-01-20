@@ -71,7 +71,8 @@ private String id;
 			}
 		}
 		result = resultModel;
-		return result;
+                //System.out.println("--8888--sparql--"+sparql);
+		return addNamespaces(result, sparql);
 	}
 
 	public Model getResult(final Model model) {
@@ -101,4 +102,8 @@ private String id;
 			model.add(resultNode, BTVocabulary.HAS_RESULT, resultGraph);
 		}
 	}
+
+    public Model addNamespaces(Model model, String sparqlQuery) {
+        return SPARQLUtil.addNamespacesFromSparql(model, sparqlQuery);
+    }
 }
