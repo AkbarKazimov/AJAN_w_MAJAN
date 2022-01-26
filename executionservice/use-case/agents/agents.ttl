@@ -39,59 +39,13 @@
 #test:Subject test:predicate "Geh weg!" .
 
 
-# ----------- Templates -----------
+# ↓↓↓↓↓↓↓↓↓↓↓↓ Templates ↓↓↓↓↓↓↓↓↓↓↓↓
 
-:GoalNodeTestAgent
+#↓↓↓↓↓↓ LCC agent ↓↓↓↓↓↓
+
+:DifeAgentForLcc
 	a ajan:AgentTemplate ;
-	rdfs:label	"GoalNodeAgent to test new goal node" ;
-	ajan:event	:InitBtEvent ;
-	ajan:event	:TestGoal ;
-	ajan:endpoint	:InitBtEndpoint ;
-	ajan:behavior	:InitBt ;
-	ajan:behavior	:TestGoalBt .
-
-:InitBtEvent
-	a ajan:ModelEvent ;
-	rdfs:label "Init BT Event" .
-
-:TestGoal
-	a ajan:Goal ;
-	rdfs:label "TestGoal goal event" ;
-	ajan:precondition """
-		ASK
-		WHERE {
-			?s ?p ?o .
-		}"""^^xsd:string ;
-		
-	ajan:postcondition """
-		ASK
-		WHERE {
-			?s ?p ?o .
-		}"""^^xsd:string .
-
-:InitBtEndpoint
-	a ajan:Endpoint ;
-	rdfs:label "Init BT endpoint" ;
-	ajan:capability "initBt" ;
-	ajan:event :InitBtEvent .
-
-:InitBt
-	a ajan:Behavior ;
-	rdfs:label "Init Behavior tree" ;
-	ajan:trigger :InitBtEvent ;
-	ajan:bt behaviors:InitBt .
-	
-:TestGoalBt
-	a ajan:Behavior ;
-	rdfs:label "Test Goal Behavior tree" ;
-	ajan:trigger :TestGoal ;
-	ajan:bt behaviors:TestGoalBt .
-
-
-:MAJANAgent
-	a ajan:AgentTemplate ;
-	rdfs:label "MAJAN Agent to Test MAJAN Features" ;
-#---------LCC Related----------------------
+	rdfs:label "DifeWelcomeAgent" ;
 	ajan:event	:StartLccAssessmentEvent ;
 	ajan:event	:LccAssessmentCompleteEvent ;
 	ajan:event	:SubmitFinalLccResultEvent ;
@@ -124,47 +78,54 @@
 	ajan:behavior	:SolveLccBehavior ;
 	ajan:behavior	:FinalizeLccProcessBehavior ;
 	ajan:behavior	:LccFailureBehavior ;
-#---------LCC Related----------------------
-#---------CHC Related----------------------
-	ajan:event :CHCProtocolEvent ;
-	ajan:event :ExecuteCHCProcessEvent;
-	ajan:event :ShareCHCPersonalInfoEvent ;
-	ajan:event :ReceiveCHCPersonalInfoEvent;
-	ajan:event :ShareCHCSimilaritiesEvent;
-	ajan:event :ReceiveCHCSimilaritiesEvent;
-	ajan:event :SolveCHCEvent;
-	ajan:event :FinalizeCHCProcessEvent;
-	ajan:event :CHCFailureEvent;
-	ajan:endpoint :CHCProtocolEndpoint ;
-	ajan:endpoint :ShareCHCPersonalInfoEndpoint ;
-	ajan:endpoint :ReceiveCHCPersonalInfoEndpoint;
-	ajan:endpoint :ShareCHCSimilaritiesEndpoint ;
-	ajan:endpoint :ReceiveCHCSimilaritiesEndpoint ;
-	ajan:endpoint :FinalizeCHCProcessEndpoint;
-	ajan:behavior :CHCProtocolBehavior ;
-	ajan:behavior :ExecutingCHCProcessBehavior ;
-	ajan:behavior :SharingCHCPersonaInfoBehavior ;	 
-	ajan:behavior :ReceivingCHCPersonaInfoBehavior;  
-	ajan:behavior :SharingCHCSimilaritiesBehavior;  
-	ajan:behavior :ReceivingCHCSimilaritiesBehavior;
-	ajan:behavior :SolvingCHCBehavior;
-	ajan:behavior :FinalizingCHCProcessBehavior;
-	ajan:behavior :CHCFailureBehavior ;
-#---------CHC Related----------------------
-#---------Other----------------------
-	ajan:event :TestQueueEvent ;
+# --- other ----
 	ajan:event :PopulateLAREvent ;	
 	ajan:event :ReceiveLocalAgentsEvent;
-	ajan:endpoint :TestQueueEventEndpoint ;
 	ajan:endpoint :populateLAR ;
-	ajan:behavior :PopulateLARRepos;
-	ajan:behavior :TestQueueEventBehavior .
-#---------Other----------------------
+	ajan:behavior :PopulateLARRepos .
+	
+# ↑↑↑↑↑↑↑↑↑↑ LCC agent ↑↑↑↑↑↑↑↑↑↑
 
+:WelcomeAgent
+	a ajan:AgentTemplate ;
+	rdfs:label "WelcomeAgent" ;
+	ajan:event :PopulateLSREvent ;
+	ajan:event :PopulateLAREvent ;	
+	ajan:event :ReceiveLocalAgentsEvent ;
+	ajan:event :ReceiveLocalServicesEvent ;
+	ajan:event :ReceiveHandshakeEvent ;	
+	ajan:event :SpeakAvatarEvent ;	
+	ajan:event :EventDIPORServiceRequest ;	
+	ajan:event :EventStatementNonOpinion ;	
+	ajan:event :SpecificBTEvent ;
+	ajan:event :FirstInteractionBTEvent ;	
+	ajan:event :CloseScenarioEvent ;
+	ajan:event :AlternativeCloseScenarioEvent ;
+	ajan:event :AgentShutdownEvent ;
+	ajan:event :AgentMonitoringEvent ;
+	ajan:endpoint :populateLAR ;
+	ajan:endpoint :populateLSR ;
+	ajan:endpoint :receiveSpeechAct ;
+	ajan:endpoint :speakAvatar ;
+	ajan:endpoint :handshake ;
+	ajan:endpoint :closeScenario ;
+    ajan:endpoint :agentSession ;
+	ajan:endpoint :heartbeat ;
+	ajan:initialBehavior :InitialWelcomeBehavior ;
+	ajan:finalBehavior :FinalWelcomeBehavior ;
+	ajan:behavior :PopulateLARRepos ;
+	ajan:behavior :PopulateLSRRepos ;
+	ajan:behavior :HandshakeBehavior ;
+	ajan:behavior :ProcessSpeechActsBehavior ;
+	ajan:behavior :SpecificFirstReceptionBT ;
+	ajan:behavior :CloseScenarioBT ;
+	ajan:behavior :AgentShutdown ;
+	ajan:behavior :HeartbeatMonitoringBT .
+	
+#↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ LCC Related Stuff ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 
-#------------MAJAN Stuff-------------------
-
-#----Behaviors-------
+#↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ LCC Behaviors ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+	
 :StartLccAssessmentBehavior
 	a ajan:Behavior ;
 	rdfs:label "Start LCC Assessment Behavior" ;
@@ -237,69 +198,10 @@
 	ajan:trigger :LccFailureEvent ;
 	ajan:bt behaviors:LccFailureBt .
 
-:CHCProtocolBehavior
-	a ajan:Behavior ;
-	rdfs:label "Start CHC Protocol with TCN/App request" ;
-	ajan:trigger :CHCProtocolEvent ;
-	ajan:bt behaviors:CHCProtocolBT.
+#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ LCC Behaviors ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
-:ExecutingCHCProcessBehavior
-	a ajan:Behavior ;
-	rdfs:label "Execute CHC Process" ;
-	ajan:trigger :ExecuteCHCProcessEvent ;
-	ajan:bt behaviors:ExecutingCHCProcessBT.
+#↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ LCC Endpoints ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 
-:SharingCHCPersonaInfoBehavior
-	a ajan:Behavior ;
-	rdfs:label "Share CHC Personal Info" ;
-	ajan:trigger :ShareCHCPersonalInfoEvent ;
-	ajan:bt behaviors:SharingCHCPersonalInfoBT.
-
-:ReceivingCHCPersonaInfoBehavior
-	a ajan:Behavior ;
-	rdfs:label "Receive CHC Personal Info" ;
-	ajan:trigger :ReceiveCHCPersonalInfoEvent ;
-	ajan:bt behaviors:ReceiveCHCPersonalInfoBT.
-
-:SharingCHCSimilaritiesBehavior
-	a ajan:Behavior ;
-	rdfs:label "Share CHC Similarities" ;
-	ajan:trigger :ShareCHCSimilaritiesEvent ;
-	ajan:bt behaviors:SharingCHCSimilaritiesBT.
-
-:ReceivingCHCSimilaritiesBehavior
-	a ajan:Behavior ;
-	rdfs:label "Receive CHC Similarities" ;
-	ajan:trigger :ReceiveCHCSimilaritiesEvent ;
-	ajan:bt behaviors:ReceivingCHCSimilaritiesBT.
-
-:SolvingCHCBehavior
-	a ajan:Behavior ;
-	rdfs:label "Solve CHC Problem Behavior" ;
-	ajan:trigger :SolveCHCEvent ;
-	ajan:bt behaviors:SolvingCHCBT.
-
-:FinalizingCHCProcessBehavior
-	a ajan:Behavior ;
-	rdfs:label "Finalize CHC Process Behavior" ;
-	ajan:trigger :FinalizeCHCProcessEvent ;
-	ajan:bt behaviors:FinalizingCHCProcessBT.
-	
-:CHCFailureBehavior
-	a ajan:Behavior ;
-	rdfs:label "Behavior to run when something fails in CHC Protocol/Process" ;
-	ajan:trigger :CHCFailureEvent ;
-	ajan:bt behaviors:CHCFailureBT.
-	
-:TestQueueEventBehavior
-	a ajan:Behavior ;
-	rdfs:label "Test Queue Event Behavior" ;
-	ajan:trigger :TestQueueEvent ;
-	ajan:bt behaviors:TestQueueBT.
-
-#----Behaviors-------
-
-#----Endpoints-------
 :StartLccAssessmentEndpoint
 	a ajan:Endpoint ;
 	rdfs:label "Start LCC Assessment phase Endpoint" ;
@@ -348,51 +250,10 @@
 	ajan:capability "finalizeLccProcess" ;
 	ajan:event :FinalizeLccProcessEvent .
 
-:CHCProtocolEndpoint
-	a ajan:Endpoint ;
-	rdfs:label "Endpoint to start CHC Protocol" ;
-	ajan:capability "startCHC" ;
-	ajan:event :CHCProtocolEvent .
+#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ LCC Endpoints ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
-:ShareCHCPersonalInfoEndpoint
-	a ajan:Endpoint ;
-	rdfs:label "Endpoint to trigger Sharing CHC Personal Info Behavior" ;
-	ajan:capability "shareCHCPersonalInfo" ;
-	ajan:event :ShareCHCPersonalInfoEvent .
+#↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ LCC Events ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 
-:ReceiveCHCPersonalInfoEndpoint
-	a ajan:Endpoint ;
-	rdfs:label "Endpoint to trigger Receiving CHC Personal Info Behavior" ;
-	ajan:capability "receiveCHCPersonalInfo" ;
-	ajan:event :ReceiveCHCPersonalInfoEvent .
-
-:ShareCHCSimilaritiesEndpoint
-	a ajan:Endpoint ;
-	rdfs:label "Endpoint to trigger Sharing CHC Similarities Behavior" ;
-	ajan:capability "shareCHCSimilarities" ;
-	ajan:event :ShareCHCSimilaritiesEvent .
-
-:ReceiveCHCSimilaritiesEndpoint
-	a ajan:Endpoint ;
-	rdfs:label "Endpoint to trigger Receiving CHC Similarities Behavior" ;
-	ajan:capability "receiveCHCSimilarities" ;
-	ajan:event :ReceiveCHCSimilaritiesEvent .
-
-:FinalizeCHCProcessEndpoint
-	a ajan:Endpoint ;
-	rdfs:label "Endpoint to trigger Finalizing CHC Process Behavior" ;
-	ajan:capability "finalizeCHCProcess" ;
-	ajan:event :FinalizeCHCProcessEvent .
-
-:TestQueueEventEndpoint 
-	a ajan:Endpoint ;
-	rdfs:label "Endpoint to test queue event Behavior" ;
-	ajan:capability "testQueueEvent" ;
-	ajan:event :TestQueueEvent .
-
-#----Endpoints-------
-
-#----Events-------
 :StartLccAssessmentEvent
 	a ajan:ModelQueueEvent ;
 	rdfs:label "Start LCC Assessment Phase Event" .
@@ -441,90 +302,13 @@
 	a ajan:ModelQueueEvent ;
 	rdfs:label "LCC Process Failed Event" .
 
-:CHCProtocolEvent
-	a ajan:ModelQueueEvent ;
-	rdfs:label "CHC Protocol Event" .
 
-:ExecuteCHCProcessEvent 
-	a ajan:ModelEvent ;
-	rdfs:label "Execute CHC Process Event" .
+#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ LCC Events ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
-:ShareCHCPersonalInfoEvent
-	a ajan:ModelQueueEvent ;
-	rdfs:label "Share CHC Personal Info Event" .
+#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ LCC Related Stuff ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
 
-:ReceiveCHCPersonalInfoEvent
-	a ajan:ModelQueueEvent ;
-	rdfs:label "Receive CHC Personal Info Event" .
+#↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ WELCOME Stuff by ELENA ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
 
-:ShareCHCSimilaritiesEvent
-	a ajan:ModelQueueEvent ;
-	rdfs:label "Share CHC Similarities Event" .
-
-:ReceiveCHCSimilaritiesEvent
-	a ajan:ModelQueueEvent ;
-	rdfs:label "Receive CHC Similarities Event" .
-
-:SolveCHCEvent
-	a ajan:ModelEvent ;
-	rdfs:label "Solve CHC Problem Event" .
-
-:FinalizeCHCProcessEvent
-	a ajan:ModelQueueEvent ;
-	rdfs:label "Finalize CHC Process Event" .
-	
-:CHCFailureEvent
-	a ajan:ModelEvent ;
-	rdfs:label "CHC Protocol/Process Failed Event" .
-
-:TestQueueEvent
-	a ajan:ModelQueueEvent ;
-	rdfs:label "Test Queue Event" .
-
-#----Events-------
-
-
-#------------MAJAN Stuff-------------------
-
-
-#------------------WELCOME Stuff by ELENA----------------------
-
-
-:WelcomeAgent
-	a ajan:AgentTemplate ;
-	rdfs:label "DTASFWelcomeAgent" ;
-	ajan:event :PopulateLSREvent ;
-	ajan:event :PopulateLAREvent ;	
-	ajan:event :ReceiveLocalAgentsEvent ;
-	ajan:event :ReceiveLocalServicesEvent ;
-	ajan:event :ReceiveHandshakeEvent ;	
-	ajan:event :SpeakAvatarEvent ;	
-	ajan:event :EventDIPORServiceRequest ;	
-	ajan:event :EventStatementNonOpinion ;	
-	ajan:event :SpecificBTEvent ;
-	ajan:event :FirstInteractionBTEvent ;	
-	ajan:event :CloseScenarioEvent ;
-	ajan:event :AlternativeCloseScenarioEvent ;
-	ajan:event :AgentShutdownEvent ;
-	ajan:event :AgentMonitoringEvent ;
-	ajan:endpoint :populateLAR ;
-	ajan:endpoint :populateLSR ;
-	ajan:endpoint :receiveSpeechAct ;
-	ajan:endpoint :speakAvatar ;
-	ajan:endpoint :handshake ;
-	ajan:endpoint :closeScenario ;
-    ajan:endpoint :agentSession ;
-	ajan:endpoint :heartbeat ;
-	ajan:initialBehavior :InitialWelcomeBehavior ;
-	ajan:finalBehavior :FinalWelcomeBehavior ;
-	ajan:behavior :PopulateLARRepos ;
-	ajan:behavior :PopulateLSRRepos ;
-	ajan:behavior :HandshakeBehavior ;
-	ajan:behavior :ProcessSpeechActsBehavior ;
-	ajan:behavior :SpecificFirstReceptionBT ;
-	ajan:behavior :CloseScenarioBT ;
-	ajan:behavior :AgentShutdown ;
-	ajan:behavior :HeartbeatMonitoringBT .
 
 # ----------- Behaviors -----------
 

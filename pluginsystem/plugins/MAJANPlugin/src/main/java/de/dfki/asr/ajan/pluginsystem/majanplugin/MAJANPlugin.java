@@ -26,7 +26,7 @@ public class MAJANPlugin extends Plugin{
 
 	@Override
     public void start() {
-        System.out.println("MappingPlugin.start()");
+        System.out.println("MAJANPlugin.start()");
         if (RuntimeMode.DEVELOPMENT.equals(wrapper.getRuntimeMode())) {
 			LOG.debug("MappingPlugin");
         }
@@ -34,6 +34,6 @@ public class MAJANPlugin extends Plugin{
 
     @Override
     public void stop() {
-        System.out.println("MappingPlugin.stop()");
+        System.out.println("MAJANPlugin.stop()");
     }
 }

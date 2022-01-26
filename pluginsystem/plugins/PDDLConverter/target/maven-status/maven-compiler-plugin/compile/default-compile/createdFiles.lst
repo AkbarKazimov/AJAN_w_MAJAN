@@ -1,9 +1,0 @@
-de\dfki\asr\ajan\pluginsystem\pddlconverter\exception\IOException.class
-de\dfki\asr\ajan\pluginsystem\pddlconverter\exception\QueryEvaluationException.class
-de\dfki\asr\ajan\pluginsystem\pddlconverter\CreatePDDLPlugin.class
-de\dfki\asr\ajan\pluginsystem\pddlconverter\exception\OWLException.class
-de\dfki\asr\ajan\pluginsystem\pddlconverter\exception\URISyntaxException.class
-de\dfki\asr\ajan\pluginsystem\pddlconverter\vocabularies\PDDLConverterVocabulary.class
-META-INF\extensions.idx
-de\dfki\asr\ajan\pluginsystem\pddlconverter\extensions\PDDLConverter.class
-de\dfki\asr\ajan\pluginsystem\pddlconverter\extensions\package-info.class

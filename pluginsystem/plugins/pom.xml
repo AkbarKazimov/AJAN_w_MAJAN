@@ -25,7 +25,6 @@
         <module>CalculateClosestDistancePlugin</module>-->
         <module>MAJANPlugin</module>
     </modules>
-
     <dependencies>
         <dependency>
             <groupId>de.dfki.asr.ajan</groupId>
