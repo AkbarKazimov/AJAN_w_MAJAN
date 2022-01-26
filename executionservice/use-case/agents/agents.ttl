@@ -155,9 +155,11 @@
 	ajan:event :TestQueueEvent ;
 	ajan:event :PopulateLAREvent ;	
 	ajan:event :ReceiveLocalAgentsEvent;
+	ajan:event :RequestInitiatorEvent ;
 	ajan:endpoint :TestQueueEventEndpoint ;
 	ajan:endpoint :populateLAR ;
 	ajan:behavior :PopulateLARRepos;
+	ajan:behavior :Request_Initiator_BT ;
 	ajan:behavior :TestQueueEventBehavior .
 #---------Other----------------------
 
@@ -165,6 +167,12 @@
 #------------MAJAN Stuff-------------------
 
 #----Behaviors-------
+:Request_Initiator_BT
+	a ajan:Behavior ;
+	rdfs:label "Request Initiator Behavior" ;
+	ajan:trigger :RequestInitiatorEvent ;
+	ajan:bt behaviors:RequestInitiatorBT .
+	
 :StartLccAssessmentBehavior
 	a ajan:Behavior ;
 	rdfs:label "Start LCC Assessment Behavior" ;
@@ -393,6 +401,11 @@
 #----Endpoints-------
 
 #----Events-------
+
+:RequestInitiatorEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Request Initiator BT Event" .
+
 :StartLccAssessmentEvent
 	a ajan:ModelQueueEvent ;
 	rdfs:label "Start LCC Assessment Phase Event" .
@@ -521,7 +534,7 @@
 	ajan:behavior :PopulateLSRRepos ;
 	ajan:behavior :HandshakeBehavior ;
 	ajan:behavior :ProcessSpeechActsBehavior ;
-	ajan:behavior :SpecificFirstReceptionBT ;
+	#ajan:behavior :SpecificFirstReceptionBT ;
 	ajan:behavior :CloseScenarioBT ;
 	ajan:behavior :AgentShutdown ;
 	ajan:behavior :HeartbeatMonitoringBT .

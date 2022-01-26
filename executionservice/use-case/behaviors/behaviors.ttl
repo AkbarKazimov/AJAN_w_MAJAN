@@ -34,6 +34,9 @@
 # -------------------------------------------	
 
 #------------New Goal node test stuff----------------------
+
+
+
 :InitBt
 	a bt:BehaviorTree ;
 	a bt:Root ;
@@ -48,7 +51,20 @@
 						:ConditionSPO
 							)
 				] .
-
+:RequestInitiatorBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Request Initiator Behavior" ;
+	bt:hasChild [
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandleInitEvent
+						:ConditionSPO
+						:ProduceTestGoal
+						:ConditionSPO
+						:ConditionSPO
+							)
+				] .
 :TestGoalBt
 	a bt:BehaviorTree ;
 	a bt:Root ;
@@ -833,7 +849,7 @@
 		http-core:headers ([
 					a http-core:Header ;						
 					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "application/ld+json"^^xsd:string 
+					http-core:fieldValue "text/turtle"^^xsd:string 
 				][
 					a http-core:Header ;
 					http-core:hdrName http-headers:content-type ;
@@ -1376,6 +1392,8 @@
 							?lccSubject	rdf:type	welcome:LCCUseCase, mac:MACProblemInstance ;
 										?p ?o ;
 										welcome:hasSdWeight		?cplWeight ;
+										mac:hasUseCase	"LCC"^^xsd:string ;
+										mac:hasSolver	"BOSS"^^xsd:string ;
 										mac:hasNumberOfAgents	?numOfAgents ;
 										mac:hasMinCoalitionSize	?minSize ;
 										mac:hasMaxCoalitionSize	?maxSize .
@@ -3190,7 +3208,7 @@
 				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 				PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
 				INSERT {
-					?lccUseCase	welcome:hasRuntime	?lccRuntimeInSeconds .
+					?lccUseCase	mac:hasRuntime	?lccRuntimeInSeconds .
 				}
 				WHERE{
 					?lccUseCase	rdf:type	welcome:LCCUseCase ;
@@ -4271,7 +4289,7 @@
 
 
 :WriteLccResult
-	a bt:Write ;
+	a bt:Insert ;
 	rdfs:label "Write: LCC Result 2 LAKR" ;
 	rdfs:comment "Write LCC Result to LAKR" ;
 	bt:query [
@@ -5163,6 +5181,7 @@ CONSTRUCT {
 				?s ?p ?o .
 			} """^^xsd:string ;
 	] .
+	
 :InsertAnotherTest2Lakr
 	a bt:Insert ;
 	rdfs:label "Insert: another test to lakr " ;
@@ -5646,7 +5665,8 @@ CONSTRUCT {
 						?bnode	rdf:type	mac:MACProblemInstance, welcome:CHCUseCase;
 									welcome:hasStatus	"running"^^xsd:string;
 									mac:hasId		?uniqueChcId;
-									welcome:hasSolver	"HDBSCAN"^^xsd:string;
+									mac:hasUseCase	"CHC"^^xsd:string;
+									mac:hasSolver	"HDBSCAN"^^xsd:string;
 									mac:hasNumberOfAgents	?numOfAgents;
 									mac:hasParticipants		?name;
 									welcome:hasAgeWeight		"10"^^xsd:int;
@@ -5710,7 +5730,8 @@ CONSTRUCT {
 									welcome:hasStartTime	?now ;
 									welcome:hasStatus	"running"^^xsd:string;
 									mac:hasId		?chcId;
-									welcome:hasSolver	"HDBSCAN"^^xsd:string;
+									mac:hasUseCase	?useCaseName ;
+									mac:hasSolver	?solver;
 									mac:hasNumberOfAgents	?numOfAgents;
 									mac:hasParticipants		?name;
 									welcome:hasAgeWeight		"10"^^xsd:int;
@@ -5730,7 +5751,8 @@ CONSTRUCT {
 						?bnode	rdf:type	mac:MACProblemInstance, welcome:CHCUseCase;
 									welcome:hasStatus	"running"^^xsd:string;
 									mac:hasId		?chcId;
-									welcome:hasSolver	"HDBSCAN"^^xsd:string;
+									mac:hasSolver	?solver;
+									mac:hasUseCase	?useCaseName ;
 									mac:hasNumberOfAgents	?numOfAgents;
 									mac:hasParticipants		?name;
 									welcome:hasAgeWeight		"10"^^xsd:int;
@@ -8561,7 +8583,7 @@ CONSTRUCT {
 										welcome:isRunningCHC	?chcId .	
 					}
 					INSERT{
-							?chcBnode	welcome:hasRuntime	?chcRuntimeInSeconds.
+							?chcBnode	mac:hasRuntime	?chcRuntimeInSeconds.
 					}
 					WHERE {
 					
