@@ -45,6 +45,7 @@ public class MAJANVocabulary {
         
         public final static IRI HAS_VALUE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasValue");        
         public final static IRI HAS_SOLUTION = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSolution"); 
+        public final static IRI HAS_MIN_CS_VALUE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMinCsValue"); 
         public final static IRI HAS_RANK = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasRank");  
         public final static IRI HAS_SOLUTION_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSolutionOf");        
 

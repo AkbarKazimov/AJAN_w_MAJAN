@@ -319,6 +319,7 @@
 												:WriteCoalitionValues2Ek
 												#:JustFail
 												:SolveLcc_BOSS
+												:NormalizeCsValues
 												:WriteAgentAddresses2Exec
 												:BroadcastLccResult
 												:Message2TeacherLccResult
@@ -3529,7 +3530,41 @@
 					"""^^xsd:string ;
 			] .
 
-			
+	
+:NormalizeCsValues
+	a bt:Update ;
+	rdfs:label "Update: Normalize CS values" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+				PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+				DELETE{
+					?lccSolution	mac:hasValue	?csValue .
+				}
+				INSERT {
+					?lccSolution	mac:hasValue	?normalizedCsValue .
+				}
+				WHERE{
+					?lccSubject	rdf:type	welcome:LCCUseCase .
+										
+					OPTIONAL {
+						?lccSubject	mac:hasSolution	?lccSolution ;
+									mac:hasMinCsValue ?minCsValue .
+						
+						# Select LCC Use Case Solutions
+						?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
+										mac:hasValue	?csValue .
+						BIND((?csValue + 5 - ?minCsValue) AS ?normalizedCsValue)
+							}
+					
+				}
+					"""^^xsd:string ;
+		]) .			
 :BroadcastLccResult
 	a bt:Broadcast ;
 	rdfs:label "Broadcast: LCC Result"^^xsd:string ;
@@ -4038,6 +4073,7 @@
 										mac:hasId	?lccId ;
 										mac:hasSolution	?lccSolution ;
 										welcome:hasDedicatedAgent	?dAgentId ;
+										mac:hasMinCsValue ?minCsValue ;
 										welcome:hasStatus	?lccStatus .
 							
 							?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
@@ -4059,7 +4095,8 @@
 										welcome:hasDedicatedAgent	?dAgentId .
 										
 							OPTIONAL {
-								?lccSubject	mac:hasSolution	?lccSolution .
+								?lccSubject	mac:hasSolution	?lccSolution ;
+											mac:hasMinCsValue ?minCsValue .
 								# Select LCC Use Case Solutions
 								?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
 												mac:hasValue	?csValue ;
@@ -4139,6 +4176,7 @@
 									mac:hasId	?lccId ;
 									mac:hasSolution	?lccSolution ;
 									welcome:hasDedicatedAgent	?dAgentId ;
+									mac:hasMinCsValue ?minCsValue ;
 									welcome:hasStatus	?lccStatus .
 							
 						?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
@@ -4160,7 +4198,8 @@
 									welcome:hasDedicatedAgent	?dAgentId .
 									
 						OPTIONAL {
-							?lccSubject	mac:hasSolution	?lccSolution .
+							?lccSubject	mac:hasSolution	?lccSolution ;
+										mac:hasMinCsValue ?minCsValue .
 							# Select LCC Use Case Solutions
 							?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
 											mac:hasValue	?csValue ;

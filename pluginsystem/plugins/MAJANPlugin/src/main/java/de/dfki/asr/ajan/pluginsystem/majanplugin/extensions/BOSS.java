@@ -245,11 +245,14 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         builder.setNamespace("welcome", MAJANVocabulary.WELCOME_NAMESPACE.toString())
                 .setNamespace("mac", MAJANVocabulary.MAC_NAMESPACE.toString());
 
-        
+        double minimumCsValue = 5.0;
         // Adding Coalition Structures to the Problem Instance Subject as Solution
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
             if(solution.getValue()[0]<=(infeasibleCoalitionValue*3)/4){
                 continue;
+            }
+            if(solution.getValue()[0] < minimumCsValue){
+                minimumCsValue = solution.getValue()[0];
             }
            // System.out.println("Rank: " + solution.getValue()[1] + " CS: " + general.General.convertArrayToString(solution.getKey()) + 
            //         " Value: " + solution.getValue()[0]);
@@ -278,6 +281,9 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
                 }
             } // end
         }
+        builder.subject(problemInstance_subject)
+                .add(MAJANVocabulary.HAS_MIN_CS_VALUE, minimumCsValue);
+
         Model responseModel=builder.build();
        // Utils.printRDF4JModel(responseModel, LOG);
         if(csgpInputQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
