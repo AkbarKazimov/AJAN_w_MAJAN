@@ -251,6 +251,10 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
             if(solution.getValue()[0]<=(infeasibleCoalitionValue*3)/4){
                 continue;
             }
+            // Storing only top 3 solutions
+            if(solution.getValue()[1]>3){
+               continue;
+            }
             if(solution.getValue()[0] < minimumCsValue){
                 minimumCsValue = solution.getValue()[0];
             }

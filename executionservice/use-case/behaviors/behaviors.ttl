@@ -609,7 +609,7 @@
 						WHERE {
 						?subjectIri	rdf:type	welcome:LCCLesson ;
                     	        welcome:hasAssessmentScore  ?assessmentScore .
-						BIND((xsd:integer(?assessmentScore)) AS ?asmScore)
+						BIND((xsd:float(?assessmentScore)) AS ?asmScore)
 						}
 						}
 					}
@@ -2946,7 +2946,7 @@
 	a bt:Wait ;
 	rdfs:label "Wait: 4 LCC Utilities" ;
 	rdfs:comment "Wait for participating agents to return their Utility Values for LCC" ;
-	bt:milliseconds "100000"^^xsd:int .	
+	bt:milliseconds "20000"^^xsd:int .	
 
 
 
