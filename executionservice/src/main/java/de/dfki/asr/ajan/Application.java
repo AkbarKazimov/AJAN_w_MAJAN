@@ -54,7 +54,8 @@ public class Application {
         HttpMessage hm = new HttpMessage();
         String resp;
         try {
-            resp = hm.sendGet(url, headers);
+            //resp = hm.sendGet(url, headers);
+            resp = hm.sendPost(url, "just a body", headers);
             System.out.println(resp);
             hm.close();
         } catch (Exception ex) {

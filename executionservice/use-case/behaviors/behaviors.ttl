@@ -538,8 +538,20 @@
 			a bt:Sequence ;
 			bt:hasChildren (
 						:HandleLccFailedEvent
-						:Message2TeacherLccFailed
-						:BroadcastLccFailed
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+									:Message2TeacherLccFailed
+									:SimpleSuccess
+							)
+						]
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+									:BroadcastLccFailed
+									:SimpleSuccess
+							)
+						]
 						:ProduceFinalizeLccEvent
 							)
 					]
@@ -4289,7 +4301,7 @@
 
 
 :WriteLccResult
-	a bt:Insert ;
+	a bt:Write ;
 	rdfs:label "Write: LCC Result 2 LAKR" ;
 	rdfs:comment "Write LCC Result to LAKR" ;
 	bt:query [
@@ -4304,7 +4316,7 @@
 					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
 						
 					CONSTRUCT {
-						?lccSubject	rdf:type	welcome:LCCUseCase ;
+						?lccSubject	rdf:type	welcome:LCCUseCase, mac:MACProblemInstance ;
 									welcome:hasEndTime	?now ;
 									mac:hasId	?lccId ;
 									mac:hasSolution	?lccSolution ;
