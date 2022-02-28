@@ -43,11 +43,11 @@ public class Utils {
         switch (type) {
             case MUST_LINK:
                 constraintConnections = extractConstraints(rdfInput, agentNames, MAJANVocabulary.HAS_MUST_LINK_CONNECTIONS, MAJANVocabulary.HAS_MUST_CONNECT);
-                System.out.println("Must links:");
+                //System.out.println("Must links:");
                 break;
             case CANNOT_LINK:
                 constraintConnections = extractConstraints(rdfInput, agentNames, MAJANVocabulary.HAS_CANNOT_LINK_CONNECTIONS, MAJANVocabulary.HAS_CANNOT_CONNECT);
-                System.out.println("Cannot links:");
+                //System.out.println("Cannot links:");
                 break;
             default:
                 throw new ConstraintsException("No valid input is given as the type of constraint. Either "+CONSTRAINT_TYPE.MUST_LINK + " or "

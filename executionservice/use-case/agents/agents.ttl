@@ -311,7 +311,7 @@
 :StartLccAssessmentEndpoint
 	a ajan:Endpoint ;
 	rdfs:label "Start LCC Assessment phase Endpoint" ;
-	ajan:capability "startAssessment" ;
+	ajan:capability "Assessment" ;
 	ajan:event :StartLccAssessmentEvent .
 
 :LccAssessmentCompleteEndpoint
@@ -323,13 +323,13 @@
 :SubmitFinalLccResultEndpoint
 	a ajan:Endpoint ;
 	rdfs:label "Submit LCC Final Result Endpoint" ;
-	ajan:capability "submitFinalLccResult" ;
+	ajan:capability "Final-Group" ;
 	ajan:event :SubmitFinalLccResultEvent .
 
 :StartLccProcessEndpoint
 	a ajan:Endpoint ;
 	rdfs:label "Start LCC Process Endpoint" ;
-	ajan:capability "startLCC" ;
+	ajan:capability "TCN-Group" ;
 	ajan:event :StartLccProcessEvent .
 
 :ReceiveLccPersonalInfoEndpoint

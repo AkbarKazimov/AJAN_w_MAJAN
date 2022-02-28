@@ -491,6 +491,7 @@
 												:WriteCoalitionValues2Ek
 												#:JustFail
 												:SolveLcc_BOSS
+												:NormalizeCsValues
 												:WriteAgentAddresses2Exec
 												:BroadcastLccResult
 												:Message2TeacherLccResult
@@ -607,9 +608,14 @@
 				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 				SELECT ?hdrName ?userID
 				WHERE {
-					   VALUES ?hdrName {"X-User-ID"}
-					   ?du rdf:type welcome:DialogueUser .
-					   ?du welcome:hasUserId ?userID .
+						{
+							VALUES ?hdrName {"X-User-ID"}
+							?du rdf:type welcome:DialogueUser .
+							?du welcome:hasUserId ?userID .
+						} UNION {
+							VALUES ?hdrName {"X-Msg-Type"}
+							VALUES ?userID {"Assessment"}
+						}
 				}"""^^xsd:string
 		] ;
 		http-core:headers ([
@@ -621,6 +627,8 @@
 					http-core:hdrName http-headers:content-type ;
 					http-core:fieldValue "application/ld+json"
 				]
+
+				
 		) ;	
 		http-core:body [
 			a actn:Payload ;
@@ -791,7 +799,7 @@
 						WHERE {
 						?subjectIri	rdf:type	welcome:LCCLesson ;
                     	        welcome:hasAssessmentScore  ?assessmentScore .
-						BIND((xsd:integer(?assessmentScore)) AS ?asmScore)
+						BIND((xsd:float(?assessmentScore)) AS ?asmScore)
 						}
 						}
 					}
@@ -819,7 +827,8 @@
 											welcome:hasNationality	?nation ;
 											welcome:hasLccGenderPreference	?lccGenderPref ;
 											welcome:hasLccNationPreference	?lccNationPref ;
-											welcome:hasFirstName	?tcnName .
+											welcome:hasName	?tcnName .
+						?tcnName	?p	?o .
 					}
 					WHERE {
 						welcome:DialogueUser
@@ -828,7 +837,8 @@
 											welcome:hasLccGenderPreference	?lccGenderPref ;
 											welcome:hasLccNationPreference	?lccNationPref .
 						OPTIONAL {
-								welcome:DialogueUser welcome:hasFirstName	?tcnName .
+								welcome:DialogueUser welcome:hasName	?tcnName .
+								?tcnName	?p	?o .
 						}
 					}
 
@@ -853,9 +863,14 @@
 				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 				SELECT ?hdrName ?userID
 				WHERE {
-					   VALUES ?hdrName {"X-User-ID"}
-					   ?du rdf:type welcome:DialogueUser .
-					   ?du welcome:hasUserId ?userID .
+						{
+							VALUES ?hdrName {"X-User-ID"}
+							?du rdf:type welcome:DialogueUser .
+							?du welcome:hasUserId ?userID .
+						} UNION {
+							VALUES ?hdrName {"X-Msg-Type"}
+							VALUES ?userID {"Assessment-Scores"}
+						}
 				}"""^^xsd:string
 		] ;
 		http-core:headers ([
@@ -882,12 +897,12 @@
 						
 						CONSTRUCT {
 						?agentUri	ajan:agentId	?agentId ;
-									welcome:hasFirstName	?tcnName ;
+									welcome:hasName	?tcnName ;
 									welcome:hasGender	?gender ;
 									welcome:hasNationality	?nation ;
 									welcome:hasLccGenderPreference	?lccGenderPref ;
 									welcome:hasLccNationPreference	?lccNationPref .
-									
+						?tcnName	?p	?o .			
 						?subjectIri	rdf:type	welcome:LCCLesson ;
 								welcome:hasLessonId    ?lessonId ;
                     	        welcome:hasAssessmentScore  ?assessmentScore ;
@@ -906,7 +921,8 @@
 											welcome:hasLccGenderPreference	?lccGenderPref ;
 											welcome:hasLccNationPreference	?lccNationPref .
 						OPTIONAL {
-								welcome:DialogueUser welcome:hasFirstName	?tcnName .
+								welcome:DialogueUser welcome:hasName	?tcnName .
+								?tcnName	?p	?o .
 						}
 						?subjectIri	rdf:type	welcome:LCCLesson ;
 								welcome:hasLessonId    ?lessonId ;
@@ -937,7 +953,17 @@
 						#welcome:dispatcher welcome:hasAddress ?partialAddress .
 						#BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/TP") AS ?requestURI )
 
-					}"""^^xsd:string
+					}
+					
+					#PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					#PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+					#SELECT ?requestURI 
+					#WHERE
+					#{
+					#	welcome:dispatcher welcome:hasAddress ?partialAddress .
+					#	BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/messageToTeacher") AS ?requestURI )
+					#}
+					"""^^xsd:string
 	] .	
 	
 	
@@ -3127,7 +3153,7 @@
 	a bt:Wait ;
 	rdfs:label "Wait: 4 LCC Utilities" ;
 	rdfs:comment "Wait for participating agents to return their Utility Values for LCC" ;
-	bt:milliseconds "100000"^^xsd:int .	
+	bt:milliseconds "50000"^^xsd:int .	
 
 
 
@@ -3711,7 +3737,40 @@
 					"""^^xsd:string ;
 			] .
 
-			
+:NormalizeCsValues
+	a bt:Update ;
+	rdfs:label "Update: Normalize CS values" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+				PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+				PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+				PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+				PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+				DELETE{
+					?lccSolution	mac:hasValue	?csValue .
+				}
+				INSERT {
+					?lccSolution	mac:hasValue	?normalizedCsValue .
+				}
+				WHERE{
+					?lccSubject	rdf:type	welcome:LCCUseCase .
+										
+					OPTIONAL {
+						?lccSubject	mac:hasSolution	?lccSolution ;
+									mac:hasMinCsValue ?minCsValue .
+						
+						# Select LCC Use Case Solutions
+						?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
+										mac:hasValue	?csValue .
+						BIND((?csValue + 5 - ?minCsValue) AS ?normalizedCsValue)
+							}
+					
+				}
+					"""^^xsd:string ;
+		]) .				
 :BroadcastLccResult
 	a bt:Broadcast ;
 	rdfs:label "Broadcast: LCC Result"^^xsd:string ;
@@ -4016,9 +4075,14 @@
 				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 				SELECT ?hdrName ?userID
 				WHERE {
-					   VALUES ?hdrName {"X-User-ID"}
-					   ?du rdf:type welcome:DialogueUser .
-					   ?du welcome:hasUserId ?userID .
+						{
+							VALUES ?hdrName {"X-User-ID"}
+							?du rdf:type welcome:DialogueUser .
+							?du welcome:hasUserId ?userID .
+						} UNION {
+							VALUES ?hdrName {"X-Msg-Type"}
+							VALUES ?userID {"Groups"}
+						}
 				}"""^^xsd:string
 		] ;
 		http-core:headers ([
@@ -4115,7 +4179,18 @@
 					SELECT DISTINCT ?requestURI
 					WHERE {
 						VALUES ?requestURI { "http://localhost:8092/teacherPanel/inform"}
-					}"""^^xsd:string
+					}
+					
+					#PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					#PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+					#SELECT ?requestURI 
+					#WHERE
+					#{
+					#	welcome:dispatcher welcome:hasAddress ?partialAddress .
+					#	BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/messageToTeacher") AS ?requestURI )
+					#}
+					
+					"""^^xsd:string
 	] .	
 	
 
@@ -4136,9 +4211,14 @@
 				PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
 				SELECT ?hdrName ?userID
 				WHERE {
-					   VALUES ?hdrName {"X-User-ID"}
-					   ?du rdf:type welcome:DialogueUser .
-					   ?du welcome:hasUserId ?userID .
+						{
+							VALUES ?hdrName {"X-User-ID"}
+							?du rdf:type welcome:DialogueUser .
+							?du welcome:hasUserId ?userID .
+						} UNION {
+							VALUES ?hdrName {"X-Msg-Type"}
+							VALUES ?userID {"Groups"}
+						}
 				}"""^^xsd:string
 		] ;
 		http-core:headers ([
@@ -4195,7 +4275,17 @@
 					SELECT DISTINCT ?requestURI
 					WHERE {
 						VALUES ?requestURI { "http://localhost:8092/teacherPanel/inform"}
-					}"""^^xsd:string
+					}
+					
+					#PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#> 
+					#PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+					#SELECT ?requestURI 
+					#WHERE
+					#{
+					#	welcome:dispatcher welcome:hasAddress ?partialAddress .
+					#	BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/messageToTeacher") AS ?requestURI )
+					#}
+					"""^^xsd:string
 	] .
 	
 :ProduceFinalizeLccEvent
@@ -4220,6 +4310,7 @@
 										mac:hasId	?lccId ;
 										mac:hasSolution	?lccSolution ;
 										welcome:hasDedicatedAgent	?dAgentId ;
+										mac:hasMinCsValue ?minCsValue ;
 										welcome:hasStatus	?lccStatus .
 							
 							?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
@@ -4241,7 +4332,8 @@
 										welcome:hasDedicatedAgent	?dAgentId .
 										
 							OPTIONAL {
-								?lccSubject	mac:hasSolution	?lccSolution .
+								?lccSubject	mac:hasSolution	?lccSolution ;
+											mac:hasMinCsValue ?minCsValue .
 								# Select LCC Use Case Solutions
 								?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
 												mac:hasValue	?csValue ;
@@ -4321,6 +4413,7 @@
 									mac:hasId	?lccId ;
 									mac:hasSolution	?lccSolution ;
 									welcome:hasDedicatedAgent	?dAgentId ;
+									mac:hasMinCsValue ?minCsValue ;
 									welcome:hasStatus	?lccStatus .
 							
 						?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
@@ -4342,7 +4435,8 @@
 									welcome:hasDedicatedAgent	?dAgentId .
 									
 						OPTIONAL {
-							?lccSubject	mac:hasSolution	?lccSolution .
+							?lccSubject	mac:hasSolution	?lccSolution ;
+										mac:hasMinCsValue ?minCsValue .
 							# Select LCC Use Case Solutions
 							?lccSolution	rdf:type	mac:CSGP-CoalitionStructure ;
 											mac:hasValue	?csValue ;
