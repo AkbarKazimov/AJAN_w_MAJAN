@@ -61,15 +61,20 @@ public class MajanService {
     public String runJarEndpoint(@RequestBody String body,
                                @RequestHeader(value = "jarPath") String jarPath,
                                @RequestHeader(value = "timeout") int timeout) {
-        System.out.println("path: " + jarPath);
-        System.out.println("input: " + body);
-        System.out.println("timeout: " + timeout);
-        String inputFilePath = System.getProperty("user.dir") + "\\majanService\\JarInput.txt";
-        String outputFilePath = System.getProperty("user.dir") + "\\majanService\\JarOutput.txt";
-        File inFile = createFileIfNotExists(inputFilePath);
-        File outFile = createFileIfNotExists(outputFilePath);
+        
+        
+        String inputFilePath = System.getProperty("user.dir") + 
+                File.separator + "majanService" + 
+                File.separator + "JarInput.txt";
+        String outputFilePath = System.getProperty("user.dir") + 
+                File.separator + "majanService" +
+                File.separator + "JarOutput.txt";
+        
+        File inFile = null, outFile = null;
         
         try {
+            inFile = createFileIfNotExists(inputFilePath);
+            outFile = createFileIfNotExists(outputFilePath);
             writeToFile(inputFilePath, body);
         } catch (IOException ex) {
             return HttpStatus.INTERNAL_SERVER_ERROR.toString() + "\nException Message: " + ex.getLocalizedMessage();
@@ -94,22 +99,23 @@ public class MajanService {
         }finally{
             removeFile(outFile);
         }
-        
         if("".equals(output)){
             return jarResult;
         }
         return output;
     }
     
-    private static File createFileIfNotExists(String path){
+    private static File createFileIfNotExists(String path) throws IOException{
         File file = new File(path);
         //if(!file.isFile()){
             file.getParentFile().mkdirs();
+            file.createNewFile();
         //}
         return file;
     }
     private static void removeFile(File file){
-        file.delete();
+        if(file != null)
+            file.delete();
     }
     private static void writeToFile(String filePath, String input) throws IOException{
         FileWriter fileWriter = new FileWriter(new File(filePath));
@@ -134,9 +140,13 @@ public class MajanService {
     }
     
     private static String runJar(String jarPath, String inputPath, String outputPath, int timeout) throws InterruptedException, IOException{
-        String command = "java -jar \"" + jarPath + "\" \"" + inputPath + "\" \"" + outputPath + "\"";
+        //String command = "java -jar \"" + jarPath + "\" \"" + inputPath + "\" \"" + outputPath + "\"";
+       
+        //String command = "java -jar " + jarPath + " " + inputPath + " " + outputPath;
         String result = "";
-        Process pr = Runtime.getRuntime().exec(command);
+        Process pr = new ProcessBuilder("java", "-jar", jarPath, inputPath, outputPath).start();
+
+//        Process pr = Runtime.getRuntime().exec(command);
         if(pr.waitFor(timeout, TimeUnit.SECONDS)){
             InputStream in = pr.getInputStream();
             StringBuilder output = new StringBuilder();
