@@ -62,7 +62,7 @@ public class MajanService {
                                @RequestHeader(value = "jarPath") String jarPath,
                                @RequestHeader(value = "timeout") int timeout) {
         
-        
+        System.out.println("jar:" + jarPath);
         String inputFilePath = System.getProperty("user.dir") + 
                 File.separator + "majanService" + 
                 File.separator + "JarInput.txt";
