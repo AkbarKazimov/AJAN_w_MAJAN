@@ -17,8 +17,7 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 MA 02110-1301  USA
 -->
-
-
+<project-shared-configuration>
     <properties xmlns="http://www.netbeans.org/ns/maven-properties-data/1">
         <!--
 Properties that influence various parts of the IDE, especially code formatting and the like. 
@@ -27,5 +26,6 @@ That way multiple projects can share the same settings (useful for formatting ru
 Any value defined here will override the pom.xml file value but is only applicable to the current project.
 -->
         <netbeans.hint.license>licenseheader</netbeans.hint.license>
+        <netbeans.hint.jdkPlatform>JDK_8</netbeans.hint.jdkPlatform>
     </properties>
 </project-shared-configuration>

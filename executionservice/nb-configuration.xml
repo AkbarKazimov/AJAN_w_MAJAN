@@ -17,8 +17,6 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 MA 02110-1301  USA
 -->
-
-
 <project-shared-configuration>
     <!--
 This file contains additional configuration written by modules in the NetBeans IDE.
@@ -35,5 +33,6 @@ Any value defined here will override the pom.xml file value but is only applicab
 -->
         <netbeans.checkstyle.format>true</netbeans.checkstyle.format>
         <netbeans.hint.licensePath>../licenseheader.txt</netbeans.hint.licensePath>
+        <netbeans.hint.jdkPlatform>JDK_8</netbeans.hint.jdkPlatform>
     </properties>
 </project-shared-configuration>

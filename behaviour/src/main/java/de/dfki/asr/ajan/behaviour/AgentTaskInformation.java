@@ -31,8 +31,8 @@ import de.dfki.asr.ajan.pluginsystem.extensionpoints.NodeExtension;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import lombok.Data;
 import de.dfki.asr.ajan.behaviour.nodes.action.UriGenerator;
+import lombok.Data;
 
 @SuppressWarnings("PMD.TooManyFields")
 @Data
