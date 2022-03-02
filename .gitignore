@@ -1,4 +1,5 @@
 nbactions.xml
+nb-configuration.xml
 /build-resources/target/
 /executionservice/target/
 /triplestore/target/
@@ -34,3 +35,4 @@ nbactions.xml
 /target/
 /pluginsystem/plugins/MAJANPlugin/target/
 /executionservice/HDBSCANFiles/
+
