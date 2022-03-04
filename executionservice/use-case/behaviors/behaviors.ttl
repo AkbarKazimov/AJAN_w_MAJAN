@@ -5737,9 +5737,18 @@ CONSTRUCT {
 		a bt:QueryUri ;
 		bt:originBase ajan:AgentKnowledge ;
 		bt:sparql """
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
 					SELECT ?requestURI
 					WHERE {
-					  VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
+					# LINE TO SEND TO DUMMY ENDPOINT
+					#	VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
+					
+					# LINES TO SEND TO ACTUAL ENDPOINT
+						welcome:dispatcher welcome:hasAddress ?partialAddress .
+						BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentStatus") AS ?requestURI )
 					}"""^^xsd:string
 	] .
 
@@ -8925,7 +8934,6 @@ CONSTRUCT {
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
-						PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
 						PREFIX welcome-sw: <http://www.semanticweb.org/welcome#>
 						CONSTRUCT {
 							?agent	welcome:hasStatus	welcome-sw:active ;
@@ -8944,27 +8952,20 @@ CONSTRUCT {
 		a bt:QueryUri ;
 		bt:originBase ajan:AgentKnowledge ;
 		bt:sparql """
-					
-					
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 					PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-					# LINES TO SEND TO DUMMY ENDPOINT
-					#SELECT ?requestURI
-					#WHERE {
-					#  VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
-					#}
-
-					# LINES TO SEND TO ACTUAL ENDPOINT
 					SELECT ?requestURI
-					WHERE
-					{
+					WHERE {
+					# LINE TO SEND TO DUMMY ENDPOINT
+					#	VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
+					
+					# LINES TO SEND TO ACTUAL ENDPOINT
 						welcome:dispatcher welcome:hasAddress ?partialAddress .
 						BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentStatus") AS ?requestURI )
 					}
-					
-					
+
 					"""^^xsd:string
 	] .
 #---------------FinalizingCHCProcessBT Nodes----------------------------
