@@ -110,7 +110,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
 
     public int[] runSolver(Double[][] distanceScores, int minPts, int minClSize){
         HDBSCANStarRunner hdbscanStarRunner = new HDBSCANStarRunner();
-        int[] clusterLabels = hdbscanStarRunner.execute(distanceScores, null, minPts, minClSize);
+        int[] clusterLabels = hdbscanStarRunner.execute(distanceScores, null, minPts, minClSize, false);
         return clusterLabels;
     }
 
@@ -400,7 +400,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
 
         // Execute HDBSCAN Algorithm to compute Cluster Labels
         HDBSCANStarRunner hdbscanStarRunner = new HDBSCANStarRunner();
-        clusterLabels = hdbscanStarRunner.execute(distanceScores, constraints, 1, 2);
+        clusterLabels = hdbscanStarRunner.execute(distanceScores, constraints, 1, 2, false);
         printClusters(clusterLabels, agentNames);
         
         // Create Response Model

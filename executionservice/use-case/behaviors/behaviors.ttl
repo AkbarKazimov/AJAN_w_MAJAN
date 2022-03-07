@@ -4185,20 +4185,15 @@
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 					PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-					# LINES TO SEND TO DUMMY ENDPOINT
-					#SELECT DISTINCT ?requestURI
-					#WHERE {
-					#	VALUES ?requestURI { "http://localhost:8092/teacherPanel/inform"}
-					#}
 
-					# LINES TO SEND TO ACTUAL ENDPOINT
 					SELECT ?requestURI
-					WHERE
-					{
-						welcome:dispatcher welcome:hasAddress ?partialAddress .
-						BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/messageToTeacher") AS ?requestURI )
+					WHERE {
+						# LINES TO SEND TO DUMMY ENDPOINT
+						VALUES ?requestURI { "http://localhost:8092/teacherPanel/inform"}
+						# LINES TO SEND TO ACTUAL ENDPOINT
+					#	welcome:dispatcher welcome:hasAddress ?partialAddress .
+					#	BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/messageToTeacher") AS ?requestURI )
 					}
-
 					"""^^xsd:string
 	] .
 
@@ -4279,19 +4274,15 @@
 					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
 					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 					PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-					
-					#LINES TO SEND TO DUMMY ENDPOINT
-					#SELECT DISTINCT ?requestURI
-					#WHERE {
-					#	VALUES ?requestURI { "http://localhost:8092/teacherPanel/inform"}
-					#}
 
-					# LINES TO SEND TO ACTUAL ENDPOINT
+
 					SELECT ?requestURI
-					WHERE
-					{
-						welcome:dispatcher welcome:hasAddress ?partialAddress .
-						BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/messageToTeacher") AS ?requestURI )
+					WHERE {
+						# LINES TO SEND TO DUMMY ENDPOINT
+						VALUES ?requestURI { "http://localhost:8092/teacherPanel/inform"}
+						# LINES TO SEND TO ACTUAL ENDPOINT
+					#	welcome:dispatcher welcome:hasAddress ?partialAddress .
+					#	BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/messageToTeacher") AS ?requestURI )
 					}
 					"""^^xsd:string
 	] .
@@ -5744,11 +5735,11 @@ CONSTRUCT {
 					SELECT ?requestURI
 					WHERE {
 					# LINE TO SEND TO DUMMY ENDPOINT
-					#	VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
+						VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
 					
 					# LINES TO SEND TO ACTUAL ENDPOINT
-						welcome:dispatcher welcome:hasAddress ?partialAddress .
-						BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentStatus") AS ?requestURI )
+					#	welcome:dispatcher welcome:hasAddress ?partialAddress .
+					#	BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentStatus") AS ?requestURI )
 					}"""^^xsd:string
 	] .
 
@@ -7286,7 +7277,7 @@ CONSTRUCT {
 
 						# to assign/retrieve configuration values
 						BIND(1 AS ?matchScore)
-						BIND(0 AS ?unmatchScore)
+						BIND(-1 AS ?unmatchScore)
 						#BIND(10 AS ?numOfPreferences)
 
 						# to compute similarity value of subject agent for object agent
@@ -8224,7 +8215,7 @@ CONSTRUCT {
 							?chcBnode	rdf:type	welcome:CHCUseCase;
 										mac:hasId		?chcId;
 										mac:hasParticipants		?pAgentId ;
-										welcome:hasCHCSolution	?clusteringBnode .
+										mac:hasSolution	?clusteringBnode .
 
 							?clusteringBnode	rdf:type	mac:Clustering ;
 									mac:isSolutionOf	?chcId ;
@@ -8313,7 +8304,7 @@ CONSTRUCT {
 										mac:hasId		?chcId;
 										mac:hasParticipants		?pAgentId ;
 										welcome:hasStatus	"succeeded" ;
-										welcome:hasCHCSolution	?clusteringBnode .
+										mac:hasSolution	?clusteringBnode .
 							?clusteringBnode	rdf:type	mac:Clustering ;
 									mac:isSolutionOf	?chcId ;
 									mac:hasMembers		?clusterBnode .
@@ -8330,7 +8321,7 @@ CONSTRUCT {
 							?chcBnode	rdf:type	welcome:CHCUseCase;
 										mac:hasId		?chcId;
 										mac:hasParticipants		?pAgentId ;
-										welcome:hasCHCSolution	?clusteringBnode .
+										mac:hasSolution	?clusteringBnode .
 
 							?clusteringBnode	rdf:type	mac:Clustering ;
 									mac:isSolutionOf	?chcId ;
@@ -8443,7 +8434,7 @@ CONSTRUCT {
 										mac:hasId		?chcId;
 										mac:hasParticipants		?pAgentId ;
 										#welcome:hasStatus	?defaultChcStatus ;
-										welcome:hasCHCSolution	?clusteringBnode .
+										mac:hasSolution	?clusteringBnode .
 
 							?clusteringBnode	rdf:type	mac:Clustering ;
 									mac:isSolutionOf	?chcId ;
@@ -8714,7 +8705,7 @@ CONSTRUCT {
 						?chcBnode	rdf:type	welcome:CHCUseCase .
 
 						OPTIONAL {
-							?chcBnode	welcome:hasCHCSolution	?clusteringBnode .
+							?chcBnode	mac:hasSolution	?clusteringBnode .
 						}
 
 						OPTIONAL {
@@ -8793,7 +8784,7 @@ CONSTRUCT {
 
 							?chcBnode	rdf:type	welcome:CHCUseCase;
 										mac:hasId		?chcId;
-										welcome:hasCHCSolution	?clusteringBnode .
+										mac:hasSolution	?clusteringBnode .
 						}
 
 						FILTER(BOUND(?chcId) && BOUND(?clusteringBnode))
@@ -8959,11 +8950,11 @@ CONSTRUCT {
 					SELECT ?requestURI
 					WHERE {
 					# LINE TO SEND TO DUMMY ENDPOINT
-					#	VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
+						VALUES ?requestURI { "http://localhost:8092/wpm/updateAgentStatus" }
 					
 					# LINES TO SEND TO ACTUAL ENDPOINT
-						welcome:dispatcher welcome:hasAddress ?partialAddress .
-						BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentStatus") AS ?requestURI )
+					#	welcome:dispatcher welcome:hasAddress ?partialAddress .
+					#	BIND(CONCAT(STR(?partialAddress), "/welcome/integration/workflow/dispatcher/agentStatus") AS ?requestURI )
 					}
 
 					"""^^xsd:string
@@ -9066,7 +9057,7 @@ CONSTRUCT {
 										mac:hasId		?chcId;
 										mac:hasParticipants		?pAgentId ;
 										#welcome:hasStatus	?defaultChcStatus ;
-										welcome:hasCHCSolution	?clusteringBnode .
+										mac:hasSolution	?clusteringBnode .
 
 							?clusteringBnode	rdf:type	mac:Clustering ;
 									mac:isSolutionOf	?chcId ;
