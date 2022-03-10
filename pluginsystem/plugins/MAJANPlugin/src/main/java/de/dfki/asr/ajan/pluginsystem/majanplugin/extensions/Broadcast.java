@@ -99,7 +99,7 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
                         setRequestUriList();
                         
                         for (String requestUri: requestUriList) {
-                    //        System.out.println("RequestURI:" + requestUri);
+                            System.out.println("RequestURI:" + requestUri);
                             binding.setRequestURI(new URI(requestUri));
                             request = new HttpConnection(binding);
                             String payload = null;
@@ -181,7 +181,10 @@ public class Broadcast extends AbstractTDBLeafTask implements NodeExtension, Tre
                 requestUriList.clear();
 		Repository repo = BTUtil.getInitializedRepository(getObject(), queryURI.getOriginBase());
 		List<BindingSet> result = queryURI.getResult(repo);
-                LOG.info("ResultSize: " + result.size());
+                /*LOG.info("ResultSize: " + result.size());
+                for(BindingSet requri:result){
+                    LOG.info("Request URI-:"+requri);
+                }*/
 		if (result.isEmpty()) {
 			throw new MessageEvaluationException("No ?requestURI defined in Message description");
 		}

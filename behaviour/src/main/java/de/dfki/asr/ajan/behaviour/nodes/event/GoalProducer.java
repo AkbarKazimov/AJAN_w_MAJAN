@@ -39,6 +39,7 @@ import org.cyberborean.rdfbeans.annotations.RDFBean;
 import org.cyberborean.rdfbeans.annotations.RDFSubject;
 import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Resource;
+import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.model.impl.LinkedHashModel;
 import org.eclipse.rdf4j.model.vocabulary.RDFS;
@@ -114,10 +115,22 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 	}
 
 	private void produceGoal() throws EventEvaluationException, AJANBindingsException, URISyntaxException, ConditionEvaluationException {
-		Map<URI,Event> events = this.getObject().getEvents();
+            Object info = this.getObject().getEventInformation();
+            if (info instanceof ModelEventInformation) {
+                ModelEventInformation eventInfo = (ModelEventInformation) info;
+                Model model = eventInfo.getModel();
+                System.out.println("goal producer model 1 ----");
+                for(Statement stm: model){
+                    System.out.println(stm);
+                }
+            }
+		
+            Map<URI,Event> events = this.getObject().getEvents();
 		if (events.containsKey(goalURI)) {
 			if (events.get(goalURI) instanceof AJANGoal) {
+                            
 				goal = (AJANGoal)events.get(goalURI);
+                                
 				createGoalEvent(goal);
 			} else {
 				throw new EventEvaluationException("Event is no AJANGoal");
@@ -129,6 +142,10 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 
 	private void createGoalEvent(final AJANGoal goal) throws AJANBindingsException, URISyntaxException, ConditionEvaluationException {
                 Model model = getModel();
+                LOG.info("Statements:--------------------");
+                for(Statement stm: model){
+                    LOG.info(stm.toString());
+                }
                 if(checkPrecondition(model)){
                         goal.setEventInformation(this, model);
 		} else {
@@ -139,6 +156,7 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 	private Model getModel() throws ConditionEvaluationException {
 		try {
 			Repository repo = BTUtil.getInitializedRepository(getObject(), query.getOriginBase());
+                        
                         Model model = query.getResult(repo);
                         return model;
 		} catch (URISyntaxException | QueryEvaluationException ex) {
@@ -156,7 +174,7 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
         }
         
 	public boolean checkPostCondition() throws AJANBindingsException, URISyntaxException {
-		String condition = goal.getPostcondition();
+		String condition = goal.getPostcondition(); 
 		Repository repo = this.getObject().getAgentBeliefs().getInitializedRepository();
 		try (RepositoryConnection conn = repo.getConnection()) {
 			BooleanQuery query = conn.prepareBooleanQuery(condition);
@@ -166,12 +184,16 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 
 	@Override
 	public void reportGoalStatus(final Status result) {
+            //System.out.println("Goal status:---" + result.toString());
 		goalStatus = result;
 		if (goalStatus.equals(Status.RUNNING)) {
 			return;
 		}
 		try {
-			if (checkPostCondition()) {
+                    // !!! ADDED "&& goalStatus.equals(Status.SUCCEEDED)" WHICH REQUIRES THAT BOTH OF 
+                    // POSTCONDITION AND THE BT WHICH WAS TRIGGERED BY THIS GOAL SHOULD SUCCEED !!!
+                    // WITHOUT THIS ADDITION, THE GOAL NODE SUCCEEDED EVEN THOUGH ITS BT FAILED. 
+			if (checkPostCondition() && goalStatus.equals(Status.SUCCEEDED)) {
 				goalStatus = Status.SUCCEEDED;
 			} else {
 				goalStatus = Status.FAILED;

@@ -38,6 +38,263 @@
 #test:Subject rdf:type test:Resource .
 #test:Subject test:predicate "Geh weg!" .
 
+# ----------- MAJAN BTs -----------
+
+:MajanBTsAgent
+	a ajan:AgentTemplate ;
+	rdfs:label	"Creation of MAJAN coordination BTs." ;
+	ajan:event	:StartCoordEvent ;
+	ajan:event 	:ReceiveRequestEvent ;
+	ajan:event	:InitiatorSendRequestGoal ;
+	ajan:event	:ParticipantHandleRequestGoal ;
+	ajan:event 	:InitiatorReceiveReplyGoal ;
+	ajan:event	:ParticipantSendResultGoal;
+	ajan:event 	:ReceiveParticipantReplyEvent ;
+	ajan:endpoint	:StartCoordEndpoint ;
+	ajan:endpoint 	:ReceiveRequestEndpoint ;
+	ajan:endpoint 	:ReceiveParticipantResponseEndpoint ;
+	ajan:behavior	:StartCoordBehavior ;
+	ajan:behavior 	:ReceiveRequestBehavior ;
+	ajan:behavior	:InitiatorSendRequestBehavior ;
+	ajan:behavior	:ParticipantHandleRequestBehavior ;
+	ajan:behavior 	:InitiatorReceiveReplyBehavior ;
+	ajan:behavior	:ParticipantSendResultBehavior ;
+	ajan:behavior 	:ReceiveParticipantReplyBehavior ;
+	ajan:event :PopulateLAREvent ;	
+	ajan:event :ReceiveLocalAgentsEvent;
+	ajan:endpoint :populateLAR ;
+	ajan:behavior :PopulateLARRepos .
+
+
+:StartCoordEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Custom Start Coordination Event" .
+
+:StartCoordEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Start Coordination endpoint" ;
+	ajan:capability "startCoordination" ;
+	ajan:event :StartCoordEvent .
+
+:StartCoordBehavior
+	a ajan:Behavior ;
+	rdfs:label "Start Coordination Behavior" ;
+	ajan:trigger :StartCoordEvent ;
+	ajan:bt behaviors:TempStartCoordinationBT .
+
+
+:InitiatorSendRequestBehavior
+	a ajan:Behavior ;
+	rdfs:label "Request protocol Initiator Behavior to send requests" ;
+	ajan:trigger :InitiatorSendRequestGoal ;
+	ajan:bt behaviors:RP_InitiatorSendRequestBT .
+
+
+:InitiatorSendRequestGoal
+	a ajan:Goal ;
+	rdfs:label "Goal to trigger Initator Send Request BT" ;
+	ajan:precondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+		ASK
+		WHERE {
+
+			?bnode	rdf:type	mac:RequestMessage ;
+				#	mac:hasInitiator	?initiatorId ;
+					mac:hasParticipant	?participantId ;
+					mac:hasConversationId	?conversationId ;
+					mac:hasParticipantCapability	?capability ;
+					mac:hasNotificationNecessary	?notifNecessary ;
+					mac:hasTimeout	?timeout ;
+					mac:hasQuorum	?quorum ;
+					mac:hasContent	?requestContent .
+
+			# Ensures that Content is attached to RequestInput such that it doesn't get lost or mixed. 
+			?requestContent	?predicate	?object .
+
+		}"""^^xsd:string ;
+		
+	ajan:postcondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		ASK
+		WHERE {
+			?s	?p 	?o .
+#			?bnode	rdf:type	ajan:GoalStatus ;
+#					ajan:hasStatus	?status .
+
+#			FILTER(?status = "Completed" || ?status = "completed")
+		}"""^^xsd:string .
+
+:ParticipantHandleRequestBehavior
+	a ajan:Behavior ;
+	rdfs:label "Request protocol Participant Behavior to handle requests" ;
+	ajan:trigger :ParticipantHandleRequestGoal ;
+	ajan:bt behaviors:RP_ParticipantHandleRequestBT .
+
+
+:ParticipantHandleRequestGoal
+	a ajan:Goal ;
+	rdfs:label "Goal to trigger Participant Handle Request BT" ;
+	ajan:precondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+		ASK
+		WHERE {
+			?bnode	rdf:type	mac:RequestMessage ;
+					mac:hasInitiator	?initiatorId ;
+				#	mac:hasParticipant	?participantId ;
+					mac:hasConversationId	?conversationId ;
+					mac:hasAgreement	?agreement ;
+					mac:hasInitiatorCapability	?capability ;
+					mac:hasNotificationNecessary	?notifNecessary ;
+					mac:hasTimeout	?timeout .
+
+#					-------------
+#					agree-refuse message:
+#					?bnode	rdf:type mac:RequestAgreement, mac:RequestResponse ;
+#							mac:hasConversationId	?convId ;
+#							mac:hasParticipant		?senderId .
+#					?bnode	rdf:type mac:RequestRefusal, mac:RequestResponse ;
+#							mac:hasConversationId	?convId ;
+#							mac:hasParticipant		?senderId .	
+#					?bnode	rdf:type	mac:RequestResult, mac:RequestResponse ;
+#							mac:hasConversationId	?convId ;
+#							mac:hasParticipant		?senderId ;
+#							mac:hasContent	?resultContent .
+#					?resultContent	?predicate	?object .
+
+		}"""^^xsd:string ;
+		
+	ajan:postcondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		ASK
+		WHERE {
+			?s	?p 	?o .
+#			?bnode	rdf:type	ajan:GoalStatus ;
+#					ajan:hasStatus	?status .
+
+#			FILTER(?status = "Completed" || ?status = "completed")
+		}"""^^xsd:string .
+
+:ReceiveRequestEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Custom Receive and Handle Request endpoint" ;
+	ajan:capability "handleRequest" ;
+	ajan:event :ReceiveRequestEvent .
+
+:ReceiveRequestEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Custom Receive Request Event" .
+
+:ReceiveRequestBehavior
+	a ajan:Behavior ;
+	rdfs:label "Custom Receive Request Behavior" ;
+	ajan:trigger :ReceiveRequestEvent ;
+	ajan:bt behaviors:TempReceiveRequestBT .
+
+:InitiatorReceiveReplyBehavior
+	a ajan:Behavior ;
+	rdfs:label "Request protocol Initiator Behavior to receive reply" ;
+	ajan:trigger :InitiatorReceiveReplyGoal ;
+	ajan:bt behaviors:RP_InitiatorReceiveReplyBT .
+
+
+:InitiatorReceiveReplyGoal
+	a ajan:Goal ;
+	rdfs:label "Goal to trigger Initiator Receive Reply BT" ;
+	ajan:precondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+		ASK
+		WHERE {
+			?bnode	rdf:type	mac:RequestResponse, ?responseType ;
+					mac:hasParticipant	?senderId ;
+					mac:hasConversationId	?conversationId .
+
+			OPTIONAL {
+				?bnode	mac:hasContent	?resultContent .
+				?resultContent	?predicate	?object .
+			}
+			FILTER (?responseType != mac:RequestResponse)
+
+			}"""^^xsd:string ;
+		
+	ajan:postcondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		ASK
+		WHERE {
+			?s	?p 	?o .
+#			?bnode	rdf:type	ajan:GoalStatus ;
+#					ajan:hasStatus	?status .
+
+#			FILTER(?status = "Completed" || ?status = "completed")
+		}"""^^xsd:string .
+
+:ReceiveParticipantResponseEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to Receive participant replies" ;
+	ajan:capability "participantResponse" ;
+	ajan:event :ReceiveParticipantReplyEvent .
+
+:ReceiveParticipantReplyEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Custom Receive Request Event" .
+
+:ReceiveParticipantReplyBehavior
+	a ajan:Behavior ;
+	rdfs:label "Receive Participant reply custom behavior" ;
+	ajan:trigger :ReceiveParticipantReplyEvent ;
+	ajan:bt behaviors:TempReceiveParticipantReplyBT .
+
+
+:ParticipantSendResultBehavior
+	a ajan:Behavior ;
+	rdfs:label "Request protocol Participant Behavior to send result" ;
+	ajan:trigger :ParticipantSendResultGoal ;
+	ajan:bt behaviors:RP_ParticipantSendResultBT .
+
+
+:ParticipantSendResultGoal
+	a ajan:Goal ;
+	rdfs:label "Goal to trigger Participant Send Reult BT" ;
+	ajan:precondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+		ASK
+		WHERE {
+			?bnode	rdf:type	mac:RequestMessage ;
+					mac:hasInitiator	?initiatorId ;
+					mac:hasConversationId	?conversationId ;
+					mac:hasInitiatorCapability	?capability ;
+					mac:hasTimeout	?timeout ;
+					mac:hasContent	?requestResult .
+
+			?requestResult	?predicate ?object .
+
+			}"""^^xsd:string ;
+		
+	ajan:postcondition """
+		PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+		PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+		ASK
+		WHERE {
+			?s	?p 	?o .
+	#			?bnode	rdf:type	ajan:GoalStatus ;
+	#				ajan:hasStatus	?status .
+
+	#		FILTER(?status = "Completed" || ?status = "completed")
+		}"""^^xsd:string .
+
+
+# ----------- MAJAN BTs -----------
+
 
 # ----------- Templates -----------
 
