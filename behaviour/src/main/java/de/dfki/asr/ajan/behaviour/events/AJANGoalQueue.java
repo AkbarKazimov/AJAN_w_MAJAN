@@ -22,6 +22,7 @@ package de.dfki.asr.ajan.behaviour.events;
 import de.dfki.asr.ajan.behaviour.nodes.common.Variable;
 //import de.dfki.asr.ajan.common.AgentUtil;
 import java.util.List;
+import java.util.Queue;
 import lombok.Getter;
 import lombok.Setter;
 import org.cyberborean.rdfbeans.annotations.RDF;
@@ -29,8 +30,8 @@ import org.cyberborean.rdfbeans.annotations.RDFBean;
 import org.cyberborean.rdfbeans.annotations.RDFSubject;
 import org.eclipse.rdf4j.model.Model;
 
-@RDFBean("ajan:Goal")
-public class AJANGoal extends ModelCallback {
+@RDFBean("ajan:GoalQueue")
+public class AJANGoalQueue extends DefaultQueueEvent {
 
 	@RDFSubject
 	@Getter @Setter
@@ -56,10 +57,17 @@ public class AJANGoal extends ModelCallback {
                        ModelEventInformation info = new ModelEventInformation();
                        info.setEvent(url);
                        info.setModel(gInfo.getModel());
-                       this.information = info;
+                       //this.information = info;
+                       this.queueInformation.add(info);
                        notifyListeners(producer);
 	}
         
+	@Override
+	public void notifyListeners(Producer producer) {
+		this.listeners.stream().forEach((listener) -> {
+			new Thread(() -> listener.setEventInformation(producer, this.queueInformation)).start();
+		});
+	}
         /*private ModelEventInformation getEventInfo(final Object information) {
 		ModelEventInformation info = new ModelEventInformation();
 		info.setEvent(url);

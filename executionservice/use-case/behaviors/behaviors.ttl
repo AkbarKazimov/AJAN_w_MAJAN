@@ -35,19 +35,726 @@
 
 # ----------- MAJAN BTs -----------
 
-#					-------------
-#					agree-refuse message:
-#					?bnode	rdf:type mac:RequestAgreement, mac:RequestResponse ;
-#							mac:hasConversationId	?convId ;
-#							mac:hasParticipant		?senderId .
-#					?bnode	rdf:type mac:RequestRefusal, mac:RequestResponse ;
-#							mac:hasConversationId	?convId ;
-#							mac:hasParticipant		?senderId .	
-#					?bnode	rdf:type	mac:RequestResult, mac:RequestResponse ;
-#							mac:hasConversationId	?convId ;
-#							mac:hasParticipant		?senderId ;
-#							mac:hasContent	?resultContent .
-#					?resultContent	?predicate	?object .
+# -----------CSGP Coordination Protocol BTs ------------------
+:SendCsgpCoordRequestTempBt
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Send CSGP Coord. Request Temp. BT" ;
+	bt:hasChild [
+			a bt:UntilFail ;
+			bt:hasChild [
+				a bt:Priority ;
+				bt:hasChildren (
+					[
+						a bt:Sequence ;
+						bt:hasChildren (
+							:HandleStartCsgpCoordRequestEvent
+							:WriteThisAgentId2Execution
+							:WriteParticipantAddressesToExec
+							#:InsertParticipantCapability # participant capability to return required agent personal info  
+							:GenerateNewConvId
+							:SendMessages # request personal info
+							:SaveRequest
+							[
+								a bt:UntilSuccess ;
+								bt:hasChild [
+									a bt:Priority ;
+									bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:GetResponses
+												[
+													a bt:Priority ;
+													bt:hasChildren (
+														[
+															a bt:Invert ;
+															bt:hasChild (
+																:NotificationNecessary
+															)
+														]
+														:AgreementsReached
+													)
+												]
+												:QuorumReached
+												:SetQuorumReached
+											)	
+										]
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:TimeoutReached
+												:SetTimeoutReached
+											)
+										]
+									)
+								]
+							]
+							# Following node can be used if users want to add custom behavior based on Quorum or Timeout reached
+							:QuorumOrTimeoutReached
+							:ProduceComputeCoalitionsEvent # must send required triples
+							:ClearExecutionKnowledge
+						)
+					]
+					[
+						a bt:Sequence ;
+						bt:hasChildren (
+							:ClearExecutionKnowledge
+							:JustFail
+						)
+					]
+				)
+			]
+	] .
+
+
+
+:HandleAgentProfileInfoRequestTempBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Handle Agent Profile Info Request Temp. BT" ;
+	bt:hasChild [
+		a bt:UntilFail ;
+		bt:hasChild [
+			a bt:Priority ;
+			bt:hasChildren (
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:HandleReceiveAgentProfileInfoRequestEvent  # handle event to return agent profile info
+						#:Wait3Sec
+						:InsertAgreeOrRefuse  # agree or refuse can be decided based on some use case dependent conditions if necessary 
+						:InsertDefaultResponseCapability # insert default capability of initiator to receive response from participants
+						:WriteThisAgentId2Execution
+						:WriteParticipantAddressesToExec
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+								:TimeoutReached
+								[
+									a bt:Invert ;
+									bt:hasChild (
+										:NotificationNecessary
+									)
+								]
+								[
+									a bt:Priority ;
+									bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:Agreed
+												:SendAgreed
+											)
+										]
+										:SendRefused
+									)
+								]
+							)
+						]
+						#:Wait3Sec
+						:WriteAgentProfileInfo
+						:InsertAgentProfileInfo # insert required info as message content
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+								:TimeoutReached
+								:SendResult
+							)
+						]
+						:ClearExecutionKnowledge
+					)
+				]
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:ClearExecutionKnowledge
+						:JustFail
+					)
+				]
+			)
+		]
+	].
+
+
+:ComputeCsgpCoalitionsTemplBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Compute CSGP Coalitions Templ. BT" ;
+	bt:hasChild [
+			a bt:UntilFail ;
+			bt:hasChild [
+				a bt:Priority ;
+				bt:hasChildren (
+					[
+						a bt:Sequence ;
+						bt:hasChildren (
+							:HandleComputeCsgpCoalitionsEvent 
+							#:WriteAgentProfiles2ExKnowledge # pay attention to conversation ID 
+							#:ComputeCannotLinks
+							#:GenerateCoalitions
+							#:ComputeCoalitionInfo
+							#:UpdateCoalitionInfo
+							:WriteThisAgentId2Execution
+							:WriteParticipantAddressesToExec
+							#:InsertCsgpUtilitiesCapability # participant capability to return utilities  
+							:GenerateNewConvId
+							:SendMessages 
+							:SaveRequest
+							[
+								a bt:UntilSuccess ;
+								bt:hasChild [
+									a bt:Priority ;
+									bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:GetResponses
+												[
+													a bt:Priority ;
+													bt:hasChildren (
+														[
+															a bt:Invert ;
+															bt:hasChild (
+																:NotificationNecessary
+															)
+														]
+														:AgreementsReached
+													)
+												]
+												:QuorumReached
+												:SetQuorumReached
+											)	
+										]
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:TimeoutReached
+												:SetTimeoutReached
+											)
+										]
+									)
+								]
+							]
+							# Following node can be used if users want to add custom behavior based on Quorum or Timeout reached
+							:QuorumOrTimeoutReached
+							#:ComputeUtilityValues
+							#:ComputeCoalitionValues
+							#:ProduceSolveCsgpEvent
+							:ClearExecutionKnowledge
+						)
+					]
+					[
+						a bt:Sequence ;
+						bt:hasChildren (
+							:ClearExecutionKnowledge
+							:JustFail
+						)
+					]
+				)
+			]
+	] .
+
+:HandleCsgpUtilitiesRequestTemplBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Handle Csgp Utilities Request Templ. BT" ;
+	bt:hasChild [
+		a bt:UntilFail ;
+		bt:hasChild [
+			a bt:Priority ;
+			bt:hasChildren (
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:HandleCsgpUtilitiesRequestEvent  
+						:InsertAgreeOrRefuse  # agree or refuse can be decided based on some use case dependent conditions if necessary 
+						:InsertDefaultResponseCapability # insert default capability of initiator to receive response from participants
+						:WriteThisAgentId2Execution
+						:WriteParticipantAddressesToExec
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+								:TimeoutReached
+								[
+									a bt:Invert ;
+									bt:hasChild (
+										:NotificationNecessary
+									)
+								]
+								[
+									a bt:Priority ;
+									bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:Agreed
+												:SendAgreed
+											)
+										]
+										:SendRefused
+									)
+								]
+							)
+						]
+						#:WriteAgentProfileInfo
+						#:InsertAgentProfileInfo # insert required info as message content
+						:InsertUtilities
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+								:TimeoutReached
+								:SendResult
+							)
+						]
+						:ClearExecutionKnowledge
+					)
+				]
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:ClearExecutionKnowledge
+						:JustFail
+					)
+				]
+			)
+		]
+	].
+
+
+:ProduceComputeCoalitionsEvent
+	a bt:EventProducer ;
+	rdfs:label "Produce Compute Coalitions Event" ;
+	ajan:event agents:ComputeCsgpCoalitionsEvent ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+						CONSTRUCT {
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasParticipant	?participantId ;
+								mac:hasConversationId	?conversationId ;
+								mac:hasParticipantCapability	"csgpUtilities" ;
+								mac:hasNotificationNecessary	?notifNecessary ;
+								mac:hasTimeout	?timeout ;
+								mac:hasQuorum	?quorum . 
+		#					?bnode	mac:hasContent	?requestContent . 		
+		#					?requestContent	?predicate	?object .
+					}
+					WHERE {
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasParticipant	?participantId ;
+								mac:hasConversationId	?conversationId ;
+								mac:hasParticipantCapability	?capability ;
+								mac:hasNotificationNecessary	?notifNecessary ;
+								mac:hasTimeout	?timeout ;
+								mac:hasQuorum	?quorum . 
+		#				OPTIONAL {
+		#					?bnode	mac:hasContent	?requestContent . 		
+		#					?requestContent	?predicate	?object .
+		#				}
+					}"""^^xsd:string ;
+				] .
+
+# -----------CSGP Coordination Protocol BTs ------------------
+
+
+# ---------- templ bts without goals
+
+
+
+:SendCoordRequestTempBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Send Coord. Request Temp. BT" ;
+	bt:hasChild [
+			a bt:UntilFail ;
+			bt:hasChild [
+				a bt:Priority ;
+				bt:hasChildren (
+					[
+						a bt:Sequence ;
+						bt:hasChildren (
+							:HandleStartCoordRequestEvent
+							:WriteThisAgentId2Execution
+							:WriteParticipantAddressesToExec
+							:SendMessages
+							:SaveRequest
+							[
+								a bt:UntilSuccess ;
+								bt:hasChild [
+									a bt:Priority ;
+									bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:GetResponses
+												[
+													a bt:Priority ;
+													bt:hasChildren (
+														[
+															a bt:Invert ;
+															bt:hasChild (
+																:NotificationNecessary
+															)
+														]
+														:AgreementsReached
+													)
+												]
+												:QuorumReached
+												:SetQuorumReached
+											)	
+										]
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:TimeoutReached
+												:SetTimeoutReached
+											)
+										]
+									)
+								]
+							]
+							# Following node can be used if users want to add custom behavior based on Quorum or Timeout reached
+							:QuorumOrTimeoutReached
+							:ClearExecutionKnowledge
+						)
+					]
+					[
+						a bt:Sequence ;
+						bt:hasChildren (
+							:ClearExecutionKnowledge
+							:JustFail
+						)
+					]
+				)
+			]
+	] .
+
+
+:HandleCoordRequestTempBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Handle Coord. Request Temp. BT" ;
+	bt:hasChild [
+		a bt:UntilFail ;
+		bt:hasChild [
+			a bt:Priority ;
+			bt:hasChildren (
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:HandleReceiveCoordRequestEvent
+						:Wait3Sec
+						:InsertAgreeOrRefuse
+						:InsertDefaultResponseCapability
+						:WriteThisAgentId2Execution
+						:WriteParticipantAddressesToExec
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+								:TimeoutReached
+								[
+									a bt:Invert ;
+									bt:hasChild (
+										:NotificationNecessary
+									)
+								]
+								[
+									a bt:Priority ;
+									bt:hasChildren (
+										[
+											a bt:Sequence ;
+											bt:hasChildren (
+												:Agreed
+												:SendAgreed
+											)
+										]
+										:SendRefused
+									)
+								]
+							)
+						]
+						:Wait3Sec
+						:InsertRequestResult
+						[
+							a bt:Priority ;
+							bt:hasChildren (
+								:TimeoutReached
+								:SendResult
+							)
+						]
+						:ClearExecutionKnowledge
+					)
+				]
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:ClearExecutionKnowledge
+						:JustFail
+					)
+				]
+			)
+		]
+	].
+
+
+
+:ReceiveCoordRequestResponseTempBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Receive Coord. Request Response Temp. BT" ;
+	bt:hasChild [
+		a bt:UntilFail ;
+		bt:hasChild [
+			a bt:Priority ;
+			bt:hasChildren (
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:HandleReceiveCoordResponseEvent
+						:SaveResponse
+						:ClearExecutionKnowledge
+					)
+				]
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:ClearExecutionKnowledge
+						:JustFail
+					)
+				]
+			)
+		]
+	].
+
+:HandleStartCsgpCoordRequestEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "Handle Start CSGP Coord. Request Event" ;
+	bt:event agents:StartCsgpCoordRequestEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+:HandleComputeCsgpCoalitionsEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "Handle Compute Csgp Coalitions Event" ;
+	bt:event agents:ComputeCsgpCoalitionsEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasParticipant	?participantId ;
+								mac:hasConversationId	?conversationId ;
+								mac:hasParticipantCapability	?capability ;
+								mac:hasNotificationNecessary	?notifNecessary ;
+								mac:hasTimeout	?timeout ;
+								mac:hasQuorum	?quorum . 
+			#			?bnode	mac:hasContent	?requestContent . 		
+			#			?requestContent	?predicate	?object .
+					}
+					WHERE {
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasParticipant	?participantId ;
+								mac:hasConversationId	?conversationId ;
+								mac:hasParticipantCapability	?capability ;
+								mac:hasNotificationNecessary	?notifNecessary ;
+								mac:hasTimeout	?timeout ;
+								mac:hasQuorum	?quorum . 
+			#			OPTIONAL {
+			#				?bnode	mac:hasContent	?requestContent . 		
+			#				?requestContent	?predicate	?object .
+			#			}
+					}"""^^xsd:string ;
+				] .
+
+:HandleCsgpUtilitiesRequestEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "Handle Csgp Utilities Request Event" ;
+	bt:event agents:CsgpUtilitiesRequestEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+
+
+:HandleReceiveAgentProfileInfoRequestEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "Handle Receive Agent Profile Info Request Event" ;
+	bt:event agents:AgentProfileInfoRequestEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+
+
+:HandleStartCoordRequestEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "Handle Start Coord. Request Event" ;
+	bt:event agents:SendCoordRequestEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+
+:HandleReceiveCoordRequestEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "Handle Receive Coord. Request Event" ;
+	bt:event agents:HandleCoordRequestEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+
+:HandleReceiveCoordResponseEvent
+	a bt:HandleQueueEvent ;
+	rdfs:label "Handle Receive Coord. Request Response Event" ;
+	bt:event agents:ReceiveCoordRequestResponseEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+
+
+# ---------- templ bts without goals
+
+
+
+
+
+
+:TempStartCsgpCoordinationBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Template BT 2 Start CSGP-solver Coordination" ;
+	bt:hasChild [
+			a bt:Priority ;
+			bt:hasChildren (
+				[
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandleStartCsgpCoordEvent
+						:ProduceRequestPrsInfoGoal
+						:ClearExecutionKnowledge
+							)
+				]
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:ClearExecutionKnowledge
+						:JustFail
+					)
+				]
+				)
+				] .
+
+
+
+
+:TempHandlePrsInfoRequestBT
+	a bt:BehaviorTree ;
+	a bt:Root ;
+	rdfs:label "Template BT 2 Handle Personal Info Request" ;
+	bt:hasChild [
+			a bt:Priority ;
+			bt:hasChildren (
+				[
+				a bt:Sequence ;
+				bt:hasChildren (
+						:HandlePrsInfoRequestEvent
+						:ProduceHandlePrsInfoRequestGoal
+						:Wait3Sec
+						:QueryPrsInfo
+						#:WriteThisAgentId2Execution
+						:ProduceSendPrsInfoGoal
+						:ClearExecutionKnowledge
+							)
+				]
+				[
+					a bt:Invert ;
+					bt:hasChild (
+						:ClearExecutionKnowledge
+					)
+				]
+				)
+				 ].
+
 
 
 :TempStartCoordinationBT
@@ -101,28 +808,55 @@
 				)
 				 ].
 
+
+
 :TempReceiveParticipantReplyBT
 	a bt:BehaviorTree ;
 	a bt:Root ;
 	rdfs:label "Template Behavior Tree to receive participant reply" ;
 	bt:hasChild [
+		a bt:UntilFail ;
+		bt:hasChild [
 			a bt:Priority ;
 			bt:hasChildren (
 				[
 					a bt:Sequence ;
 					bt:hasChildren (
+						#[
+						#	a bt:UntilFail ;
+						#	bt:hasChild [
+						#			a bt:Sequence ;
+						#			bt:hasChildren (
+						#					:InitiatorReceiveReplyGoalRunning
+						#			)							
+						#	]
+						#]
+						#:SetInitiatorReceiveReplyGoalRunning
 						:HandleReceiveResponseEvent
-						:ProduceInitiatorReceiveReplyGoal
+						#:SaveResponse
+						#:SaveAllToAgKnowledge
+						#:ProduceInitiatorReceiveReplyGoal
+						#:SetInitiatorReceiveReplyGoalCompleted
 						:ClearExecutionKnowledge
 							)
 				]
 				[
-					a bt:Invert ;
-					bt:hasChild (
+					a bt:Sequence ;
+					bt:hasChildren (
 						:ClearExecutionKnowledge
+						:JustFail
 					)
 				]
+				[
+					a bt:Sequence ;
+					bt:hasChildren (
+						:SetInitiatorReceiveReplyGoalCompleted
+						:JustFail
+					)
+				]
+
 				)
+				]
 	].
 
 
@@ -293,6 +1027,47 @@
 			)
 	] .
 
+:ProduceRequestPrsInfoGoal
+	a bt:GoalProducer ;
+	rdfs:label "Produce Goal to Request Personal Info" ;
+	ajan:goal agents:InitiatorSendRequestGoal ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+						CONSTRUCT {
+							?bnode	rdf:type	mac:RequestMessage ;
+									mac:hasParticipant	?participantId ;
+									mac:hasConversationId	?conversationId ;
+									mac:hasParticipantCapability	?capability ;
+									mac:hasNotificationNecessary	?notifNecessary ;
+									mac:hasTimeout	?timeout ;
+									mac:hasQuorum	?quorum ;
+									mac:hasContent	?requestContent .
+
+							?requestContent	?predicate	?object .						
+						}
+						WHERE {
+							?bnode	rdf:type	mac:RequestMessage ;
+									mac:hasParticipant	?participantId ;
+									mac:hasConversationId	?conversationId ;
+									mac:hasParticipantCapability	?capability ;
+									mac:hasNotificationNecessary	?notifNecessary ;
+									mac:hasTimeout	?timeout ;
+									mac:hasQuorum	?quorum .
+
+
+							OPTIONAL {
+								?bnode	mac:hasContent	?requestContent . 
+				
+								?requestContent	?predicate	?object .
+							}
+						}"""^^xsd:string ;
+				] .
+
 :ProduceInitiatorSendRequestGoal
 	a bt:GoalProducer ;
 	rdfs:label "GoalProducer: Initiate Send Request Goal" ;
@@ -349,6 +1124,81 @@
 						}
 						WHERE {
 							?s ?p ?o .
+						}"""^^xsd:string ;
+				] .
+
+:ProduceSendPrsInfoGoal
+	a bt:GoalProducer ;
+	rdfs:label "Produce Send Personal Info Request Goal" ;
+	ajan:goal agents:ParticipantSendResultGoal ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+						PREFIX domain: <http://localhost:8090/rdf4j/repositories/domain_specific_ontology#>
+	
+						CONSTRUCT {
+							?bnode	rdf:type	mac:RequestMessage ;
+									mac:hasInitiator	?initiatorId ;
+									mac:hasConversationId	?conversationId ;
+									mac:hasTimeout	?timeout ;
+									mac:hasInitiatorCapability	'participantResponse' ;
+									mac:hasContent 	?bnode2 .
+
+							?bnode2 	domain:hasGender 	?gender ;
+										domain:hasNationality 	?nation ;
+										domain:hasLanguage 	?lang .
+						}
+						WHERE {
+							?bnode	rdf:type	mac:RequestMessage ;
+									mac:hasInitiator	?initiatorId ;
+									mac:hasConversationId	?conversationId ;
+									mac:hasTimeout	?timeout .
+							
+							?bnode2 	rdf:type 	domain:DomainUser ;
+										domain:hasGender 	?gender ;
+										domain:hasNationality 	?nation ;
+										domain:hasLanguage 	?lang .
+
+							#?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
+							#			ajan:agentId	?thisAgentId .
+
+						}"""^^xsd:string ;
+				] .
+							
+
+
+:ProduceHandlePrsInfoRequestGoal
+	a bt:GoalProducer ;
+	rdfs:label "Produce Handle Personal Info Request Goal" ;
+	ajan:goal agents:ParticipantHandleRequestGoal ;
+	bt:content [
+					a bt:ConstructQuery ;
+					bt:originBase ajan:ExecutionKnowledge;
+					bt:sparql """
+						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+						CONSTRUCT {
+							?bnode	rdf:type	mac:RequestMessage ;
+									mac:hasInitiator	?initiatorId ;
+									mac:hasConversationId	?conversationId ;
+									mac:hasNotificationNecessary	?notifNecessary ;
+									mac:hasTimeout	?timeout ;
+									mac:hasAgreement	'true' ;
+									mac:hasInitiatorCapability	'participantResponse' .
+						}
+						WHERE {
+							?bnode	rdf:type	mac:RequestMessage ;
+									mac:hasInitiator	?initiatorId ;
+									mac:hasConversationId	?conversationId ;
+									mac:hasNotificationNecessary	?notifNecessary ;
+									mac:hasTimeout	?timeout .
+
+
 						}"""^^xsd:string ;
 				] .
 
@@ -415,6 +1265,48 @@
 	rdfs:comment "" ;
 	bt:milliseconds "3000"^^xsd:int .
 
+:HandleStartCsgpCoordEvent
+	a bt:HandleEvent ;
+	rdfs:label "Handle Start Csgp-solver Coordination event" ;
+	bt:event agents:StartCsgpCoordEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+
+:HandlePrsInfoRequestEvent
+	a bt:HandleEvent ;
+	rdfs:label "Handle Personal Info Request event" ;
+	bt:event agents:HandlePrsInfoRequestEvent ;
+	bt:validate [
+			a bt:ConstructQuery ;
+			bt:targetBase ajan:ExecutionKnowledge ;
+			bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+					}
+					WHERE {
+						?s ?p ?o .
+					}"""^^xsd:string ;
+				] .
+
+
+
 :HandleStartCoordEvent
 	a bt:HandleEvent ;
 	rdfs:label "EventHandler: handle Start Coordination event" ;
@@ -454,6 +1346,27 @@
 						?s ?p ?o .
 					}"""^^xsd:string ;
 				] .
+
+:InitiatorReceiveReplyGoalRunning
+	a bt:Condition ;
+	rdfs:label "Is Initiator Receive Reply Goal Running" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					ASK
+					WHERE {
+						?bnode 	rdf:type ajan:InitiatorReceiveReplyGoal ;
+								ajan:hasStatus "Running" .
+						}"""^^xsd:string ;
+		]) .
+
+
+
 :ConditionSPO
 	a bt:Condition ;
 	rdfs:label "Condition: just a condition" ;
@@ -534,8 +1447,7 @@
 					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
 					ASK
-					WHERE {
-	
+					WHERE {						
 						{
 							SELECT (COUNT( DISTINCT ?agreementBnode) AS ?agreementCount) ?quorum
 							WHERE {
@@ -608,6 +1520,387 @@
 					"""^^xsd:string ;
 		]) .
 
+
+
+:SetQuorumReached
+	a bt:Update ;
+	rdfs:label "Add Quorum Reached Triple" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+					DELETE {
+						mac:TemporaryQuorumSubject 	rdf:type 	?object .
+
+					}
+					INSERT{
+						mac:TemporaryQuorumSubject 	rdf:type 	mac:QuorumReached .
+					}
+					WHERE{
+						?s ?p ?o .
+						OPTIONAL {
+							mac:TemporaryQuorumSubject 	rdf:type 	?object .
+						}
+						
+					}
+					"""^^xsd:string ;
+		]) .
+
+:QuorumOrTimeoutReached
+	a bt:Condition ;
+	rdfs:label "Is Quorum reached" ;
+	bt:query ( [
+		a bt:AskQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					ASK
+					WHERE {
+						mac:TemporaryQuorumSubject 	rdf:type 	mac:QuorumReached .
+					}
+					"""^^xsd:string ;
+		]) .
+
+:SetTimeoutReached
+	a bt:Update ;
+	rdfs:label "Add Timeout Reached Triple" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+					DELETE {
+						mac:TemporaryQuorumSubject 	rdf:type 	?object .
+
+					}
+					INSERT{
+						mac:TemporaryQuorumSubject 	rdf:type 	mac:TimeoutReached .
+					}
+					WHERE{
+						?s ?p ?o .
+						OPTIONAL {
+							mac:TemporaryQuorumSubject 	rdf:type 	?object .
+						}
+						
+					}
+					"""^^xsd:string ;
+		]) .
+
+:InsertAgreeOrRefuse
+	a bt:Update ;
+	rdfs:label "Insert Agreed or Refused" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasAgreement	'true' .
+					}
+					WHERE{
+						?bnode	rdf:type	mac:RequestMessage .
+					}
+					"""^^xsd:string ;
+		]) .
+		
+:InsertParticipantCapability
+	a bt:Update ;
+	rdfs:label "Insert Agent Profile Info Capability" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasInitiatorCapability	'agentProfileInfoRequest' .
+					}
+					WHERE{
+						?bnode	rdf:type	mac:RequestMessage .
+					}
+					"""^^xsd:string ;
+		]) .
+		
+:InsertUtilities
+	a bt:Update ;
+	rdfs:label "Insert CSGP Utilities to RequestMessage" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					PREFIX domain: <http://localhost:8090/rdf4j/repositories/domain_specific_ontology#>
+
+
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasContent mac:Utilities .
+						mac:Utilities 	rdf:type 	mac:CsgpUtilities ;
+										mac:hasValue 	?randomValue .
+
+					}
+					WHERE{
+						?bnode	rdf:type	mac:RequestMessage .
+
+						BIND(RAND() AS ?randomValue)
+					}
+					"""^^xsd:string ;
+		]) .
+
+:InsertAgentProfileInfo
+	a bt:Update ;
+	rdfs:label "Insert Profile Info to RequestMessage" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					PREFIX domain: <http://localhost:8090/rdf4j/repositories/domain_specific_ontology#>
+
+
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasContent ?agProf .
+						?agProf 	rdf:type 	domain:DomainUser ;
+									domain:hasGender 	?gender ;
+									domain:hasNationality 	?nation ;
+									domain:hasLanguage 	?lang .
+					}
+					WHERE{
+						?bnode	rdf:type	mac:RequestMessage .
+
+						?agProf 	rdf:type 	domain:DomainUser ;
+									domain:hasGender 	?gender ;
+									domain:hasNationality 	?nation ;
+									domain:hasLanguage 	?lang .
+					}
+					"""^^xsd:string ;
+		]) .
+
+:GenerateNewConvId
+	a bt:Update ;
+	rdfs:label "Create Unique Conversation Id" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+					DELETE {
+						?bnode	mac:hasConversationId	?conversationId .
+					}
+					INSERT{
+						?bnode	mac:hasConversationId	?uniqueId . 
+					}
+					WHERE{
+						?bnode	rdf:type	mac:RequestMessage .
+
+						OPTIONAL {
+							?bnode 	mac:hasConversationId	?conversationId .						
+						} 
+						BIND(SHA1(xsd:string(NOW())) AS ?uniqueId)
+
+					}
+					"""^^xsd:string ;
+		]) .
+
+
+
+:InsertCsgpUtilitiesCapability
+	a bt:Update ;
+	rdfs:label "Insert Csgp Utilities Capability" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+					DELETE {
+						?bnode	mac:hasInitiatorCapability	?capability .
+					}
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasInitiatorCapability	'csgpUtilities' .
+					}
+					WHERE{
+						?s ?p ?o .
+						OPTIONAL {
+							?bnode	rdf:type	mac:RequestMessage ;
+									mac:hasInitiatorCapability	?capability .
+						}
+					}
+					"""^^xsd:string ;
+		]) .
+
+
+:InsertDefaultResponseCapability
+	a bt:Update ;
+	rdfs:label "Insert Capability of Initiator" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasInitiatorCapability	'receiveCoordRequestResponse' .
+					}
+					WHERE{
+						?bnode	rdf:type	mac:RequestMessage .
+					}
+					"""^^xsd:string ;
+		]) .	
+
+:InsertRequestResult
+	a bt:Update ;
+	rdfs:label "Insert Result of Request" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasContent 	mac:DomainSpecificSubjectUri .
+
+						mac:DomainSpecificSubjectUri 	rdf:type 	mac:ResponseContent ;
+															ajan:hasLocation 	"DFKI" . 
+					}
+					WHERE{
+						?bnode	rdf:type	mac:RequestMessage .
+					}
+					"""^^xsd:string ;
+		]) .
+
+
+:InsertRequiredTriples
+	a bt:Update ;
+	rdfs:label "Insert Required Triples to Handle Request" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+
+					INSERT{
+						?bnode	rdf:type	mac:RequestMessage ;
+								mac:hasAgreement	'true' ;
+								mac:hasInitiatorCapability	'receiveCoordRequestResponse' .
+						?s ?p ?o .
+					}
+					WHERE{
+						?s ?p ?o .
+						?bnode	rdf:type	mac:RequestMessage .
+					}
+					"""^^xsd:string ;
+		]) .
+
+
+:SetInitiatorReceiveReplyGoalRunning
+	a bt:Update ;
+	rdfs:label "Set Initiator Receive Reply Goal Running" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+					DELETE {
+						ajan:TemporaryGoalStatus	rdf:type ajan:InitiatorReceiveReplyGoal ;
+													ajan:hasStatus 	?status .
+					}
+					INSERT{
+						ajan:TemporaryGoalStatus	rdf:type ajan:InitiatorReceiveReplyGoal ;
+													ajan:hasStatus 	"Running" .
+					}
+					WHERE{
+						?s ?p ?o .
+
+						OPTIONAL {
+							ajan:TemporaryGoalStatus	rdf:type ajan:InitiatorReceiveReplyGoal ;
+														ajan:hasStatus 	?status .
+						}
+					}
+					"""^^xsd:string ;
+		]) .
+
+:SetInitiatorReceiveReplyGoalCompleted
+	a bt:Update ;
+	rdfs:label "Set Initiator Receive Reply Goal Completed" ;
+	bt:query ([
+		a bt:UpdateQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+
+					DELETE {
+						ajan:TemporaryGoalStatus	ajan:hasStatus 	?status .
+					}
+					INSERT{
+						ajan:TemporaryGoalStatus	ajan:hasStatus 	"Completed" .
+					}
+					WHERE{
+						ajan:TemporaryGoalStatus	rdf:type ajan:InitiatorReceiveReplyGoal ;
+													ajan:hasStatus 	?status .
+					}
+					"""^^xsd:string ;
+		]) .
+
+
 :SetGoalCompleted
 	a bt:Update ;
 	rdfs:label "Update Goal status to Complete" ;
@@ -657,8 +1950,10 @@
 					"""^^xsd:string ;
 		]) .
 
+
+
 :HandleReceiveResponseEvent
-	a bt:HandleEvent ;
+	a bt:HandleQueueEvent ;
 	rdfs:label "Handle Receive Response Event" ;
 	bt:event agents:ReceiveParticipantReplyEvent ;
 	bt:validate [
@@ -700,6 +1995,68 @@
 					}
 					"""^^xsd:string ;
 				] .
+
+:WriteAgentProfileInfo
+	a bt:Write ;
+	rdfs:label "Write Profile Info to ExKnowledge" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					PREFIX domain: <http://localhost:8090/rdf4j/repositories/domain_specific_ontology#>
+
+					CONSTRUCT {
+							?bnode 	rdf:type 	domain:DomainUser ;
+									domain:hasGender 	?gender ;
+									domain:hasNationality 	?nation ;
+									domain:hasLanguage 	?lang .
+						}
+					WHERE {
+							?bnode 	rdf:type 	domain:DomainUser ;
+									domain:hasGender 	?gender ;
+									domain:hasNationality 	?nation ;
+									domain:hasLanguage 	?lang .
+
+							}
+		"""^^xsd:string ;
+	] .
+
+:QueryPrsInfo
+	a bt:Write ;
+	rdfs:label "Write Personal Info to ExKnowledge" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:AgentKnowledge ;
+		bt:targetBase ajan:ExecutionKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					PREFIX domain: <http://localhost:8090/rdf4j/repositories/domain_specific_ontology#>
+
+					CONSTRUCT {
+							?bnode 	rdf:type 	domain:DomainUser ;
+									domain:hasGender 	?gender ;
+									domain:hasNationality 	?nation ;
+									domain:hasLanguage 	?lang .
+						}
+					WHERE {
+							?bnode 	rdf:type 	domain:DomainUser ;
+									domain:hasGender 	?gender ;
+									domain:hasNationality 	?nation ;
+									domain:hasLanguage 	?lang .
+
+							}
+		"""^^xsd:string ;
+	] .
+
+
 :SaveRequest
 	a bt:Write ;
 	rdfs:label "Write Request of Initiator to AgKnowledge" ;
@@ -726,10 +2083,12 @@
 							?bnode	rdf:type	mac:RequestMessage ;
 									mac:hasConversationId	?conversationId ;
 									mac:hasNotificationNecessary	?notifNecessary ;
-									mac:hasTimeout	?timeout ;
-									mac:hasContent	?requestContent .
+									mac:hasTimeout	?timeout .
 
-							?requestContent	?predicate	?object .
+							OPTIONAL {
+								?bnode 	mac:hasContent	?requestContent .
+								?requestContent	?predicate	?object .
+							}
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
 										ajan:agentId	?thisAgentId .
 
@@ -737,6 +2096,28 @@
 		"""^^xsd:string ;
 	] .
 
+				
+:SaveAllToAgKnowledge
+	a bt:Write ;
+	rdfs:label "Write All to LAKR" ;
+	bt:query [
+		a bt:ConstructQuery ;
+		bt:originBase ajan:ExecutionKnowledge ;
+		bt:targetBase ajan:AgentKnowledge ;
+		bt:sparql """
+					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
+					PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+					CONSTRUCT {
+						?s ?p ?o .
+						
+					}
+					WHERE {
+						?s ?p ?o .
+					}
+		"""^^xsd:string ;
+	] .
 
 				
 :SaveResponse
@@ -901,10 +2282,13 @@
 							?bnode	rdf:type	mac:RequestMessage ;
 									mac:hasConversationId	?conversationId ;
 									mac:hasNotificationNecessary	?notifNecessary ;
-									mac:hasTimeout	?timeout ;
-									mac:hasContent	?requestContent .
+									mac:hasTimeout	?timeout .
 
-							?requestContent	?predicate	?object .
+							OPTIONAL {
+								?bnode 	mac:hasContent	?requestContent .
+								?requestContent	?predicate	?object .
+							}
+									
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
 										ajan:agentId	?thisAgentId .
 
@@ -970,7 +2354,7 @@
 						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 						CONSTRUCT {
-							?newBnode	rdf:type mac:RequestAgreement, mac:RequestResponse ;
+							?newNode	rdf:type mac:RequestAgreement, mac:RequestResponse ;
 										mac:hasConversationId	?conversationId ;
 										mac:hasParticipant		?thisAgentId .
 						}
@@ -980,7 +2364,14 @@
 
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
 										ajan:agentId	?thisAgentId .
-							BIND(BNODE() as ?newBnode)
+							BIND(SHA1(xsd:string(NOW())) AS ?uniqueId)
+							BIND( IRI(CONCAT(STR(mac:RequestAgreement), STR(?uniqueId))) AS ?newNode )
+
+
+
+							#{			
+							#	BIND(BNODE() as ?newBnode)
+							#}
 						}
 							"""^^xsd:string
 			]
@@ -1040,7 +2431,7 @@
 
 						CONSTRUCT {
 
-							?bnode	rdf:type mac:RequestRefusal, mac:RequestResponse ;
+							?newNode	rdf:type mac:RequestRefusal, mac:RequestResponse ;
 									mac:hasConversationId	?conversationId ;
 									mac:hasParticipant		?thisAgentId .
 						}
@@ -1050,7 +2441,15 @@
 
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
 										ajan:agentId	?thisAgentId .
+							BIND(SHA1(xsd:string(NOW())) AS ?uniqueId)
+							BIND( IRI(CONCAT(STR(mac:RequestRefusal), STR(?uniqueId))) AS ?newNode )
+
+							#{			
+							#	BIND(BNODE() as ?newBnode)
+							#}
 							}
+
+
 							"""^^xsd:string
 			]
 		] ;
@@ -1109,7 +2508,7 @@
 						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 						CONSTRUCT {
-							?newBnode	rdf:type	mac:RequestResult, mac:RequestResponse ;
+							?newNode	rdf:type	mac:RequestResult, mac:RequestResponse ;
 										mac:hasConversationId	?convId ;
 										mac:hasParticipant		?thisAgentId ;
 										mac:hasContent	?resultContent .
@@ -1126,9 +2525,11 @@
 
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
 										ajan:agentId	?thisAgentId .
-							{
-								BIND(BNODE() as ?newBnode)
-							}
+							BIND(SHA1(xsd:string(NOW())) AS ?uniqueId)
+							BIND( IRI(CONCAT(STR(mac:RequestResult), STR(?uniqueId))) AS ?newNode )
+							#{			
+							#	BIND(BNODE() as ?newBnode)
+							#}
 							}
 							"""^^xsd:string
 			]
@@ -1515,7 +2916,7 @@
 													#			]
 																		)
 													]
-													:ProduceComputeCoalitionsEvent
+													:ProduceComputeLccCoalitionsEvent
 													:ClearExecutionKnowledge
 															)
 										]
@@ -2448,7 +3849,7 @@
 						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
 						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 						PREFIX welcome: <https://raw.githubusercontent.com/gtzionis/WelcomeOntology/main/welcome.ttl#>
-					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
+						PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
 						CONSTRUCT {
 							?agent	ajan:agentId	?agentName ;
 									welcome:hasLCCPersonalInfo	?bnode .
@@ -2889,7 +4290,7 @@
 		"""^^xsd:string ;
 	] .
 
-:ProduceComputeCoalitionsEvent
+:ProduceComputeLccCoalitionsEvent
 	a bt:EventProducer ;
 	rdfs:label "EventProducer: Compute Possible Coalitions Event" ;
 	ajan:event agents:ComputeLccCoalitionStructuresEvent ;

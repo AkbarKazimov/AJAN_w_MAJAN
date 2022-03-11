@@ -80,6 +80,7 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 	@Override
 	@SuppressWarnings("PMD.ConfusingTernary")
 	public LeafStatus executeLeaf() {
+            System.out.println("Girdiiiiiiiiii");
 		Status exStatus;
 		if (goalStatus.equals(Status.FRESH)) {
 			goalStatus = Status.RUNNING;
@@ -91,11 +92,12 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 				return new LeafStatus(Status.FAILED, toString() + " FAILED");
 			}
 		} else if (!goalStatus.equals(Status.RUNNING)) {
-			exStatus = goalStatus;
-			goalStatus = Status.FRESH;
+                    exStatus = goalStatus;
+                    goalStatus = Status.FRESH;
 		} else {
 			exStatus = Status.RUNNING;
-		}
+     
+                }
 		printStatus(exStatus);
 		return new LeafStatus(exStatus, toString() + " " + exStatus);
 	}
@@ -115,6 +117,7 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
 	}
 
 	private void produceGoal() throws EventEvaluationException, AJANBindingsException, URISyntaxException, ConditionEvaluationException {
+            System.out.println("1111111111111111111111");
             Object info = this.getObject().getEventInformation();
             if (info instanceof ModelEventInformation) {
                 ModelEventInformation eventInfo = (ModelEventInformation) info;
@@ -124,14 +127,19 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
                     System.out.println(stm);
                 }
             }
-		
+		            System.out.println("222222222222222222222");
+
             Map<URI,Event> events = this.getObject().getEvents();
 		if (events.containsKey(goalURI)) {
 			if (events.get(goalURI) instanceof AJANGoal) {
-                            
+                                        System.out.println("33333333333333333333333");
+
 				goal = (AJANGoal)events.get(goalURI);
-                                
+                                            System.out.println("44444444444444444444");
+
 				createGoalEvent(goal);
+                                            System.out.println("5555555555555555555");
+
 			} else {
 				throw new EventEvaluationException("Event is no AJANGoal");
 			}
@@ -146,8 +154,16 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
                 for(Statement stm: model){
                     LOG.info(stm.toString());
                 }
+                            System.out.println("66666666666666666666");
+
                 if(checkPrecondition(model)){
-                        goal.setEventInformation(this, model);
+                                System.out.println("7777777777777777777777");
+
+// i have been using
+//                         goal.setEventInformation(this, model);
+                    goal.setEventInformation(this, new GoalInformation(model));
+                                System.out.println("88888888888888888888888");
+
 		} else {
 			throw new AJANBindingsException("Input model failed to conform to Goal precondition");
 		}
@@ -166,7 +182,11 @@ public class GoalProducer extends AbstractTDBLeafTask implements Producer {
         
         private boolean checkPrecondition(final Model model) throws ConditionEvaluationException {
             String precondition = goal.getPrecondition();
+                        System.out.println("99999999999999999999999");
+
             if (!SPARQLUtil.askModel(model, precondition)) {
+                            System.out.println("1010101010101010");
+
 			LOG.error("Input model failed to conform to Goal precondition.");
 			return false;
 		}
