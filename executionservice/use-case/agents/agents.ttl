@@ -40,7 +40,7 @@
 
 # ----------- MAJAN BTs -----------
 
-:MajanBTsAgent
+:MajanAgent
 	a ajan:AgentTemplate ;
 	rdfs:label	"Creation of MAJAN coordination BTs." ;
 	ajan:event	:StartCoordEvent ;
@@ -79,10 +79,28 @@
 	ajan:behavior 	:ReceiveCoordRequestResponseBehavior ;
 # ---------- templ bts without goals
 # ----------Grouping Template BTs ------------
+
+# ----------- Clustering Coordination stuff -------------------
+	ajan:event 		:StartClusteringCoordRequestEvent ;
+	ajan:event 		:CollectClusteringDistancesEvent ;
+	ajan:event 		:HandleClusteringDistancesRequestEvent ;
+	ajan:event 		:SolveClusteringEvent ;
+	ajan:event 		:FinalizeCoordinationEvent ;
+ 	ajan:endpoint 	:HandleClusteringDistancesEndpoint ;
+	ajan:endpoint 	:SendClusteringCoordRequestEndpoint ;
+	ajan:behavior 	:SolveClusteringBehavior ;
+	ajan:behavior 	:FinalizeCoordinationBehavior ;
+	ajan:behavior 	:HandleClusteringDistancesBehavior ;
+	ajan:behavior 	:CollectClusteringDistancesBehavior ;
+	ajan:behavior 	:SendClusteringCoordRequestBehavior ;
+# ----------- Clustering Coordination stuff -------------------
+
 	ajan:event 	:StartCsgpCoordRequestEvent ;
 	ajan:event 	:AgentProfileInfoRequestEvent ;
 	ajan:event 	:ComputeCsgpCoalitionsEvent ;
 	ajan:event 	:CsgpUtilitiesRequestEvent ;
+	ajan:event 	:SolveCsgpEvent ;
+	ajan:event 	:FinalizeCsgpCoordinationEvent ;
 	ajan:endpoint 	:CsgpUtilitiesRequestEndpoint ;
 	ajan:endpoint 	:SendCsgpCoordRequestEndpoint ;
 	ajan:endpoint 	:AgentProfileInfoRequestEndpoint ;
@@ -90,6 +108,8 @@
 	ajan:behavior 	:ComputeCsgpCoalitionsBehavior ;
 	ajan:behavior 	:SendCsgpCoordRequestBehavior ;
 	ajan:behavior 	:AgentProfileInfoRequestBehavior ;
+	ajan:behavior 	:SolveCsgpBehavior ;
+	ajan:behavior 	:FinalizeCsgpCoordinationBehavior ;
 
 # ----------Grouping Template BTs ------------
 
@@ -100,6 +120,75 @@
 
 
 # -------------Grouping Template BTs ---------------
+
+
+# ----------- Clustering Coordination stuff -------------------
+:StartClusteringCoordRequestEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Send Clustering Coord. Request Event" .
+
+:SendClusteringCoordRequestEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Send Clustering Coord. Request Endpoint" ;
+	ajan:capability "sendClusteringCoordRequest" ;
+	ajan:event :StartClusteringCoordRequestEvent .
+
+:SendClusteringCoordRequestBehavior
+	a ajan:Behavior ;
+	rdfs:label "Send Clustering Coord. Request Behavior" ;
+	ajan:trigger :StartClusteringCoordRequestEvent ;
+	ajan:bt behaviors:SendClusteringCoordRequestTempBt .
+
+
+:CollectClusteringDistancesEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Collect Clustering Distances Event" .
+
+:CollectClusteringDistancesBehavior
+	a ajan:Behavior ;
+	rdfs:label "Collect Clustering Distances Behavior" ;
+	ajan:trigger :CollectClusteringDistancesEvent ;
+	ajan:bt behaviors:CollectClusteringDistancesTemplBt .
+
+
+:HandleClusteringDistancesRequestEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Handle Clustering Distances Request Event" .
+
+:HandleClusteringDistancesEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Send Clustering Distances Request Endpoint" ;
+	ajan:capability "clusteringDistanceScores" ;
+	ajan:event :HandleClusteringDistancesRequestEvent .
+
+:HandleClusteringDistancesBehavior
+	a ajan:Behavior ;
+	rdfs:label "Handle Clustering Distances Request Behavior" ;
+	ajan:trigger :HandleClusteringDistancesRequestEvent ;
+	ajan:bt behaviors:HandleClusteringDistancesRequestTemplBT .
+
+
+:SolveClusteringEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Solve Clustering Event" .
+
+:SolveClusteringBehavior
+	a ajan:Behavior ;
+	rdfs:label "Solve Clustering Behavior" ;
+	ajan:trigger :SolveClusteringEvent ;
+	ajan:bt behaviors:SolveClusteringTemplBT .
+
+:FinalizeCoordinationEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Finalize Coordination Event" .
+
+:FinalizeCoordinationBehavior
+	a ajan:Behavior ;
+	rdfs:label "Finalize Coordination Behavior" ;
+	ajan:trigger :FinalizeCoordinationEvent ;
+	ajan:bt behaviors:FinalizeCoordinationToGroupsBT .
+# ----------- Clustering Coordination stuff -------------------
+
 :StartCsgpCoordRequestEvent
 	a ajan:ModelQueueEvent ;
 	rdfs:label "Send Csgp Coord. Request Event" .
@@ -131,6 +220,27 @@
 	rdfs:label "Agent Profile Info Request Behavior" ;
 	ajan:trigger :AgentProfileInfoRequestEvent ;
 	ajan:bt behaviors:HandleAgentProfileInfoRequestTempBT .
+
+:SolveCsgpEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Solve CSGP Coordination Event" .
+
+:SolveCsgpBehavior
+	a ajan:Behavior ;
+	rdfs:label "Solve CSGP Behavior" ;
+	ajan:trigger :SolveCsgpEvent ;
+	ajan:bt behaviors:SolveCsgpTemplBT .
+
+:FinalizeCsgpCoordinationEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Finalize CSGP Coordination Event" .
+
+:FinalizeCsgpCoordinationBehavior
+	a ajan:Behavior ;
+	rdfs:label "Finalize CSGP Behavior" ;
+	ajan:trigger :FinalizeCsgpCoordinationEvent ;
+	ajan:bt behaviors:FinalizeCsgpCoordinationBT .
+
 
 :ComputeCsgpCoalitionsEvent
 	a ajan:ModelQueueEvent ;
