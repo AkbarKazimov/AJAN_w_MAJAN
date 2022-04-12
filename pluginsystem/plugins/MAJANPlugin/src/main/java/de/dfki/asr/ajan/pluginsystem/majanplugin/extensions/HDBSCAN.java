@@ -374,8 +374,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
     
     private Double[][] applyConstraints(Double[][] distances, ArrayList<int[]> mlList, ArrayList<int[]> clList) {
         for(int[] ml : mlList) {
-            distances[ml[0]][ml[1]] = 0.0;
-            distances[ml[1]][ml[0]] = 0.0;
+            distances[ml[0]][ml[1]] = 0.001;
+            distances[ml[1]][ml[0]] = 0.001;
         }
         for(int[] cl : clList) {
             distances[cl[0]][cl[1]] = Double.POSITIVE_INFINITY;
