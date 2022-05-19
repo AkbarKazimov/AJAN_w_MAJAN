@@ -5827,7 +5827,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -5860,7 +5860,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Started Coordination\\nMac ID: ", STR(?macId), "\\nParticipants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum), "\\r\\nMAC Status: ", STR(?macStatus)) AS ?activity)
+							BIND(CONCAT("Started Coordination\\nMac ID: ", STR(?macId), "\\nParticipants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum)) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -5925,7 +5925,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -5966,7 +5966,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Sent Coordination Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Sent Coordination Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nContent IRIs: ", ?contentIris) AS ?activity)
 
 							BIND("Succes" AS ?activityStatus)
 
@@ -5996,109 +5996,6 @@ a bt:Update ;
 					}"""^^xsd:string
 	] .
 
-:SendLogToMajan
-	a bt:Message ;
-	rdfs:label "Send Log to MAJAN"^^xsd:string ;
-	rdfs:comment ""^^xsd:string ;
-	bt:targetBase ajan:ExecutionKnowledge ;
-	bt:binding [
-		a http-core:Request ;
-		http-core:httpVersion "1.1"^^xsd:string ;
-		http-core:mthd http-methods:POST ;
-		http-core:headers ([
-					a http-core:Header ;
-					http-core:hdrName http-headers:accept ;
-					http-core:fieldValue "text/turtle"^^xsd:string
-				][
-					a http-core:Header ;
-					http-core:hdrName http-headers:content-type ;
-					http-core:fieldValue "text/turtle"
-				]
-		) ;
-		http-core:body [
-			a actn:Payload ;
-			bt:query [
-				rdf:type bt:ConstructQuery ;
-				bt:originBase ajan:ExecutionKnowledge ;
-				bt:sparql """
-						PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-						PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-						PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
-						PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-
-						CONSTRUCT {
-							?newBnode	rdf:type 	mac:Log ;
-										mac:hasAgentId	?thisAgentId ;
-										mac:hasUseCase 	?useCase ;
-										mac:hasSolver 	?solver ;
-										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
-						}
-						WHERE {
-							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
-										ajan:agentId	?thisAgentId .
-
-							?macInstance 	rdf:type 	mac:MACProblemInstance ;
-											mac:hasId 	?macId ;
-											mac:hasUseCase 	?useCase .
-
-							OPTIONAL{
-								?conversation 	rdf:type 	mac:Conversation ;
-												mac:hasId 	?convId ;
-												mac:hasTimeout 	?timeout ;
-												mac:hasNotificationNecessary	?notificationNecessary ;
-												mac:hasQuorum 	?quorum ;
-												mac:hasMacProblemId 	?macId .
-							}	
-							OPTIONAL {
-								?macInstance 	rdf:type 	mac:MACProblemInstance ;
-												mac:hasSolver 	?solver .
-							}
-							{
-								SELECT (GROUP_CONCAT(?participantId ; separator=", ") AS ?participants)
-								WHERE{
-									?conversation 	rdf:type 	mac:Conversation ;
-													mac:hasParticipants 	?participantId .
-								}
-							}
-							{
-								SELECT (GROUP_CONCAT(?contentIri ; separator=", ") AS ?contentIris)
-								WHERE{
-									?conversation 	rdf:type 	mac:Conversation ;
-													mac:hasContent 	?contentIri .
-								}
-							}
-
-
-							BIND(CONCAT("Collect Clustering Distances BT Started\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nContent IRIs: ", ?contentIris) AS ?activity)
-							BIND("Succes" AS ?activityStatus)
-
-
-							{			
-								BIND(BNODE() as ?newBnode)
-							}
-						}
-							"""^^xsd:string
-			]
-		] ;
-	] ;
-	bt:queryUri [
-		a bt:SelectQuery ;
-		a bt:QueryUri ;
-		bt:originBase ajan:AgentKnowledge ;
-		bt:sparql """
-					PREFIX ajan: <http://www.ajan.de/ajan-ns#>
-					PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-					PREFIX mac: <http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#>
-
-					SELECT DISTINCT ?requestURI
-					WHERE {
-							OPTIONAL {
-								mac:MajanLogging 	mac:hasUri 	?storedUri .
-							}
-							BIND(IF(BOUND(?storedUri), ?storedUri, "http://localhost:4202/post") AS ?requestURI)
-					}"""^^xsd:string
-	] .
 
 :LOGStartedComputeCoalitions
 	a bt:Message ;
@@ -6136,7 +6033,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6182,7 +6079,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Compute CSGP Coalitions BT Started\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus),  "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Compute CSGP Coalitions BT Started\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,  "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 
@@ -6248,7 +6145,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6286,7 +6183,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Collect Clustering Distances BT Started\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Collect Clustering Distances BT Started\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 
@@ -6352,7 +6249,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6390,7 +6287,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Sent Compute Utilities Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Sent Compute Utilities Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 
@@ -6456,7 +6353,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6494,7 +6391,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Sent Clustering Distances Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Sent Clustering Distances Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,  "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 
@@ -6560,7 +6457,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6599,7 +6496,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Sent Profile Info Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Sent Profile Info Request To Participants\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,  "\\nContent IRIs: ", ?contentIris) AS ?activity)
 
 							BIND("Succes" AS ?activityStatus)
 
@@ -6665,7 +6562,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6703,7 +6600,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Received Agent Profile Info Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Received Agent Profile Info Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -6768,7 +6665,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6806,7 +6703,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Received UTILITIES Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Received UTILITIES Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,   "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -6871,7 +6768,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -6909,7 +6806,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Received Clustering Distances Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Received Clustering Distances Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,   "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -6974,7 +6871,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7017,7 +6914,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Received Coordination Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Received Coordination Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,   "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -7082,7 +6979,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7118,7 +7015,7 @@ a bt:Update ;
 							}
 
 
-							BIND(CONCAT("Sent AGREED to the Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus)) AS ?activity)
+							BIND(CONCAT("Sent AGREED to the Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nMAC ID: ", ?macId) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -7184,7 +7081,7 @@ a bt:Update ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7219,7 +7116,7 @@ a bt:Update ;
 								}
 							}
 
-							BIND(CONCAT("Sent REFUSED the Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus)) AS ?activity)
+							BIND(CONCAT("Sent REFUSED the Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nMAC ID: ", ?macId ) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -7284,7 +7181,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7324,7 +7221,7 @@ a bt:Message ;
 							}
 
 
-							BIND(CONCAT("Sent RESULT of the Clustering Distances Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Sent RESULT of the Clustering Distances Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,  "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -7389,7 +7286,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7437,7 +7334,7 @@ a bt:Message ;
 							}
 
 
-							BIND(CONCAT("Starting to Solve CSGP\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Starting to Solve CSGP\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,   "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -7503,7 +7400,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7538,7 +7435,7 @@ a bt:Message ;
 													mac:hasContent 	?contentIri .
 								}
 							}
-							BIND(CONCAT("Starting to Solve Clustering\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Starting to Solve Clustering\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,   "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 							{			
 								BIND(BNODE() as ?newBnode)
@@ -7603,7 +7500,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7673,7 +7570,7 @@ a bt:Message ;
 							}
 
 
-							BIND(CONCAT("Finalize Coordination\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", ?macStatus, "\\nContent IRIs: ", ?contentIris, "\\nSolution: ", ?groupingResultStr) AS ?activity)
+							BIND(CONCAT("Finalize Coordination\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nContent IRIs: ", ?contentIris, "\\nSolution: ", ?groupingResultStr) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -7738,7 +7635,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7807,7 +7704,7 @@ a bt:Message ;
 							}
 
 
-							BIND(CONCAT("CSGP solved\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris, "\\n Solution: ", ?groupingResultStr) AS ?activity)
+							BIND(CONCAT("CSGP solved\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nContent IRIs: ", ?contentIris, "\\n Solution: ", ?groupingResultStr) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -7872,7 +7769,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -7941,7 +7838,7 @@ a bt:Message ;
 							}
 
 
-							BIND(CONCAT("Clustering solved\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris, "\\n Solution: ", ?groupingResultStr) AS ?activity)
+							BIND(CONCAT("Clustering solved\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,  "\\nContent IRIs: ", ?contentIris, "\\n Solution: ", ?groupingResultStr) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -8006,7 +7903,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -8051,7 +7948,7 @@ a bt:Message ;
 							}
 
 
-							BIND(CONCAT("Sent RESULT of the Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus), "\\nContent IRIs: ", ?contentIris) AS ?activity)
+							BIND(CONCAT("Sent RESULT of the Request\\nConversation ID: ", STR(?convId), "\\nConversation Participants: ",STR(?participants), "\\nTimeout: ",STR(?timeout), "\\nNotification Necessary: ", ?notificationNecessary, "\\nMAC ID: ", ?macId,   "\\nContent IRIs: ", ?contentIris) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -8117,7 +8014,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -8219,7 +8116,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -8242,7 +8139,7 @@ a bt:Message ;
 								?macInstance 	rdf:type 	mac:MACProblemInstance ;
 												mac:hasSolver 	?solver .
 							}
-							BIND(CONCAT("Current EKB\\nConversation ID: ", STR(?convId), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum), "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus)) AS ?activity)
+							BIND(CONCAT("Current EKB\\nConversation ID: ", STR(?convId), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum), "\\nMAC ID: ", ?macId ) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -8307,7 +8204,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -8330,7 +8227,7 @@ a bt:Message ;
 								?macInstance 	rdf:type 	mac:MACProblemInstance ;
 												mac:hasSolver 	?solver .
 							}
-							BIND(CONCAT("Quorum Reached\\nConversation ID: ", STR(?convId), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum), "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus)) AS ?activity)
+							BIND(CONCAT("Quorum Reached\\nConversation ID: ", STR(?convId), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum), "\\nMAC ID: ", ?macId) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
@@ -8396,7 +8293,7 @@ a bt:Message ;
 										mac:hasUseCase 	?useCase ;
 										mac:hasSolver 	?solver ;
 										mac:hasActivity		?activity ;
-										mac:hasActivityStatus		?activityStatus .
+										mac:hasStatus		?macStatus .
 						}
 						WHERE {
 							?thisAgent	rdf:type	ajan:Agent, ajan:ThisAgent ;
@@ -8419,7 +8316,7 @@ a bt:Message ;
 								?macInstance 	rdf:type 	mac:MACProblemInstance ;
 												mac:hasSolver 	?solver .
 							}
-							BIND(CONCAT("Timeout Reached\\nConversation ID: ", STR(?convId), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum), "\\nMAC ID: ", ?macId, "\\nMAC Status: ", STR(?macStatus)) AS ?activity)
+							BIND(CONCAT("Timeout Reached\\nConversation ID: ", STR(?convId), "\\nTimeout: ",STR(?timeout), "\\nQuorum: ", STR(?quorum), "\\nMAC ID: ", ?macId) AS ?activity)
 							BIND("Succes" AS ?activityStatus)
 
 							{			
