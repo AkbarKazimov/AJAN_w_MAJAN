@@ -32,7 +32,6 @@ public class MAJANVocabulary {
         public final static IRI MAC_NAMESPACE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#");
         public final static IRI HAS_MEMBERS = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasMembers");        
         public final static IRI HAS_SIZE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSize");
-        public final static IRI IS_SOLUTION_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isSolutionOf");
         public final static IRI IS_MEMBER_OF = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isMemberOf");
         public final static IRI BOSS_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGP_SOLVER-BOSS");
         public final static IRI CSGP_SOLVER_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#CSGP_SOLVER");
@@ -54,8 +53,8 @@ public class MAJANVocabulary {
         public final static IRI HDBSCAN_TYPE = FACTORY.createIRI("http://www.ajan.de/ajan-ns#Clustering_Solver-HDBSCAN");
         public final static IRI HAS_PERFECT_MATCH_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasPerfectMatchScore"); 
         
-        public final static IRI HAS_SUBJECT_AGENT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSubjectAgent");
-        public final static IRI HAS_OBJECT_AGENT = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasObjectAgent");
+        public final static IRI IS_COMPUTED_BY = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isComputedBy");
+        public final static IRI IS_COMPUTED_AGAINST = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isComputedAgainst");
         
         public final static IRI HAS_SIMILARITY_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasSimilarityScore");
         
@@ -70,7 +69,7 @@ public class MAJANVocabulary {
         public final static IRI BROADCAST = FACTORY.createIRI("http://www.ajan.de/behavior/bt-ns#Broadcast");
         
         public final static IRI HAS_ID = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasId");
-        public final static IRI IS_COMPUTED_FOR_PROBLEM_ID = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isComputedForProblemId");
+        public final static IRI IS_COMPUTED_FOR = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#isComputedFor");
         public final static IRI DISTANCE_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#DistanceScore");
         public final static IRI HAS_DISTANCE_SCORE = FACTORY.createIRI("http://localhost:8090/rdf4j/repositories/ajan_mac_ontology#hasDistanceScore");
         

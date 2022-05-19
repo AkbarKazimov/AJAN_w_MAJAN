@@ -20,198 +20,106 @@
 
 # ------------- Body --------------
 
+#@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+#@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+#@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+#@prefix ajan: <http://www.ajan.de/ajan-ns#> .
+#@prefix inv: <http://www.dfki.de/inversiv#> .
+#@prefix : <http://www.dfki.de/inversiv#> .
+#@prefix bt: <http://www.ajan.de/behavior/bt-ns#> .
+#@prefix http: <http://www.w3.org/2006/http#> .
+#@prefix test: <http://test/> .
+#
+#:initialization rdf:type ajan:AgentInitialisation ;
+#				ajan:agentName "Agento"^^xsd:string ;
+#				ajan:agentTemplate <http://localhost:8090/rdf4j/repositories/agents#ExampleAgent> ;
+#				ajan:agentInitKnowledge test:Subject  .
+#
+#test:Subject rdf:type test:Resource .
+#test:Subject test:predicate "Geh weg!" .
 
+# ----------- MAJAN BTs -----------
 
-
-################## MAJAN Template Coordination BTs ################## START 
-
-:MajanAgent
+:MajanBTsAgent
 	a ajan:AgentTemplate ;
-	rdfs:label	"Agent Template with MAJAN Coordination Capabilities" ;
+	rdfs:label	"Creation of MAJAN coordination BTs." ;
+	ajan:event	:StartCoordEvent ;
+	ajan:event 	:ReceiveRequestEvent ;
+#	ajan:event	:InitiatorSendRequestGoal ;
+#	ajan:event	:ParticipantHandleRequestGoal ;
+#	ajan:event 	:InitiatorReceiveReplyGoal ;
+#	ajan:event	:ParticipantSendResultGoal;
+	ajan:event 	:ReceiveParticipantReplyEvent ;
+	ajan:event 	:StartCsgpCoordEvent ;
+	ajan:event 	:HandlePrsInfoRequestEvent ;
+	ajan:endpoint 	:HandlePrsInfoRequestEndpoint ;
+	ajan:endpoint 	:StartCsgpCoordEndpoint ;
+	ajan:endpoint	:StartCoordEndpoint ;
+	ajan:endpoint 	:ReceiveRequestEndpoint ;
+	ajan:endpoint 	:ReceiveParticipantResponseEndpoint ;
+	ajan:behavior	:StartCoordBehavior ;
+	ajan:behavior 	:HandlePrsInfoRequestBehavior ;
+	ajan:behavior 	:StartCsgpCoordBehavior ;
+	ajan:behavior 	:ReceiveRequestBehavior ;
+#	ajan:behavior	:InitiatorSendRequestBehavior ;
+#	ajan:behavior	:ParticipantHandleRequestBehavior ;
+#	ajan:behavior 	:InitiatorReceiveReplyBehavior ;
+#	ajan:behavior	:ParticipantSendResultBehavior ;
+#	ajan:behavior 	:ReceiveParticipantReplyBehavior ;
 
-######### Simple Coordination Stuff ######### START
-
+# ---------- templ bts without goals
 	ajan:event 	:SendCoordRequestEvent ;
 	ajan:event 	:HandleCoordRequestEvent ;
-	ajan:endpoint 	:HandleCoordRequestEndpoint ;
+	ajan:event 	:ReceiveCoordRequestResponseEvent ;
 	ajan:endpoint 	:SendCoordRequestEndpoint ;
+	ajan:endpoint 	:HandleCoordRequestEndpoint ;
+	ajan:endpoint 	:ReceiveCoordRequestResponseEndpoint ;
 	ajan:behavior 	:SendCoordRequestBehavior ;
 	ajan:behavior 	:HandleCoordRequestBehavior ;
+	ajan:behavior 	:ReceiveCoordRequestResponseBehavior ;
+# ---------- templ bts without goals
+# ----------Grouping Template BTs ------------
 
-######### Simple Coordination Stuff ######### END
-
-######### CSGP Coordination Stuff ######### START
-
-	ajan:event 	:StartCsgpCoordEvent ;
-	ajan:event 	:StartCsgpCoordRequestEvent ;
-	ajan:event 	:ComputeCsgpCoalitionsEvent ;
-	ajan:event 	:CsgpUtilitiesRequestEvent ;
-	ajan:event 	:SolveCsgpEvent ;
-	ajan:endpoint 	:StartCsgpCoordEndpoint ;
-	ajan:endpoint 	:CsgpUtilitiesRequestEndpoint ;
-	ajan:endpoint 	:SendCsgpCoordRequestEndpoint ;
-	ajan:behavior 	:CsgpUtilitiesRequestBehavior ;
-	ajan:behavior 	:ComputeCsgpCoalitionsBehavior ;
-	ajan:behavior 	:SendCsgpCoordRequestBehavior ;
-	ajan:behavior 	:StartCsgpCoordBehavior ;
-	ajan:behavior 	:SolveCsgpBehavior ;
-######### CSGP Coordination Stuff ######### END
-
-######### Clustering Coordination Stuff ######### START
-
+# ----------- Clustering Coordination stuff -------------------
 	ajan:event 		:StartClusteringCoordRequestEvent ;
 	ajan:event 		:CollectClusteringDistancesEvent ;
 	ajan:event 		:HandleClusteringDistancesRequestEvent ;
 	ajan:event 		:SolveClusteringEvent ;
+	ajan:event 		:FinalizeCoordinationEvent ;
  	ajan:endpoint 	:HandleClusteringDistancesEndpoint ;
 	ajan:endpoint 	:SendClusteringCoordRequestEndpoint ;
 	ajan:behavior 	:SolveClusteringBehavior ;
+	ajan:behavior 	:FinalizeCoordinationBehavior ;
 	ajan:behavior 	:HandleClusteringDistancesBehavior ;
 	ajan:behavior 	:CollectClusteringDistancesBehavior ;
 	ajan:behavior 	:SendClusteringCoordRequestBehavior ;
+# ----------- Clustering Coordination stuff -------------------
 
-######### Clustering Coordination Stuff ######### END
-
-
-######### Common Coordination Stuff ######### START
-
-	ajan:event 		:ReceiveCoordRequestResponseEvent ;
-	ajan:event 		:FinalizeCoordinationEvent ;
-	ajan:event 		:AgentProfileInfoRequestEvent ;
-	ajan:event 		:PopulateLAREvent ;	
-	ajan:event 		:ReceiveLocalAgentsEvent;
-	ajan:endpoint 	:ReceiveCoordRequestResponseEndpoint ;
+	ajan:event 	:StartCsgpCoordRequestEvent ;
+	ajan:event 	:AgentProfileInfoRequestEvent ;
+	ajan:event 	:ComputeCsgpCoalitionsEvent ;
+	ajan:event 	:CsgpUtilitiesRequestEvent ;
+	ajan:event 	:SolveCsgpEvent ;
+	ajan:event 	:FinalizeCsgpCoordinationEvent ;
+	ajan:endpoint 	:CsgpUtilitiesRequestEndpoint ;
+	ajan:endpoint 	:SendCsgpCoordRequestEndpoint ;
 	ajan:endpoint 	:AgentProfileInfoRequestEndpoint ;
-	ajan:endpoint 	:populateLAR ;
+	ajan:behavior 	:CsgpUtilitiesRequestBehavior ;
+	ajan:behavior 	:ComputeCsgpCoalitionsBehavior ;
+	ajan:behavior 	:SendCsgpCoordRequestBehavior ;
 	ajan:behavior 	:AgentProfileInfoRequestBehavior ;
-	ajan:behavior 	:FinalizeCoordinationBehavior ;
-	ajan:behavior 	:ReceiveCoordRequestResponseBehavior ;
-	ajan:behavior 	:PopulateLARRepos .
+	ajan:behavior 	:SolveCsgpBehavior ;
+	ajan:behavior 	:FinalizeCsgpCoordinationBehavior ;
 
-######### Common Coordination Stuff ######### END
+# ----------Grouping Template BTs ------------
 
-
-######### Coordination with Goal node Stuff ######### START
-# THESE WERE DEVELOPED AT FIRST BUT SINCE AJAN DOESN'T SUPPORT RUNNING MULTIPLE INSTANCES OF SAME BT IN PARALLEL, THESE STUFF ARE NOT NECESSARY FOR NOW. 
-
-#	ajan:event	:StartCoordEvent ;
-#	ajan:event 	:ReceiveRequestEvent ;
-#	ajan:event 	:ReceiveParticipantReplyEvent ;
-#	ajan:event 	:HandlePrsInfoRequestEvent ;
-#	ajan:endpoint	:StartCoordEndpoint ;
-#	ajan:endpoint 	:HandlePrsInfoRequestEndpoint ;
-#	ajan:endpoint 	:ReceiveRequestEndpoint ;
-#	ajan:endpoint 	:ReceiveParticipantResponseEndpoint ;
-#	ajan:behavior 	:ReceiveRequestBehavior ;
-#	ajan:behavior	:StartCoordBehavior ;
-#	ajan:behavior 	:HandlePrsInfoRequestBehavior ;
-######### Coordination with Goal node Stuff ######### END
-
-################## MAJAN Template Coordination BTs ################## END 
-
-################## MAJAN BTs with GOALs ################## START
-
-################## MAJAN BTs with GOALs ################## END 
-
-################## MAJAN and WELCOME Common BTs ################## START
-
-:ReceiveLocalAgentsEvent
-	a ajan:ModelEvent ;
-	rdfs:label "Receive Local Agents Event" .
-:populateLAR
-	a ajan:Endpoint ;
-	rdfs:label "populate LAR Repo Endpoint" ;
-	ajan:capability "populateLAR" ;
-	ajan:event :ReceiveLocalAgentsEvent .
-:PopulateLAREvent
-	a ajan:ModelEvent ;
-	rdfs:label "Populate LAR Event" .
-:PopulateLARRepos
-	a ajan:Behavior ;
-	rdfs:label "Populate LAR Repos" ;
-	ajan:trigger :PopulateLAREvent ;
-	ajan:trigger :ReceiveLocalAgentsEvent ;
-	ajan:bt behaviors:PopulateLARRepos .
-################## MAJAN and WELCOME Common BTs ################## END 
-
-################## WELCOME BTs ################## START
-
-:WelcomeAgent
-	a ajan:AgentTemplate ;
-	rdfs:label "Welcome agent with LCC, CHC capabilities" ;
-################## LCC Stuff ################## START
-
-	ajan:event	:StartLccAssessmentEvent ;
-	ajan:event	:LccAssessmentCompleteEvent ;
-	ajan:event	:SubmitFinalLccResultEvent ;
-	ajan:event	:StartLccProcessEvent ;
-	ajan:event	:LccDedicatedAgentBehaviorEvent ;
-	ajan:event	:ReceiveLccPersonalInfoEvent ;
-	ajan:event	:ComputeLccCoalitionStructuresEvent ;
-	ajan:event	:ComputeLccUtilityValuesEvent ;
-	ajan:event	:ReceiveLccUtilityValuesEvent ;
-	ajan:event	:SolveLccEvent ;
-	ajan:event	:FinalizeLccProcessEvent ;
-	ajan:event	:LccFailureEvent ;
-	ajan:endpoint	:StartLccAssessmentEndpoint ;
-	ajan:endpoint	:LccAssessmentCompleteEndpoint ;
-	ajan:endpoint	:SubmitFinalLccResultEndpoint ;
-	ajan:endpoint	:StartLccProcessEndpoint ;
-	ajan:endpoint	:ReceiveLccPersonalInfoEndpoint ;
-	ajan:endpoint	:ComputeLccUtilityValuesEndpoint ;
-	ajan:endpoint	:ReceiveLccUtilityValuesEndpoint ;
-	ajan:endpoint	:FinalizeLccProcessEndpoint ;
-	ajan:behavior	:StartLccAssessmentBehavior ;
-	ajan:behavior	:LccAssessmentCompleteBehavior ;
-	ajan:behavior	:SubmitFinalLccResultBehavior ;
-	ajan:behavior	:StartLccProcessBehavior ;
-	ajan:behavior	:LccDedicatedAgentBehavior ;
-	ajan:behavior	:ReceiveLccPersonalInfoBehavior ;
-	ajan:behavior	:ComputeLccCoalitionStructuresBehavior ;
-	ajan:behavior	:ComputeLccUtilityValuesBehavior ;
-	ajan:behavior	:ReceiveLccUtilityValuesBehavior ;
-	ajan:behavior	:SolveLccBehavior ;
-	ajan:behavior	:FinalizeLccProcessBehavior ;
-	ajan:behavior	:LccFailureBehavior ;
-
-################## LCC Stuff ################## END 
-
-################## CHC Stuff ################## START
-	ajan:event :CHCProtocolEvent ;
-	ajan:event :ExecuteCHCProcessEvent;
-	ajan:event :ShareCHCPersonalInfoEvent ;
-	ajan:event :ReceiveCHCPersonalInfoEvent;
-	ajan:event :ShareCHCSimilaritiesEvent;
-	ajan:event :ReceiveCHCSimilaritiesEvent;
-	ajan:event :SolveCHCEvent;
-	ajan:event :FinalizeCHCProcessEvent;
-	ajan:event :CHCFailureEvent;
-	ajan:endpoint :CHCProtocolEndpoint ;
-	ajan:endpoint :ShareCHCPersonalInfoEndpoint ;
-	ajan:endpoint :ReceiveCHCPersonalInfoEndpoint;
-	ajan:endpoint :ShareCHCSimilaritiesEndpoint ;
-	ajan:endpoint :ReceiveCHCSimilaritiesEndpoint ;
-	ajan:endpoint :FinalizeCHCProcessEndpoint;
-	ajan:behavior :CHCProtocolBehavior ;
-	ajan:behavior :ExecutingCHCProcessBehavior ;
-	ajan:behavior :SharingCHCPersonaInfoBehavior ;	 
-	ajan:behavior :ReceivingCHCPersonaInfoBehavior;  
-	ajan:behavior :SharingCHCSimilaritiesBehavior;  
-	ajan:behavior :ReceivingCHCSimilaritiesBehavior;
-	ajan:behavior :SolvingCHCBehavior;
-	ajan:behavior :FinalizingCHCProcessBehavior;
-	ajan:behavior :CHCFailureBehavior ;
-################## CHC Stuff ################## END 
-
-################## COMMON Stuff ################## START
 	ajan:event :PopulateLAREvent ;	
 	ajan:event :ReceiveLocalAgentsEvent;
 	ajan:endpoint :populateLAR ;
 	ajan:behavior :PopulateLARRepos .
-################## COMMON Stuff ################## END 
 
 
-################## WELCOME BTs ################## END 
+# -------------Grouping Template BTs ---------------
 
 
 # ----------- Clustering Coordination stuff -------------------
@@ -281,8 +189,6 @@
 	ajan:bt behaviors:FinalizeCoordinationToGroupsBT .
 # ----------- Clustering Coordination stuff -------------------
 
-# ----------- CSGP Coordination stuff -------------------
-
 :StartCsgpCoordRequestEvent
 	a ajan:ModelQueueEvent ;
 	rdfs:label "Send Csgp Coord. Request Event" .
@@ -325,6 +231,16 @@
 	ajan:trigger :SolveCsgpEvent ;
 	ajan:bt behaviors:SolveCsgpTemplBT .
 
+:FinalizeCsgpCoordinationEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Finalize CSGP Coordination Event" .
+
+:FinalizeCsgpCoordinationBehavior
+	a ajan:Behavior ;
+	rdfs:label "Finalize CSGP Behavior" ;
+	ajan:trigger :FinalizeCsgpCoordinationEvent ;
+	ajan:bt behaviors:FinalizeCsgpCoordinationBT .
+
 
 :ComputeCsgpCoalitionsEvent
 	a ajan:ModelQueueEvent ;
@@ -352,11 +268,14 @@
 	rdfs:label "Csgp Utilities Request Behavior" ;
 	ajan:trigger :CsgpUtilitiesRequestEvent ;
 	ajan:bt behaviors:HandleCsgpUtilitiesRequestTemplBT .
-# ----------- CSGP Coordination stuff -------------------
 
 # -------------Grouping Template BTs ---------------
 
 
+
+
+
+# ---------- templ bts without goals
 
 
 
@@ -410,6 +329,7 @@
 	ajan:bt behaviors:ReceiveCoordRequestResponseTempBT .
 
 
+# ----------------
 
 
 :StartCoordEvent
@@ -673,14 +593,137 @@
 
 # ----------- Templates -----------
 
+:GoalNodeTestAgent
+	a ajan:AgentTemplate ;
+	rdfs:label	"GoalNodeAgent to test new goal node" ;
+	ajan:event	:InitBtEvent ;
+	ajan:event	:TestGoal ;
+	ajan:endpoint	:InitBtEndpoint ;
+	ajan:behavior	:InitBt ;
+	ajan:behavior	:TestGoalBt .
 
+:InitBtEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Init BT Event" .
+
+:TestGoal
+	a ajan:Goal ;
+	rdfs:label "TestGoal goal event" ;
+	ajan:precondition """
+		ASK
+		WHERE {
+			?s ?p ?o .
+		}"""^^xsd:string ;
+		
+	ajan:postcondition """
+		ASK
+		WHERE {
+			?s ?p ?o .
+		}"""^^xsd:string .
+
+:InitBtEndpoint
+	a ajan:Endpoint ;
+	rdfs:label "Init BT endpoint" ;
+	ajan:capability "initBt" ;
+	ajan:event :InitBtEvent .
+
+:InitBt
+	a ajan:Behavior ;
+	rdfs:label "Init Behavior tree" ;
+	ajan:trigger :InitBtEvent ;
+	ajan:bt behaviors:InitBt .
+	
+:TestGoalBt
+	a ajan:Behavior ;
+	rdfs:label "Test Goal Behavior tree" ;
+	ajan:trigger :TestGoal ;
+	ajan:bt behaviors:TestGoalBt .
+
+
+:MAJANAgent
+	a ajan:AgentTemplate ;
+	rdfs:label "MAJAN Agent to Test MAJAN Features" ;
+#---------LCC Related----------------------
+	ajan:event	:StartLccAssessmentEvent ;
+	ajan:event	:LccAssessmentCompleteEvent ;
+	ajan:event	:SubmitFinalLccResultEvent ;
+	ajan:event	:StartLccProcessEvent ;
+	ajan:event	:LccDedicatedAgentBehaviorEvent ;
+	ajan:event	:ReceiveLccPersonalInfoEvent ;
+	ajan:event	:ComputeLccCoalitionStructuresEvent ;
+	ajan:event	:ComputeLccUtilityValuesEvent ;
+	ajan:event	:ReceiveLccUtilityValuesEvent ;
+	ajan:event	:SolveLccEvent ;
+	ajan:event	:FinalizeLccProcessEvent ;
+	ajan:event	:LccFailureEvent ;
+	ajan:endpoint	:StartLccAssessmentEndpoint ;
+	ajan:endpoint	:LccAssessmentCompleteEndpoint ;
+	ajan:endpoint	:SubmitFinalLccResultEndpoint ;
+	ajan:endpoint	:StartLccProcessEndpoint ;
+	ajan:endpoint	:ReceiveLccPersonalInfoEndpoint ;
+	ajan:endpoint	:ComputeLccUtilityValuesEndpoint ;
+	ajan:endpoint	:ReceiveLccUtilityValuesEndpoint ;
+	ajan:endpoint	:FinalizeLccProcessEndpoint ;
+	ajan:behavior	:StartLccAssessmentBehavior ;
+	ajan:behavior	:LccAssessmentCompleteBehavior ;
+	ajan:behavior	:SubmitFinalLccResultBehavior ;
+	ajan:behavior	:StartLccProcessBehavior ;
+	ajan:behavior	:LccDedicatedAgentBehavior ;
+	ajan:behavior	:ReceiveLccPersonalInfoBehavior ;
+	ajan:behavior	:ComputeLccCoalitionStructuresBehavior ;
+	ajan:behavior	:ComputeLccUtilityValuesBehavior ;
+	ajan:behavior	:ReceiveLccUtilityValuesBehavior ;
+	ajan:behavior	:SolveLccBehavior ;
+	ajan:behavior	:FinalizeLccProcessBehavior ;
+	ajan:behavior	:LccFailureBehavior ;
+#---------LCC Related----------------------
+#---------CHC Related----------------------
+	ajan:event :CHCProtocolEvent ;
+	ajan:event :ExecuteCHCProcessEvent;
+	ajan:event :ShareCHCPersonalInfoEvent ;
+	ajan:event :ReceiveCHCPersonalInfoEvent;
+	ajan:event :ShareCHCSimilaritiesEvent;
+	ajan:event :ReceiveCHCSimilaritiesEvent;
+	ajan:event :SolveCHCEvent;
+	ajan:event :FinalizeCHCProcessEvent;
+	ajan:event :CHCFailureEvent;
+	ajan:endpoint :CHCProtocolEndpoint ;
+	ajan:endpoint :ShareCHCPersonalInfoEndpoint ;
+	ajan:endpoint :ReceiveCHCPersonalInfoEndpoint;
+	ajan:endpoint :ShareCHCSimilaritiesEndpoint ;
+	ajan:endpoint :ReceiveCHCSimilaritiesEndpoint ;
+	ajan:endpoint :FinalizeCHCProcessEndpoint;
+	ajan:behavior :CHCProtocolBehavior ;
+	ajan:behavior :ExecutingCHCProcessBehavior ;
+	ajan:behavior :SharingCHCPersonaInfoBehavior ;	 
+	ajan:behavior :ReceivingCHCPersonaInfoBehavior;  
+	ajan:behavior :SharingCHCSimilaritiesBehavior;  
+	ajan:behavior :ReceivingCHCSimilaritiesBehavior;
+	ajan:behavior :SolvingCHCBehavior;
+	ajan:behavior :FinalizingCHCProcessBehavior;
+	ajan:behavior :CHCFailureBehavior ;
+#---------CHC Related----------------------
+#---------Other----------------------
+	ajan:event :TestQueueEvent ;
+	ajan:event :PopulateLAREvent ;	
+	ajan:event :ReceiveLocalAgentsEvent;
+	ajan:event :RequestInitiatorEvent ;
+	ajan:endpoint :TestQueueEventEndpoint ;
+	ajan:endpoint :populateLAR ;
+	ajan:behavior :PopulateLARRepos;
+	ajan:behavior :Request_Initiator_BT ;
+	ajan:behavior :TestQueueEventBehavior .
 #---------Other----------------------
 
 
 #------------MAJAN Stuff-------------------
 
 #----Behaviors-------
-
+:Request_Initiator_BT
+	a ajan:Behavior ;
+	rdfs:label "Request Initiator Behavior" ;
+	ajan:trigger :RequestInitiatorEvent ;
+	ajan:bt behaviors:RequestInitiatorBT .
 	
 :StartLccAssessmentBehavior
 	a ajan:Behavior ;
@@ -808,6 +851,11 @@
 	ajan:trigger :CHCFailureEvent ;
 	ajan:bt behaviors:CHCFailureBT.
 	
+:TestQueueEventBehavior
+	a ajan:Behavior ;
+	rdfs:label "Test Queue Event Behavior" ;
+	ajan:trigger :TestQueueEvent ;
+	ajan:bt behaviors:TestQueueBT.
 
 #----Behaviors-------
 
@@ -896,10 +944,19 @@
 	ajan:capability "finalizeCHCProcess" ;
 	ajan:event :FinalizeCHCProcessEvent .
 
+:TestQueueEventEndpoint 
+	a ajan:Endpoint ;
+	rdfs:label "Endpoint to test queue event Behavior" ;
+	ajan:capability "testQueueEvent" ;
+	ajan:event :TestQueueEvent .
 
 #----Endpoints-------
 
 #----Events-------
+
+:RequestInitiatorEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Request Initiator BT Event" .
 
 :StartLccAssessmentEvent
 	a ajan:ModelQueueEvent ;
@@ -984,3 +1041,226 @@
 :CHCFailureEvent
 	a ajan:ModelEvent ;
 	rdfs:label "CHC Protocol/Process Failed Event" .
+
+:TestQueueEvent
+	a ajan:ModelQueueEvent ;
+	rdfs:label "Test Queue Event" .
+
+#----Events-------
+
+
+#------------MAJAN Stuff-------------------
+
+
+#------------------WELCOME Stuff by ELENA----------------------
+
+
+:WelcomeAgent
+	a ajan:AgentTemplate ;
+	rdfs:label "DTASFWelcomeAgent" ;
+	ajan:event :PopulateLSREvent ;
+	ajan:event :PopulateLAREvent ;	
+	ajan:event :ReceiveLocalAgentsEvent ;
+	ajan:event :ReceiveLocalServicesEvent ;
+	ajan:event :ReceiveHandshakeEvent ;	
+	ajan:event :SpeakAvatarEvent ;	
+	ajan:event :EventDIPORServiceRequest ;	
+	ajan:event :EventStatementNonOpinion ;	
+	ajan:event :SpecificBTEvent ;
+	ajan:event :FirstInteractionBTEvent ;	
+	ajan:event :CloseScenarioEvent ;
+	ajan:event :AlternativeCloseScenarioEvent ;
+	ajan:event :AgentShutdownEvent ;
+	ajan:event :AgentMonitoringEvent ;
+	ajan:endpoint :populateLAR ;
+	ajan:endpoint :populateLSR ;
+	ajan:endpoint :receiveSpeechAct ;
+	ajan:endpoint :speakAvatar ;
+	ajan:endpoint :handshake ;
+	ajan:endpoint :closeScenario ;
+    ajan:endpoint :agentSession ;
+	ajan:endpoint :heartbeat ;
+	ajan:initialBehavior :InitialWelcomeBehavior ;
+	ajan:finalBehavior :FinalWelcomeBehavior ;
+	ajan:behavior :PopulateLARRepos ;
+	ajan:behavior :PopulateLSRRepos ;
+	ajan:behavior :HandshakeBehavior ;
+	ajan:behavior :ProcessSpeechActsBehavior ;
+	#ajan:behavior :SpecificFirstReceptionBT ;
+	ajan:behavior :CloseScenarioBT ;
+	ajan:behavior :AgentShutdown ;
+	ajan:behavior :HeartbeatMonitoringBT .
+
+# ----------- Behaviors -----------
+
+:InitialWelcomeBehavior
+	a ajan:InitialBehavior ;
+	rdfs:label "Initial Behavior" ;
+	ajan:bt behaviors:InitialWelcomeBehavior .
+
+:FinalWelcomeBehavior
+	a ajan:FinalBehavior ;
+	rdfs:label "Final Behavior" ;
+	ajan:bt behaviors:FinalWelcomeBehavior .
+
+:PopulateLARRepos
+	a ajan:Behavior ;
+	rdfs:label "Populate LAR Repos" ;
+	ajan:trigger :PopulateLAREvent ;
+	ajan:trigger :ReceiveLocalAgentsEvent ;
+	ajan:bt behaviors:PopulateLARRepos .
+
+:PopulateLSRRepos
+	a ajan:Behavior ;
+	rdfs:label "Populate LSR Repos" ;
+	ajan:trigger :PopulateLSREvent ;
+	ajan:trigger :ReceiveLocalServicesEvent ;
+	ajan:bt behaviors:PopulateLSRRepos .
+
+:HandshakeBehavior
+	a ajan:Behavior ;
+	rdfs:label "Handshake Behavior" ;
+	ajan:trigger :ReceiveHandshakeEvent ;	
+	ajan:bt behaviors:HandshakeBehavior .
+	
+:ProcessSpeechActsBehavior
+	a ajan:Behavior ;
+	rdfs:label "Process Speech Acts Behavior" ;
+	ajan:trigger :SpeakAvatarEvent ;
+	ajan:trigger :EventDIPORServiceRequest ;
+	ajan:trigger :EventStatementNonOpinion ;
+	ajan:bt behaviors:ProcessSpeechActsBehavior .
+
+:SpecificFirstReceptionBT
+	a ajan:Behavior ;
+	rdfs:label "Specific First Reception Behavior Tree" ;
+	ajan:trigger :FirstInteractionBTEvent ;
+	ajan:trigger :SpecificBTEvent ;
+	ajan:bt behaviors:SpecificFirstReceptionBT .
+
+:CloseScenarioBT
+	a ajan:Behavior ;
+	rdfs:label "Specific First Reception Closing Behavior Tree" ;
+	ajan:trigger :AlternativeCloseScenarioEvent ;
+	ajan:trigger :CloseScenarioEvent ;
+	ajan:bt behaviors:CloseScenarioBT .
+	
+:AgentShutdown
+	a ajan:Behavior ;
+	rdfs:label "Agent Shutdown" ;
+	ajan:trigger :AgentShutdownEvent ;
+	ajan:bt behaviors:AgentShutdown .
+
+:HeartbeatMonitoringBT
+	a ajan:Behavior ;
+	rdfs:label "Heartbeat Monitoring Behavior" ;
+	ajan:trigger :AgentMonitoringEvent ;
+	ajan:bt behaviors:HeartbeatMonitoringBT .
+
+# ----------- Endpoints -----------
+
+:populateLAR
+	a ajan:Endpoint ;
+	rdfs:label "populate LAR Repo Endpoint" ;
+	ajan:capability "populateLAR" ;
+	ajan:event :ReceiveLocalAgentsEvent .
+
+:populateLSR
+	a ajan:Endpoint ;
+	rdfs:label "populate LSR Repo Endpoint" ;
+	ajan:capability "populateLSR" ;
+	ajan:event :ReceiveLocalServicesEvent .
+	
+:receiveSpeechAct
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for DIPs" ;
+	ajan:capability "receiveSpeechAct" ;	
+	ajan:event :EventDIPORServiceRequest ;
+	ajan:event :EventStatementNonOpinion .
+
+:handshake
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for handshake" ;
+	ajan:capability "handshake" ;
+	ajan:event :ReceiveHandshakeEvent .
+	
+:speakAvatar
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for speakAvatar" ;
+	ajan:capability "speakAvatar" ;
+	ajan:event :SpeakAvatarEvent .
+	
+:closeScenario
+	a ajan:Endpoint ;
+	rdfs:label "KMS Endpoint for closeScenario" ;
+	ajan:capability "closeScenario" ;
+	ajan:event :CloseScenarioEvent .
+	
+:agentSession
+	a ajan:Endpoint ;
+	rdfs:label "Agent Session Endpoint" ;
+	ajan:capability "agentSession" ;
+	ajan:event :AgentShutdownEvent .
+
+:heartbeat
+	a ajan:Endpoint ;
+	rdfs:label "Heartbeat monitoring Endpoint" ;
+	ajan:capability "heartbeat" ;
+	ajan:event :AgentMonitoringEvent .
+	
+# ----------- Events -----------
+:PopulateLSREvent
+	a ajan:ModelEvent ;
+	rdfs:label "Populate LSR Event" .
+	
+:PopulateLAREvent
+	a ajan:ModelEvent ;
+	rdfs:label "Populate LAR Event" .
+
+:ReceiveLocalServicesEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Local Services Event" .
+	
+:ReceiveLocalAgentsEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Local Agents Event" .
+	
+:ReceiveHandshakeEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Handshake Event" .
+
+:SpeakAvatarEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Speak to Avatar Event" .
+	
+:EventDIPORServiceRequest
+	a ajan:ModelEvent ;
+	rdfs:label "Receive a DIP or Service Request Event" .
+
+:EventStatementNonOpinion
+	a ajan:ModelEvent ;
+	rdfs:label "Receive Default Statement Non Opinion Event" .
+
+:FirstInteractionBTEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Receive First Service Interaction Move Event" .
+
+:AlternativeCloseScenarioEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Alternative Close Scenario Event" .
+	
+:CloseScenarioEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Close Scenario Event" .
+	
+:SpecificBTEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Specific BT Event" .
+
+:AgentShutdownEvent
+	a ajan:ModelEvent ;
+	rdfs:label "AgentShutdownEvent" .
+
+:AgentMonitoringEvent
+	a ajan:ModelEvent ;
+	rdfs:label "Agent Monitoring Event" .

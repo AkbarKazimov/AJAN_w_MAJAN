@@ -134,8 +134,21 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         
         Utils.printRDF4JModel(rdfInputModel, LOG);
 
+                
+        // Extract the Problem Instance. There should be only 1 problem instance because 
+        // the algorithm cannot run multiple configurations at the same time. 
+        Set<Resource> subjects = rdfInputModel.filter(null, org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, 
+                MAJANVocabulary.MAC_PROBLEM_INSTANCE).subjects();
+        Resource problemInstance_subject = null;
+        if(!subjects.isEmpty()){
+            problemInstance_subject = subjects.iterator().next();
+        }else{
+            throw new HDBSCANInputException("No problem instance is specified (i.e. no subject exists for type "+
+                    MAJANVocabulary.MAC_PROBLEM_INSTANCE+")");
+        } // end
+        
         // Extract MacProblemId from model
-        Set<Value> valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_ID, null).objects();
+        Set<Value> valueSet = rdfInputModel.filter(problemInstance_subject, MAJANVocabulary.HAS_ID, null).objects();
         if(!valueSet.isEmpty()){
             chcProblemId=valueSet.iterator().next().stringValue();
         }else{
@@ -145,7 +158,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
           //  System.out.println("------------MACProblemId: "+chcProblemId);
 
         // Extract NumOfAgents from Model
-        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_NUMBER_OF_AGENTS, null).objects();
+        valueSet = rdfInputModel.filter(problemInstance_subject, MAJANVocabulary.HAS_NUMBER_OF_AGENTS, null).objects();
         if(!valueSet.isEmpty()){
             numOfAgents=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
@@ -155,7 +168,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         // System.out.println("------------NumOfAgents: "+numOfAgents);
 
         // Extract Min Points value from model
-        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_MIN_POINTS_PARAM, null).objects();
+        valueSet = rdfInputModel.filter(problemInstance_subject, MAJANVocabulary.HAS_MIN_POINTS_PARAM, null).objects();
         if(!valueSet.isEmpty()){
             minPts=Integer.valueOf(valueSet.iterator().next().stringValue());
         }else{
@@ -163,7 +176,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         } // end
          
          // Extract Min Cluster Size value from model
-         valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_MIN_CLUSTER_SIZE_PARAM, null).objects();
+         valueSet = rdfInputModel.filter(problemInstance_subject, MAJANVocabulary.HAS_MIN_CLUSTER_SIZE_PARAM, null).objects();
          if(!valueSet.isEmpty()){
              minClSize=Integer.valueOf(valueSet.iterator().next().stringValue());
          }else{
@@ -171,7 +184,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
          } // end
            
         // Extract Perfect Match Score from Model
-        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_PERFECT_MATCH_SCORE, null).objects();
+        valueSet = rdfInputModel.filter(problemInstance_subject, MAJANVocabulary.HAS_PERFECT_MATCH_SCORE, null).objects();
         if(!valueSet.isEmpty()){
             perfectMatchScore=Double.valueOf(valueSet.iterator().next().stringValue());
         }else{
@@ -181,7 +194,7 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
         //System.out.println("------------perfectMatchScore: "+perfectMatchScore);
 
         // Extract Agent Names from Model
-        valueSet=rdfInputModel.filter(null, MAJANVocabulary.HAS_PARTICIPANTS, null).objects();
+        valueSet=rdfInputModel.filter(problemInstance_subject, MAJANVocabulary.HAS_PARTICIPANTS, null).objects();
         if(valueSet.size()!=numOfAgents){
             throw new HDBSCANInputException("Amount of participating agents ("+valueSet.size()+") is different "
                     + "from the given \"numberOfAgents="+numOfAgents+"\" information.");
@@ -212,15 +225,15 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
             Arrays.fill(distanceScore, perfectMatchScore);
         }
         for (int i = 0; i < numOfAgents; i++) {
-            Set<Resource> subjectsOfSubjectAgent = rdfInputModel.filter(null, MAJANVocabulary.HAS_SUBJECT_AGENT,
+            Set<Resource> subjectsOfSubjectAgent = rdfInputModel.filter(null, MAJANVocabulary.IS_COMPUTED_BY,
                     agentNames.get(i)).subjects();
             for (int j = 0; j < numOfAgents; j++) {
                 if(i==j){
                     distanceScores[i][j] = 0.0;
                 }else{
                     for (Resource subjectOfSubjectAgent : subjectsOfSubjectAgent) {
-                        if(rdfInputModel.contains(subjectOfSubjectAgent, MAJANVocabulary.HAS_OBJECT_AGENT, agentNames.get(j))){
-                            valueSet = rdfInputModel.filter(subjectOfSubjectAgent, MAJANVocabulary.HAS_DISTANCE_SCORE, null).objects();
+                        if(rdfInputModel.contains(subjectOfSubjectAgent, MAJANVocabulary.IS_COMPUTED_AGAINST, agentNames.get(j))){
+                            valueSet = rdfInputModel.filter(subjectOfSubjectAgent, MAJANVocabulary.HAS_VALUE, null).objects();
                             
                             //valueSet = rdfInputModel.filter(subjectOfSubjectAgent, MAJANVocabulary.DistanceScorePre, null).objects();
                             if(valueSet.isEmpty()){
@@ -252,9 +265,11 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                 .setNamespace("ajan", MAJANVocabulary.AJAN_NAMESPACE.toString());
         
         BNode clusteringBNode = MAJANVocabulary.FACTORY.createBNode();
-        builder.subject(clusteringBNode)
+        builder.subject(problemInstance_subject)
+                .add(MAJANVocabulary.HAS_SOLUTION, clusteringBNode)
+                .subject(clusteringBNode)
                 .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CLUSTERING)
-                .add(MAJANVocabulary.IS_SOLUTION_OF, chcProblemId);
+                .add(MAJANVocabulary.HAS_SOLUTION_OF, chcProblemId);
         
         HashMap<Integer, Resource> clusterSubjectStorage = new HashMap<>();
         
@@ -281,177 +296,6 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
                     //.add(MAJANVocabulary.MemberOfPre, clusterBnode)
                     ;
         }
-        Model responseModel = builder.build();
-        //Utils.printRDF4JModel(responseModel, LOG);
-
-        if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.EXECUTION_KNOWLEDGE.toString())){
-            this.getObject().getExecutionBeliefs().update(responseModel);
-        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.AGENT_KNOWLEDGE.toString())){
-            this.getObject().getAgentBeliefs().update(responseModel);
-        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_AGENTS_KNOWLEDGE.toString())){
-            this.getObject().getLocalAgentsBeliefs().update(responseModel);
-        }else if(constructQuery.getTargetBase().toString().equals(AJANVocabulary.LOCAL_SERVICES_KNOWLEDGE.toString())){
-            this.getObject().getLocalServicesBeliefs().update(responseModel);
-        }
-
-        respFlag=true;
-        return respFlag;
-    }
-    
-    private boolean executeHdbscanOld() throws URISyntaxException, HDBSCANInputException {
-        boolean respFlag = false;
-        Double[][] distanceScores = null; // done
-        Double[][] asymSimilarityScores = null; // done
-        double perfectMatchScore = 0;// done
-        int numOfAgents = 0;// done
-        ArrayList<Constraint> constraints = null;
-        int[] clusterLabels = null;
-        String chcProblemId = null;// done
-        List<Value> agentNames = new ArrayList<>();// done
-
-        Repository repo = BTUtil.getInitializedRepository(this.getObject(), constructQuery.getOriginBase());
-        Model rdfInputModel = constructQuery.getResult(repo);
-        
-        //Utils.printRDF4JModel(rdfInputModel, LOG);
-
-        // Extract MacProblemId from model
-        Set<Value> valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_MAC_PROBLEM_ID, null).objects();
-        if(!valueSet.isEmpty()){
-            chcProblemId=valueSet.iterator().next().stringValue();
-        }else{
-            throw new HDBSCANInputException("CHC Problem Id is not specified (i.e. no value exists for the following predicate: "+
-                    MAJANVocabulary.HAS_MAC_PROBLEM_ID+")");
-        } // end
-        //    System.out.println("------------MACProblemId: "+chcProblemId);
-
-        // Extract NumOfAgents from Model
-        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_NUMBER_OF_AGENTS, null).objects();
-        if(!valueSet.isEmpty()){
-            numOfAgents=Integer.valueOf(valueSet.iterator().next().stringValue());
-        }else{
-            throw new HDBSCANInputException("Number of agents is not specified (i.e. no value exists for predicate "+
-                    MAJANVocabulary.HAS_NUMBER_OF_AGENTS+")");
-        } // end
-        //    System.out.println("------------NumOfAgents: "+numOfAgents);
-
-        // Extract Perfect Match Score from Model
-        valueSet = rdfInputModel.filter(null, MAJANVocabulary.HAS_PERFECT_MATCH_SCORE, null).objects();
-        if(!valueSet.isEmpty()){
-            perfectMatchScore=Double.valueOf(valueSet.iterator().next().stringValue());
-        }else{
-            throw new HDBSCANInputException("Perfect match score is not specified (i.e. no value exists for predicate "+
-                    MAJANVocabulary.HAS_PERFECT_MATCH_SCORE+")");
-        } // end
-       // System.out.println("------------perfectMatchScore: "+perfectMatchScore);
-
-        // Extract Agent Names from Model
-        valueSet=rdfInputModel.filter(null, MAJANVocabulary.HAS_PARTICIPANTS, null).objects();
-        if(valueSet.size()!=numOfAgents){
-            throw new HDBSCANInputException("Amount of participating agents ("+valueSet.size()+") is different "
-                    + "from the given \"numberOfAgents="+numOfAgents+"\" information.");
-        }
-        Iterator<Value> valueIterator = valueSet.iterator();
-        while(valueIterator.hasNext()){
-            agentNames.add(valueIterator.next());
-        } // end
-        
-        /*for (Value agentName : agentNames) {
-            System.out.println("------------agentName: "+agentName);
-        }*/
-        
-        // Extract Asymmetric Similarity Matrix, then compute Reciprocal Scores and then compute Distance scores
-        asymSimilarityScores = new Double[numOfAgents][numOfAgents];
-        distanceScores = new Double[numOfAgents][numOfAgents];
-        for (int i = 0; i < numOfAgents; i++) {
-            Set<Resource> subjectsOfSubjectAgent = rdfInputModel.filter(null, MAJANVocabulary.HAS_SUBJECT_AGENT, 
-                    agentNames.get(i)).subjects();
-            for (int j = 0; j < numOfAgents; j++) {
-                if(i==j){
-                    asymSimilarityScores[i][j] = perfectMatchScore;
-                    distanceScores[i][j] = 0.0;
-                }else{
-                    for (Resource subjectOfSubjectAgent : subjectsOfSubjectAgent) {
-                        if(rdfInputModel.contains(subjectOfSubjectAgent, MAJANVocabulary.HAS_OBJECT_AGENT, agentNames.get(j))){
-                            valueSet = rdfInputModel.filter(subjectOfSubjectAgent, MAJANVocabulary.HAS_SIMILARITY_SCORE, null).objects();
-                            if(valueSet.isEmpty()){
-                              //  throw new HDBSCANInputException("No Similarity Score is specified between <"+agentNames.get(i)+"> and <" 
-                                //        + agentNames.get(j));
-                                LOG.warn("No Similarity Score is specified between <"+agentNames.get(i)+"> and <"
-                                        + agentNames.get(j));
-                                asymSimilarityScores[i][j] = 0.0;
-                            }else{
-                                double similarityScore = Double.valueOf(valueSet.iterator().next().stringValue());
-                                                    
-                                if(asymSimilarityScores[i][j]==null || asymSimilarityScores[i][j]<similarityScore){
-                                    asymSimilarityScores[i][j]=similarityScore;
-                                }
-                            }
-                            if(asymSimilarityScores[j][i]!=null){
-                                double reciprocalScore = computeReciprocalScore(asymSimilarityScores[i][j], asymSimilarityScores[j][i]);
-                                double distanceScore = perfectMatchScore - reciprocalScore;
-                                distanceScores[i][j] = distanceScore;
-                                distanceScores[j][i] = distanceScore;
-                            }
-                        }
-                    }
-                }
-            }
-        } // end
-
-        // Execute HDBSCAN Algorithm to compute Cluster Labels
-        HDBSCANStarRunner hdbscanStarRunner = new HDBSCANStarRunner();
-        clusterLabels = hdbscanStarRunner.execute(distanceScores, constraints, 1, 2, false);
-        printClusters(clusterLabels, agentNames);
-        
-        // Create Response Model
-        ModelBuilder builder=new ModelBuilder();
-        builder.setNamespace("welcome", MAJANVocabulary.WELCOME_NAMESPACE.toString())
-                .setNamespace("ajan", MAJANVocabulary.AJAN_NAMESPACE.toString());
-        
-        BNode clusteringBNode = MAJANVocabulary.FACTORY.createBNode();
-        builder.subject(clusteringBNode)
-                .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CLUSTERING)
-                .add(MAJANVocabulary.IS_SOLUTION_OF, chcProblemId);
-        
-        HashMap<Integer, Resource> clusterSubjectStorage = new HashMap<>();
-        
-        for(int i = 0; i < clusterLabels.length; i++){
-            BNode clusterBnode = null;
-            if(clusterLabels[i] == 0){
-                clusterBnode = MAJANVocabulary.FACTORY.createBNode();
-            }else{
-                if(!clusterSubjectStorage.containsKey(clusterLabels[i])){
-                    clusterBnode = MAJANVocabulary.FACTORY.createBNode();
-                    clusterSubjectStorage.put(clusterLabels[i], clusterBnode);
-                }else{
-                    clusterBnode = (BNode) clusterSubjectStorage.get(clusterLabels[i]);
-                }
-            }
-            builder.subject(clusteringBNode)
-                    .add(MAJANVocabulary.HAS_MEMBERS, clusterBnode)
-                    .subject(clusterBnode)
-                    .add(org.eclipse.rdf4j.model.vocabulary.RDF.TYPE, MAJANVocabulary.CLUSTER)
-                    .add(MAJANVocabulary.HAS_MEMBERS, agentNames.get(i))
-                    .add(MAJANVocabulary.IS_CLUSTER_OF, clusteringBNode)
-                    .subject((Resource) agentNames.get(i))
-                    .add(MAJANVocabulary.IS_MEMBER_OF, clusterBnode);
-        }
-        
-        // Dont Delete
-        // This (responseModel) model contains the clusters which are found by HDBSCAN. This model doesn't contain the Asymmetric Similarity Values. 
-        // This means, Asymmetric Similarity Values will not be written to LAKR. I don't think it is necessary for anyone, plus there 
-        // will be huge amount of similarity values. So if it is not necessary, then why would agents store it. 
-        // However, if anyone wants to store the similarity values to LAKR, then all you need to do is to iterate over 
-        // asymSimilarityScores and write each score to the responseModel. The rdf template for a similarity score is described in 
-        // RDF Representation document but I give it below as well:
-       /*
-        _:bNodeSimilarityScore      ajan:hasSubject      ?subjectAgent;
-                                    ajan:hasObject       ?objectAgent;        
-                                    welcome:isComputedForProblemId       ?chcProblemId;
-                                    ajan:hasSimilarityScore         ?similarityScore.
-        */
-        
-
         Model responseModel = builder.build();
         //Utils.printRDF4JModel(responseModel, LOG);
 
@@ -530,8 +374,8 @@ public class HDBSCAN extends AbstractTDBLeafTask implements NodeExtension, TreeN
     
     private Double[][] applyConstraints(Double[][] distances, ArrayList<int[]> mlList, ArrayList<int[]> clList) {
         for(int[] ml : mlList) {
-            distances[ml[0]][ml[1]] = 0.0;
-            distances[ml[1]][ml[0]] = 0.0;
+            distances[ml[0]][ml[1]] = 0.001;
+            distances[ml[1]][ml[0]] = 0.001;
         }
         for(int[] cl : clList) {
             distances[cl[0]][cl[1]] = Double.POSITIVE_INFINITY;

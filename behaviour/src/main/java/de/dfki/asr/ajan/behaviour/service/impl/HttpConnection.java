@@ -93,10 +93,10 @@ public class HttpConnection implements IConnection {
 
 	@Override
 	public boolean removeProcessId(final String id) {
-		LOG.info("remove: " + id);
+		/*LOG.info("remove: " + id);
 		for (String index: processIds) {
 			LOG.info("index :" + index);
-		}
+		}*/
 		return processIds.remove(id);
 	}
 

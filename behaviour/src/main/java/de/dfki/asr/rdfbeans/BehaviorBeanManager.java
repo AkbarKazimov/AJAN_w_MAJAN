@@ -21,6 +21,7 @@ package de.dfki.asr.rdfbeans;
 
 import de.dfki.asr.ajan.behaviour.events.AJANGoal;
 import de.dfki.asr.ajan.behaviour.events.AJANGoal;
+import de.dfki.asr.ajan.behaviour.events.AJANGoalQueue;
 import de.dfki.asr.ajan.behaviour.nodes.common.Bound;
 import de.dfki.asr.ajan.behaviour.nodes.action.definition.*;
 import de.dfki.asr.ajan.behaviour.events.JsonEvent;

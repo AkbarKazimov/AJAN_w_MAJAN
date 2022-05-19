@@ -218,10 +218,15 @@ public class RDFAgentBuilder extends AgentBuilder {
     }
 
     private Event createGoal(final IRI resource) {
-        AJANGoal goal;
+        
+        AJANGoal goal = new AJANGoal();
         try (RepositoryConnection conn = agentRepo.getConnection()) {
             RDFBeanManager manager = new BehaviorBeanManager(conn, pluginLoader.getNodeExtensions());
-            goal = manager.get(resource, AJANGoal.class);
+            AJANGoal goal2 = manager.get(resource, AJANGoal.class);
+            goal.setName(goal2.getName());
+            goal.setPrecondition(goal2.getPrecondition());
+            goal.setPostcondition(goal2.getPostcondition());
+            goal.setUrl(goal2.getUrl());
         }
         catch (RDF4JException | RDFBeanException ex) {
             throw new InitializationRDFValidationException("Could not load AJANGoal " + resource.stringValue(), ex);

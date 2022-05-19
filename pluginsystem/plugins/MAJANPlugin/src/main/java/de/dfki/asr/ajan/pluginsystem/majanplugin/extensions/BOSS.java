@@ -248,7 +248,7 @@ public class BOSS extends CSGPSolver implements NodeExtension, TreeNode{
         double minimumCsValue = 5.0;
         // Adding Coalition Structures to the Problem Instance Subject as Solution
         for (Map.Entry<int[][], Double[]> solution : solutions.entrySet()) {
-            if(solution.getValue()[0]<=(infeasibleCoalitionValue*3)/4){
+            if(solution.getValue()[0]<=((infeasibleCoalitionValue*3)/4)){
                 continue;
             }
             // Storing only top 3 solutions
